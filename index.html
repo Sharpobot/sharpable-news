@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpable News — Kecerdasan Buatan</title>
+  <meta name="description" content="Kewartawanan AI bebas meliput penyelidikan, syarikat permulaan, alatan, dan industri. Untuk penyelidik, pembangun, dan pembuat keputusan.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0b0a;
+      --bg-2: #111010;
+      --bg-card: #161412;
+      --bg-hover: #1c1a17;
+      --text-1: #ede8df;
+      --text-2: #8c857c;
+      --text-3: #56514d;
+      --accent: #d4a853;
+      --accent-dim: rgba(212,168,83,0.10);
+      --border: rgba(237,232,223,0.07);
+      --border-mid: rgba(237,232,223,0.11);
+      --font-serif: 'Fraunces', serif;
+      --font-sans: 'DM Sans', sans-serif;
+      --font-mono: 'Courier Prime', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--text-3); border-radius: 2px; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ticker {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* ════════════════════════════════
+       NAVBAR
+    ════════════════════════════════ */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(12,11,10,0.93);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      transition: border-color 0.3s;
+    }
+
+    .navbar-inner {
+      display: flex;
+      align-items: center;
+      height: 62px;
+      gap: 28px;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .logo-word {
+      font-family: var(--font-serif);
+      font-size: 21px;
+      font-weight: 700;
+      font-optical-sizing: auto;
+      color: var(--text-1);
+      letter-spacing: -0.025em;
+    }
+    .logo-dot {
+      display: inline-block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 2px;
+      margin-bottom: 5px;
+      flex-shrink: 0;
+    }
+
+    .nav-pipe {
+      width: 1px; height: 22px;
+      background: var(--border-mid);
+      flex-shrink: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+    .nav-link {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-2);
+      text-decoration: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      letter-spacing: 0.01em;
+      transition: color 0.18s, background 0.18s;
+      white-space: nowrap;
+    }
+    .nav-link:hover { color: var(--text-1); background: rgba(237,232,223,0.05); }
+    .nav-link.active { color: var(--text-1); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .btn-search {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(237,232,223,0.04);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      padding: 6px 13px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      transition: all 0.18s;
+    }
+    .btn-search:hover { background: rgba(237,232,223,0.08); color: var(--text-1); }
+    .btn-search kbd {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      opacity: 0.45;
+    }
+
+    .btn-subscribe {
+      background: var(--accent);
+      color: #0c0b0a;
+      border: none;
+      padding: 7px 16px;
+      border-radius: 5px;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: background 0.18s;
+    }
+    .btn-subscribe:hover { background: #dfb96a; }
+
+    /* ════════════════════════════════
+       BREAKING TICKER
+    ════════════════════════════════ */
+    .ticker-bar {
+      margin-top: 62px;
+      height: 34px;
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+    .ticker-label {
+      background: var(--accent);
+      color: #0c0b0a;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 13px;
+      flex-shrink: 0;
+    }
+    .ticker-track-wrap {
+      flex: 1;
+      overflow: hidden;
+    }
+    .ticker-track {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker 50s linear infinite;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    .ticker-item {
+      font-size: 11.5px;
+      color: var(--text-2);
+      padding: 0 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .ticker-item::after {
+      content: '·';
+      color: var(--text-3);
+    }
+
+    /* ════════════════════════════════
+       HERO
+    ════════════════════════════════ */
+    .hero {
+      padding: 60px 0 52px;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 52px;
+      align-items: start;
+    }
+
+    /* Hero main */
+    .hero-main {}
+
+    .hero-img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 26px;
+      position: relative;
+      background: var(--bg-card);
+    }
+    .img-bg {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .img-bg-hero {
+      background:
+        radial-gradient(ellipse at 25% 35%, rgba(212,168,83,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 75%, rgba(50,80,160,0.06) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, transparent, transparent 47px, rgba(237,232,223,0.018) 47px, rgba(237,232,223,0.018) 48px),
+        repeating-linear-gradient(90deg, transparent, transparent 47px, rgba(237,232,223,0.018) 47px, rgba(237,232,223,0.018) 48px);
+    }
+    .img-placeholder {
+      opacity: 0.18;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .img-placeholder svg { color: var(--text-2); }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .eyebrow-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(30px, 3.8vw, 50px);
+      font-weight: 600;
+      font-optical-sizing: auto;
+      line-height: 1.07;
+      letter-spacing: -0.03em;
+      color: var(--text-1);
+      margin-bottom: 16px;
+    }
+    .hero-excerpt {
+      font-size: 16.5px;
+      line-height: 1.68;
+      color: var(--text-2);
+      margin-bottom: 22px;
+      max-width: 580px;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12.5px;
+      color: var(--text-3);
+    }
+    .meta-author {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text-2);
+    }
+    .avatar {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--bg-hover);
+      border: 1px solid var(--border-mid);
+      display: inline-block;
+    }
+    .meta-sep { opacity: 0.4; }
+
+    .read-clock {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .read-clock::before {
+      content: '';
+      display: inline-block;
+      width: 9px; height: 9px;
+      border: 1.5px solid var(--text-3);
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 2.5s linear infinite;
+    }
+
+    /* Hero sidebar */
+    .hero-sidebar { padding-top: 2px; }
+
+    .sidebar-header {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-list { display: flex; flex-direction: column; }
+
+    .sidebar-item {
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .sidebar-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .s-cat {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 7px;
+    }
+    .s-title {
+      font-family: var(--font-serif);
+      font-size: 16.5px;
+      font-weight: 500;
+      font-optical-sizing: auto;
+      line-height: 1.32;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      margin-bottom: 7px;
+      transition: color 0.18s;
+    }
+    .sidebar-item:hover .s-title { color: var(--accent); }
+    .s-meta { font-size: 11.5px; color: var(--text-3); }
+
+    /* ════════════════════════════════
+       SHARED SECTION UTILITIES
+    ════════════════════════════════ */
+    .divider { height: 1px; background: var(--border); }
+
+    .section { padding: 52px 0; }
+
+    .sec-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .sec-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sec-label::before {
+      content: '';
+      display: inline-block;
+      width: 18px; height: 1px;
+      background: var(--accent);
+    }
+    .view-all {
+      font-size: 12.5px;
+      color: var(--text-3);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .view-all:hover { color: var(--accent); }
+
+    /* Tags */
+    .tag {
+      display: inline-block;
+      font-family: var(--font-sans);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 2px;
+    }
+    .t-research { background: rgba(60,120,200,0.11); color: #5a9ee0; }
+    .t-analysis  { background: rgba(190,110,50,0.11);  color: #c97c42; }
+    .t-startups  { background: rgba(70,170,100,0.11);  color: #50aa70; }
+    .t-policy    { background: rgba(190,70,90,0.11);   color: #c84c6a; }
+    .t-tools     { background: rgba(120,80,200,0.11);  color: #9070cc; }
+    .t-industry  { background: rgba(190,150,40,0.11);  color: #c4a030; }
+
+    /* ════════════════════════════════
+       ARTICLE CARDS GRID (3-col)
+    ════════════════════════════════ */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+
+    .card {
+      cursor: pointer;
+    }
+    .card-img {
+      width: 100%;
+      aspect-ratio: 16/10;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      background: var(--bg-card);
+      position: relative;
+    }
+    .card-img-inner {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.4s ease;
+    }
+    .card:hover .card-img-inner { transform: scale(1.04); }
+
+    .ci-1 { background: linear-gradient(140deg,#141110 0%,#1d1912 100%); }
+    .ci-2 { background: linear-gradient(140deg,#0e1218 0%,#13192a 100%); }
+    .ci-3 { background: linear-gradient(140deg,#120f14 0%,#190e1a 100%); }
+    .ci-4 { background: linear-gradient(140deg,#0e1310 0%,#121a14 100%); }
+    .ci-5 { background: linear-gradient(140deg,#131210 0%,#1c1a16 100%); }
+    .ci-6 { background: linear-gradient(140deg,#0f1218 0%,#141a26 100%); }
+
+    .card-overlay { opacity: 0.18; }
+
+    .card-photo {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.82) saturate(0.65);
+      transition: filter 0.4s ease;
+    }
+    .card:hover .card-photo,
+    .featured-card:hover .card-photo,
+    .cat-main:hover .card-photo { filter: brightness(0.88) saturate(0.78); }
+
+    .hero-photo {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.72) saturate(0.55);
+    }
+    .stack-photo {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.78) saturate(0.55);
+    }
+
+    .card-cat { margin-bottom: 9px; }
+    .card-title {
+      font-family: var(--font-serif);
+      font-size: 19px;
+      font-weight: 600;
+      font-optical-sizing: auto;
+      line-height: 1.23;
+      letter-spacing: -0.025em;
+      color: var(--text-1);
+      margin-bottom: 9px;
+      transition: color 0.18s;
+    }
+    .card:hover .card-title { color: var(--accent); }
+
+    .card-excerpt {
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--text-2);
+      margin-bottom: 12px;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12px;
+      color: var(--text-3);
+    }
+    .dot { width: 2px; height: 2px; border-radius: 50%; background: var(--text-3); }
+
+    /* ════════════════════════════════
+       TRENDING
+    ════════════════════════════════ */
+    .trending-strip {
+      background: var(--bg-2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 44px 0;
+    }
+    .trending-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+    }
+    .trending-item {
+      display: flex;
+      gap: 14px;
+      cursor: pointer;
+      align-items: center;
+    }
+    .trend-num {
+      font-family: var(--font-serif);
+      font-size: 38px;
+      font-weight: 800;
+      font-optical-sizing: auto;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      color: rgba(237,232,223,0.16);
+      flex-shrink: 0;
+      user-select: none;
+      transition: color 0.2s;
+    }
+    .trending-item:hover .trend-num { color: var(--accent-dim); }
+    .trend-body {}
+    .trend-cat { margin-bottom: 7px; }
+    .trend-title {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 600;
+      font-optical-sizing: auto;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      margin-bottom: 7px;
+      transition: color 0.18s;
+    }
+    .trending-item:hover .trend-title { color: var(--accent); }
+    .trend-meta { font-size: 11.5px; color: var(--text-3); }
+
+    /* ════════════════════════════════
+       DEEP DIVE — featured + stack
+    ════════════════════════════════ */
+    .deep-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 52px;
+      align-items: start;
+    }
+
+    .featured-card { cursor: pointer; }
+    .featured-card .card-img { aspect-ratio: 4/3; margin-bottom: 22px; }
+    .featured-card .card-title { font-size: 27px; margin-bottom: 13px; }
+    .featured-card .card-excerpt { font-size: 15px; }
+
+    .stack-list { display: flex; flex-direction: column; }
+
+    .stack-item {
+      display: flex;
+      gap: 16px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      align-items: center;
+    }
+    .stack-item:first-child { padding-top: 0; }
+    .stack-item:last-child { border-bottom: none; }
+
+    .stack-thumb {
+      width: 90px; height: 64px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .stack-thumb-inner {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stack-body {}
+    .stack-cat { margin-bottom: 6px; }
+    .stack-title {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 600;
+      font-optical-sizing: auto;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      margin-bottom: 6px;
+      transition: color 0.18s;
+    }
+    .stack-item:hover .stack-title { color: var(--accent); }
+    .stack-meta { font-size: 11.5px; color: var(--text-3); }
+
+    /* ════════════════════════════════
+       CATEGORY SECTIONS (spotlight)
+    ════════════════════════════════ */
+    .cat-sec {
+      padding: 44px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cat-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 52px;
+      align-items: start;
+    }
+    .cat-main { cursor: pointer; }
+    .cat-main-img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 2px;
+      overflow: hidden;
+      background: var(--bg-card);
+      margin-bottom: 18px;
+    }
+    .cat-main-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 600;
+      font-optical-sizing: auto;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+      color: var(--text-1);
+      margin-bottom: 11px;
+      transition: color 0.18s;
+    }
+    .cat-main:hover .cat-main-title { color: var(--accent); }
+    .cat-main-excerpt {
+      font-size: 14px;
+      line-height: 1.68;
+      color: var(--text-2);
+      margin-bottom: 14px;
+    }
+
+    .cat-side-list {}
+    .cat-side-item {
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .cat-side-item:first-child { padding-top: 0; }
+    .cat-side-item:last-child { border-bottom: none; }
+    .cat-side-title {
+      font-family: var(--font-serif);
+      font-size: 14.5px;
+      font-weight: 500;
+      font-optical-sizing: auto;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      margin-bottom: 6px;
+      transition: color 0.18s;
+    }
+    .cat-side-item:hover .cat-side-title { color: var(--accent); }
+    .cat-side-meta { font-size: 11.5px; color: var(--text-3); }
+
+    /* ════════════════════════════════
+       NEWSLETTER
+    ════════════════════════════════ */
+    .nl-section {
+      padding: 80px 0;
+    }
+    .nl-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .nl-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 18px;
+    }
+    .nl-title {
+      font-family: var(--font-serif);
+      font-size: clamp(26px, 2.8vw, 38px);
+      font-weight: 600;
+      font-optical-sizing: auto;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--text-1);
+      margin-bottom: 14px;
+    }
+    .nl-desc {
+      font-size: 14.5px;
+      line-height: 1.7;
+      color: var(--text-2);
+    }
+    .nl-stats {
+      display: flex;
+      gap: 30px;
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 1px solid var(--border);
+    }
+    .stat-n {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      font-weight: 700;
+      font-optical-sizing: auto;
+      letter-spacing: -0.03em;
+      color: var(--text-1);
+    }
+    .stat-l { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+
+    .nl-form { display: flex; flex-direction: column; gap: 11px; }
+    .nl-row { display: flex; }
+    .nl-input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-right: none;
+      color: var(--text-1);
+      padding: 13px 16px;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      border-radius: 4px 0 0 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .nl-input::placeholder { color: var(--text-3); }
+    .nl-input:focus { border-color: rgba(212,168,83,0.4); }
+    .nl-btn {
+      background: var(--accent);
+      color: #0c0b0a;
+      border: none;
+      padding: 13px 22px;
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 0 4px 4px 0;
+      white-space: nowrap;
+      transition: background 0.18s;
+    }
+    .nl-btn:hover { background: #dfb96a; }
+    .nl-note { font-size: 11.5px; color: var(--text-3); line-height: 1.55; }
+
+    /* ════════════════════════════════
+       FOOTER
+    ════════════════════════════════ */
+    .footer {
+      background: var(--bg-2);
+      border-top: 1px solid var(--border);
+      padding: 52px 0 28px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 44px;
+    }
+    .footer-logo {
+      font-family: var(--font-serif);
+      font-size: 19px;
+      font-weight: 700;
+      font-optical-sizing: auto;
+      letter-spacing: -0.025em;
+      color: var(--text-1);
+      display: inline-flex;
+      align-items: baseline;
+      gap: 1px;
+      margin-bottom: 11px;
+    }
+    .footer-desc {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-3);
+      max-width: 270px;
+      margin-bottom: 18px;
+    }
+    .footer-social { display: flex; gap: 8px; }
+    .soc-link {
+      width: 30px; height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(237,232,223,0.04);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-3);
+      text-decoration: none;
+      font-size: 11px;
+      transition: all 0.18s;
+    }
+    .soc-link:hover { background: rgba(237,232,223,0.08); color: var(--text-1); }
+
+    .fc-title {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 14px;
+    }
+    .fc-links { display: flex; flex-direction: column; gap: 9px; }
+    .fc-link {
+      font-size: 13px;
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .fc-link:hover { color: var(--text-1); }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .fb-text { font-size: 11.5px; color: var(--text-3); }
+    .fb-links { display: flex; gap: 18px; }
+    .fb-link {
+      font-size: 11.5px;
+      color: var(--text-3);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .fb-link:hover { color: var(--text-2); }
+
+    /* ════════════════════════════════
+       SEARCH OVERLAY
+    ════════════════════════════════ */
+    .search-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(12,11,10,0.97);
+      backdrop-filter: blur(24px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 110px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s;
+    }
+    .search-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .s-close {
+      position: absolute;
+      top: 24px; right: 28px;
+      background: none;
+      border: none;
+      color: var(--text-3);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 8px;
+      transition: color 0.18s;
+      line-height: 1;
+    }
+    .s-close:hover { color: var(--text-1); }
+    .s-wrap {
+      width: 100%;
+      max-width: 620px;
+      padding: 0 28px;
+    }
+    .s-input {
+      width: 100%;
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--border-mid);
+      color: var(--text-1);
+      font-family: var(--font-serif);
+      font-size: 34px;
+      font-weight: 400;
+      font-optical-sizing: auto;
+      letter-spacing: -0.025em;
+      padding: 0 0 18px;
+      outline: none;
+    }
+    .s-input::placeholder { color: var(--text-3); }
+    .s-hint { margin-top: 16px; font-size: 12.5px; color: var(--text-3); line-height: 1.6; }
+    .s-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .s-tag {
+      background: rgba(237,232,223,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .s-tag:hover { background: rgba(237,232,223,0.09); color: var(--text-1); }
+
+    /* ════════════════════════════════
+       MOBILE
+    ════════════════════════════════ */
+    @media (max-width: 1060px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-sidebar { display: none; }
+      .deep-grid { grid-template-columns: 1fr; }
+      .cat-grid { grid-template-columns: 1fr; }
+      .nl-grid { grid-template-columns: 1fr; gap: 40px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .trending-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .container { padding: 0 18px; }
+      .nav-links { display: none; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .trending-grid { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 14px; text-align: center; }
+      .s-input { font-size: 24px; }
+    }
+    @media (max-width: 480px) {
+      .trending-grid { grid-template-columns: 1fr; }
+      .nl-row { flex-direction: column; }
+      .nl-input { border-right: 1px solid var(--border-mid); border-bottom: none; border-radius: 4px 4px 0 0; }
+      .nl-btn { border-radius: 0 0 4px 4px; padding: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ NAVBAR ═══════════ -->
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <div class="navbar-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-word">Sharpable</span>
+        <span class="logo-dot"></span>
+      </a>
+      <div class="nav-pipe"></div>
+      <nav class="nav-links">
+        <a href="#" class="nav-link active">Terkini</a>
+        <a href="#" class="nav-link">Penyelidikan</a>
+        <a href="#" class="nav-link">Permulaan</a>
+        <a href="#" class="nav-link">Alatan</a>
+        <a href="#" class="nav-link">Dasar</a>
+        <a href="#" class="nav-link">Analisis</a>
+        <a href="#" class="nav-link">Industri</a>
+      </nav>
+      <div class="nav-right">
+        <button class="btn-search" onclick="openSearch()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Cari
+          <kbd>⌘K</kbd>
+        </button>
+        <button class="btn-subscribe">Langgan</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ BREAKING TICKER ═══════════ -->
+<div class="ticker-bar">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track-wrap">
+    <div class="ticker-track">
+      <span class="ticker-item">OpenAI umumkan pratonton penyelidikan GPT-5 untuk pelanggan korporat</span>
+      <span class="ticker-item">Anthropic perluaskan API Claude ke 40 negara baharu</span>
+      <span class="ticker-item">Gemini Ultra Google DeepMind catat rekod MMLU baharu pada 92.4%</span>
+      <span class="ticker-item">Penguatkuasaan Akta AI EU bermula — audit pertama sedang berjalan di 12 negara anggota</span>
+      <span class="ticker-item">Microsoft integrasikan Copilot merentas keseluruhan suite Office 365</span>
+      <span class="ticker-item">Mistral terbitkan model 47B parameter di bawah lesen MIT</span>
+      <span class="ticker-item">Makmal AI Meta ambil 10 penyelidik kanan dari OpenAI</span>
+      <span class="ticker-item">Y Combinator W26: 38% syarikat adalah berasaskan AI</span>
+      <!-- duplikasi untuk gelung lancar -->
+      <span class="ticker-item">OpenAI umumkan pratonton penyelidikan GPT-5 untuk pelanggan korporat</span>
+      <span class="ticker-item">Anthropic perluaskan API Claude ke 40 negara baharu</span>
+      <span class="ticker-item">Gemini Ultra Google DeepMind catat rekod MMLU baharu pada 92.4%</span>
+      <span class="ticker-item">Penguatkuasaan Akta AI EU bermula — audit pertama sedang berjalan di 12 negara anggota</span>
+      <span class="ticker-item">Microsoft integrasikan Copilot merentas keseluruhan suite Office 365</span>
+      <span class="ticker-item">Mistral terbitkan model 47B parameter di bawah lesen MIT</span>
+      <span class="ticker-item">Makmal AI Meta ambil 10 penyelidik kanan dari OpenAI</span>
+      <span class="ticker-item">Y Combinator W26: 38% syarikat adalah berasaskan AI</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid" style="opacity:0; animation: fadeUp 0.75s ease 0.05s forwards;">
+      <!-- Main Feature -->
+      <div class="hero-main">
+        <div class="hero-img">
+          <img class="hero-photo" src="https://picsum.photos/seed/openai-lab/1200/675" alt="AI research laboratory">
+        </div>
+        <div class="eyebrow"><span class="eyebrow-dot"></span>Rencana Utama</div>
+        <h1 class="hero-title">Perlumbaan ke AGI: Di Sebalik Program Penyelidikan Paling Berani OpenAI</h1>
+        <p class="hero-excerpt">Apabila sempadan kecerdasan mesin semakin pesat berkembang, inisiatif dalaman terbaharu OpenAI bertujuan menyelesaikan penaakulan jangka panjang — keupayaan yang diyakini kebanyakan penyelidik sebagai jurang antara LLM masa kini dan sesuatu yang benar-benar transformatif.</p>
+        <div class="meta-row">
+          <span class="meta-author">
+            <span class="avatar"></span>
+            Marcus Chen
+          </span>
+          <span class="meta-sep">·</span>
+          <span>18 Mei 2026</span>
+          <span class="meta-sep">·</span>
+          <span class="read-clock">9 min baca</span>
+          <span class="tag t-research">Penyelidikan</span>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="hero-sidebar">
+        <div class="sidebar-header">Berita Utama</div>
+        <div class="sidebar-list">
+          <div class="sidebar-item">
+            <div class="s-cat">Permulaan</div>
+            <div class="s-title">Anthropic Kumpul $3.5 Bilion Apabila Pelaburan Keselamatan AI Capai Paras Tertinggi</div>
+            <div class="s-meta">Laila Nasser · 6 min</div>
+          </div>
+          <div class="sidebar-item">
+            <div class="s-cat">Analisis</div>
+            <div class="s-title">Sempadan Baharu AI Bukan Kecerdasan — Ia Adalah Ingatan</div>
+            <div class="s-meta">David Okafor · 11 min</div>
+          </div>
+          <div class="sidebar-item">
+            <div class="s-cat">Dasar</div>
+            <div class="s-title">Fasa Kedua Akta AI EU Bermula: Apa Yang Perlu Diketahui Setiap Syarikat</div>
+            <div class="s-meta">Sofia Reyes · 7 min</div>
+          </div>
+          <div class="sidebar-item">
+            <div class="s-cat">Alatan</div>
+            <div class="s-title">Mod Agen Baharu Cursor Mengubah Cara Pembangun Bekerja Secara Menyeluruh</div>
+            <div class="s-meta">James Whitfield · 5 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ LATEST (3-col grid) ═══════════ -->
+<section class="section">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Terkini</div>
+      <a href="#" class="view-all">Lihat semua →</a>
+    </div>
+    <div class="cards-grid">
+
+      <div class="card reveal">
+        <div class="card-img">
+          <div class="card-img-inner ci-1">
+            <img class="card-photo" src="https://picsum.photos/seed/deepmind-protein/800/500" alt="Penyelidikan saintifik">
+          </div>
+        </div>
+        <div class="card-cat"><span class="tag t-research">Penyelidikan</span></div>
+        <h3 class="card-title">Google DeepMind Perkenal Pengganti AlphaFold dengan Pemodelan Interaksi Protein Penuh</h3>
+        <p class="card-excerpt">Versi terbaharu ini melampaui lipatan protein tunggal untuk memetakan interaksi pelbagai protein yang kompleks — satu kejayaan dengan implikasi besar kepada penemuan ubat dan biologi sintetik.</p>
+        <div class="card-meta">
+          <span>Priya Menon</span>
+          <span class="dot"></span>
+          <span>18 Mei</span>
+          <span class="dot"></span>
+          <span>8 min</span>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-img">
+          <div class="card-img-inner ci-2">
+            <img class="card-photo" src="https://picsum.photos/seed/mistral-paris/800/500" alt="Pejabat syarikat teknologi">
+          </div>
+        </div>
+        <div class="card-cat"><span class="tag t-startups">Permulaan</span></div>
+        <h3 class="card-title">Model Sumber Terbuka Mistral Mengatasi GPT-4 dalam Penanda Aras Penaakulan Undang-Undang</h3>
+        <p class="card-excerpt">Keluaran terbaharu makmal yang berpusat di Paris ini, dilatih pada korpus teks undang-undang terpilih merentas 12 bidang kuasa, menarik perhatian syarikat korporat dan komuniti sumber terbuka.</p>
+        <div class="card-meta">
+          <span>Thomas Laurent</span>
+          <span class="dot"></span>
+          <span>17 Mei</span>
+          <span class="dot"></span>
+          <span>6 min</span>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-img">
+          <div class="card-img-inner ci-3">
+            <img class="card-photo" src="https://picsum.photos/seed/datacenter-gpu/800/500" alt="Pelayan pusat data">
+          </div>
+        </div>
+        <div class="card-cat"><span class="tag t-analysis">Analisis</span></div>
+        <h3 class="card-title">Ekonomi Tersembunyi Menjalankan LLM dalam Skala Besar: Pecahan Kos Penuh</h3>
+        <p class="card-excerpt">Di sebalik setiap panggilan API tersembunyi rangkaian kluster GPU, kontrak kuasa, dan infrastruktur penyejukan yang kompleks. Kami memetakan keseluruhan unit ekonomi untuk mengerahkan model frontier dalam persekitaran produksi.</p>
+        <div class="card-meta">
+          <span>Elena Vasquez</span>
+          <span class="dot"></span>
+          <span>17 Mei</span>
+          <span class="dot"></span>
+          <span>12 min</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ TRENDING ═══════════ -->
+<div class="trending-strip">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Sedang Trending</div>
+    </div>
+    <div class="trending-grid">
+
+      <div class="trending-item reveal">
+        <span class="trend-num">01</span>
+        <div class="trend-body">
+          <div class="trend-cat"><span class="tag t-industry">Industri</span></div>
+          <div class="trend-title">Sam Altman: 'Kita Mungkin Saksikan Sistem AI Mampu Menjalankan Penyelidikan Saintifik Baharu Menjelang 2026'</div>
+          <div class="trend-meta">16 Mei · 5 min baca</div>
+        </div>
+      </div>
+
+      <div class="trending-item reveal">
+        <span class="trend-num">02</span>
+        <div class="trend-body">
+          <div class="trend-cat"><span class="tag t-tools">Alatan</span></div>
+          <div class="trend-title">Cursor lwn GitHub Copilot lwn Windsurf: Perbandingan Jujur Seorang Pembangun pada 2026</div>
+          <div class="trend-meta">15 Mei · 14 min baca</div>
+        </div>
+      </div>
+
+      <div class="trending-item reveal">
+        <span class="trend-num">03</span>
+        <div class="trend-body">
+          <div class="trend-cat"><span class="tag t-policy">Dasar</span></div>
+          <div class="trend-title">Majlis AI Negara China Keluarkan Garis Panduan Baharu untuk Penggunaan Model Domestik</div>
+          <div class="trend-meta">15 Mei · 6 min baca</div>
+        </div>
+      </div>
+
+      <div class="trending-item reveal">
+        <span class="trend-num">04</span>
+        <div class="trend-body">
+          <div class="trend-cat"><span class="tag t-research">Penyelidikan</span></div>
+          <div class="trend-title">Keterepretasian Mekanistik Hasilkan Kejayaan dalam Memahami Kepala Perhatian Model AI</div>
+          <div class="trend-meta">14 Mei · 10 min baca</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DEEP DIVE ═══════════ -->
+<section class="section">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Liputan Mendalam</div>
+      <a href="#" class="view-all">Lihat semua →</a>
+    </div>
+    <div class="deep-grid">
+
+      <div class="featured-card reveal">
+        <div class="card-img" style="aspect-ratio:4/3;">
+          <div class="card-img-inner ci-4">
+            <img class="card-photo" src="https://picsum.photos/seed/memory-brain-ai/800/600" alt="Ingatan dan AI">
+          </div>
+        </div>
+        <div class="card-cat" style="margin-bottom:10px;"><span class="tag t-analysis">Analisis</span></div>
+        <h3 class="card-title" style="font-size:27px; margin-bottom:13px;">Sempadan Baharu AI Bukan Kecerdasan — Ia Adalah Ingatan</h3>
+        <p class="card-excerpt" style="font-size:15px; margin-bottom:16px;">Bidang ini terpaku pada penanda aras untuk penaakulan dan pengekodan. Tetapi model yang akan mengubah dunia kerja pengetahuan berkongsi satu ciri yang kurang dihargai: keupayaan untuk mengingat, mendapatkan semula, dan menaakulkan konteks peribadi yang luas dari masa ke masa.</p>
+        <div class="card-meta">
+          <span class="meta-author"><span class="avatar"></span>David Okafor</span>
+          <span class="dot"></span>
+          <span>14 Mei 2026</span>
+          <span class="dot"></span>
+          <span>11 min</span>
+        </div>
+      </div>
+
+      <div class="stack-list">
+
+        <div class="stack-item reveal">
+          <div class="stack-thumb ci-5">
+            <img class="stack-photo" src="https://picsum.photos/seed/bigtech-acquire/180/130" alt="Penyatuan teknologi">
+          </div>
+          <div class="stack-body">
+            <div class="stack-cat"><span class="tag t-startups">Permulaan</span></div>
+            <div class="stack-title">Penyatuan Senyap: Bagaimana Gergasi Teknologi Menyerap Ekosistem Syarikat Permulaan AI</div>
+            <div class="stack-meta">Elena Vasquez · 13 Mei · 9 min</div>
+          </div>
+        </div>
+
+        <div class="stack-item reveal">
+          <div class="stack-thumb ci-6">
+            <img class="stack-photo" src="https://picsum.photos/seed/ai-agent-robot/180/130" alt="Automasi AI">
+          </div>
+          <div class="stack-body">
+            <div class="stack-cat"><span class="tag t-tools">Alatan</span></div>
+            <div class="stack-title">Melampaui Autolengkap: Gelombang Baharu Ejen AI yang Benar-Benar Menghasilkan Produk</div>
+            <div class="stack-meta">Marcus Chen · 12 Mei · 7 min</div>
+          </div>
+        </div>
+
+        <div class="stack-item reveal">
+          <div class="stack-thumb ci-1">
+            <img class="stack-photo" src="https://picsum.photos/seed/law-court-policy/180/130" alt="Dasar dan undang-undang AI">
+          </div>
+          <div class="stack-body">
+            <div class="stack-cat"><span class="tag t-policy">Dasar</span></div>
+            <div class="stack-title">Liabiliti di Era AI: Siapa Menanggung Akibat Apabila Model Tersasar Secara Bencana?</div>
+            <div class="stack-meta">Sofia Reyes · 11 Mei · 8 min</div>
+          </div>
+        </div>
+
+        <div class="stack-item reveal">
+          <div class="stack-thumb ci-3">
+            <img class="stack-photo" src="https://picsum.photos/seed/nvidia-chip/180/130" alt="Cip semikonduktor GPU">
+          </div>
+          <div class="stack-body">
+            <div class="stack-cat"><span class="tag t-industry">Industri</span></div>
+            <div class="stack-title">Platform NIM NVIDIA Senyap-Senyap Menjadi Kubernetes untuk Inferens AI</div>
+            <div class="stack-meta">James Whitfield · 10 Mei · 6 min</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ RESEARCH SPOTLIGHT ═══════════ -->
+<section class="cat-sec">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Sorotan Penyelidikan</div>
+      <a href="#" class="view-all">Semua Penyelidikan →</a>
+    </div>
+    <div class="cat-grid">
+
+      <div class="cat-main reveal">
+        <div class="cat-main-img">
+          <img class="card-photo" src="https://picsum.photos/seed/neural-interpretability/1200/675" alt="Penyelidikan rangkaian neural">
+        </div>
+        <div style="margin-bottom:12px;"><span class="tag t-research">Penyelidikan</span></div>
+        <h3 class="cat-main-title">Keterepretasian Mekanistik Capai Kejayaan Besar: Penyelidik Kini Mampu Membaca Apa yang 'Difikirkan' Kepala Perhatian</h3>
+        <p class="cat-main-excerpt">Sebuah kertas daripada pasukan keterepretasian Anthropic menunjukkan kaedah yang boleh dipercayai untuk menyahkod peranan kepala perhatian individu dalam model bahasa besar — berpotensi membuka era baharu ketelusan model dan penyahpepijatan yang lebih tepat sasaran.</p>
+        <div class="card-meta">
+          <span>Priya Menon</span>
+          <span class="dot"></span>
+          <span>14 Mei 2026</span>
+          <span class="dot"></span>
+          <span>10 min baca</span>
+        </div>
+      </div>
+
+      <div class="cat-side-list">
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-research">Penyelidikan</span></div>
+          <div class="cat-side-title">Hukum Penskalaan Dikaji Semula: Bukti Baharu Bahawa Kualiti Mengatasi Kuantiti dalam Data Latihan</div>
+          <div class="cat-side-meta">Marcus Chen · 13 Mei · 7 min</div>
+        </div>
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-research">Penyelidikan</span></div>
+          <div class="cat-side-title">Pendekatan Baharu MIT terhadap RLHF Jimatkan Kos Anotasi 60% dengan Penjajaran Setanding</div>
+          <div class="cat-side-meta">Elena Vasquez · 12 Mei · 9 min</div>
+        </div>
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-research">Penyelidikan</span></div>
+          <div class="cat-side-title">Prompting Rantaian Pemikiran Mungkin Mengajar Model untuk Mereka-Reka, Amaran Penyelidik</div>
+          <div class="cat-side-meta">Thomas Laurent · 10 Mei · 6 min</div>
+        </div>
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-research">Penyelidikan</span></div>
+          <div class="cat-side-title">Autoenkoder Jarang Muncul sebagai Alat Utama untuk Memahami Dalaman Rangkaian Neural</div>
+          <div class="cat-side-meta">Priya Menon · 8 Mei · 8 min</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ STARTUP WATCH ═══════════ -->
+<section class="cat-sec">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Pantau Permulaan</div>
+      <a href="#" class="view-all">Semua Permulaan →</a>
+    </div>
+    <div class="cat-grid">
+
+      <div class="cat-main reveal">
+        <div class="cat-main-img">
+          <img class="card-photo" src="https://picsum.photos/seed/venture-funding/1200/675" alt="Pembiayaan syarikat permulaan">
+        </div>
+        <div style="margin-bottom:12px;"><span class="tag t-startups">Permulaan</span></div>
+        <h3 class="cat-main-title">Masalah $10 Bilion: Mengapa Syarikat Permulaan AI Membakar Wang Lebih Cepat daripada Mana-Mana Generasi Sebelumnya</h3>
+        <p class="cat-main-excerpt">Kos pengkomputeran, perang bakat, dan tekanan tanpa henti untuk mencapai keupayaan frontier telah mencipta persekitaran pembiayaan yang belum pernah berlaku sebelum ini — dan satu pertempuran sedang menanti syarikat tanpa laluan jelas menuju pendapatan.</p>
+        <div class="card-meta">
+          <span>Laila Nasser</span>
+          <span class="dot"></span>
+          <span>13 Mei 2026</span>
+          <span class="dot"></span>
+          <span>13 min baca</span>
+        </div>
+      </div>
+
+      <div class="cat-side-list">
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-startups">Permulaan</span></div>
+          <div class="cat-side-title">Cohere Beralih ke Hanya Korporat, Tutup Akses API B2C Secara Kekal</div>
+          <div class="cat-side-meta">James Whitfield · 12 Mei · 4 min</div>
+        </div>
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-startups">Permulaan</span></div>
+          <div class="cat-side-title">Character.AI Lapor 100 Juta Pengguna Aktif — Bolehkah Ia Jana Pendapatan Sebelum Wang Habis?</div>
+          <div class="cat-side-meta">Sofia Reyes · 11 Mei · 7 min</div>
+        </div>
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-startups">Permulaan</span></div>
+          <div class="cat-side-title">Bekas Penyelidik OpenAI Lancar 'Northlight' — Makmal Asas Berfokus Perancangan Jangka Panjang</div>
+          <div class="cat-side-meta">Marcus Chen · 9 Mei · 5 min</div>
+        </div>
+        <div class="cat-side-item reveal">
+          <div style="margin-bottom:8px;"><span class="tag t-startups">Permulaan</span></div>
+          <div class="cat-side-title">YC W26: Syarikat AI Paling Patut Diperhati daripada Kumpulan Tahun Ini</div>
+          <div class="cat-side-meta">Laila Nasser · 7 Mei · 8 min</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ MORE FROM SHARPABLE ═══════════ -->
+<section class="section" style="border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="sec-head">
+      <div class="sec-label">Lebih Banyak dari Sharpable</div>
+    </div>
+    <div class="cards-grid">
+
+      <div class="card reveal">
+        <div class="card-img">
+          <div class="card-img-inner ci-6">
+            <img class="card-photo" src="https://picsum.photos/seed/whitehouse-gov/800/500" alt="Kerajaan dan dasar">
+          </div>
+        </div>
+        <div class="card-cat"><span class="tag t-policy">Dasar</span></div>
+        <h3 class="card-title">Di Sebalik Majlis AI Rumah Putih: Apa yang Sebenarnya Membimbangkan Mereka</h3>
+        <p class="card-excerpt">Laporan eksklusif tentang perdebatan dalaman yang membentuk tadbir urus AI Amerika Syarikat — dari kawalan eksport hingga hak cipta, taruhannya tidak pernah lebih tinggi.</p>
+        <div class="card-meta">
+          <span>Sofia Reyes</span>
+          <span class="dot"></span>
+          <span>12 Mei</span>
+          <span class="dot"></span>
+          <span>8 min</span>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-img">
+          <div class="card-img-inner ci-2">
+            <img class="card-photo" src="https://picsum.photos/seed/coding-developer/800/500" alt="Alatan pengekodan pembangun">
+          </div>
+        </div>
+        <div class="card-cat"><span class="tag t-tools">Alatan</span></div>
+        <h3 class="card-title">Kami Uji Semua AI Penulisan Kod Utama pada 2026. Inilah yang Sebenarnya Berubah.</h3>
+        <p class="card-excerpt">Daripada Cursor dan Copilot hingga Devin dan Claude Code, landskap pembangunan kod berbantukan AI telah berubah secara dramatik dalam dua belas bulan yang lalu.</p>
+        <div class="card-meta">
+          <span>James Whitfield</span>
+          <span class="dot"></span>
+          <span>11 Mei</span>
+          <span class="dot"></span>
+          <span>15 min</span>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-img">
+          <div class="card-img-inner ci-4">
+            <img class="card-photo" src="https://picsum.photos/seed/global-geopolitics/800/500" alt="Geopolitik teknologi global">
+          </div>
+        </div>
+        <div class="card-cat"><span class="tag t-industry">Industri</span></div>
+        <h3 class="card-title">Geopolitik Kawalan Eksport GPU: Tinjauan Enam Bulan</h3>
+        <p class="card-excerpt">Enam bulan selepas sekatan cip terbaharu, kami mengkaji negara-negara yang menemui jalan alternatif — dan apa maknanya bagi keseimbangan kuasa AI global.</p>
+        <div class="card-meta">
+          <span>Laila Nasser</span>
+          <span class="dot"></span>
+          <span>10 Mei</span>
+          <span class="dot"></span>
+          <span>10 min</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ NEWSLETTER ═══════════ -->
+<section class="nl-section">
+  <div class="container">
+    <div class="nl-grid">
+      <div>
+        <div class="nl-eyebrow">Kecerdasan Harian</div>
+        <h2 class="nl-title">Kekal selangkah lebih maju dalam dunia AI — setiap pagi.</h2>
+        <p class="nl-desc">The Sharpable Brief menapis isyarat daripada gangguan: lima cerita AI penting, dipilih oleh pasukan editorial kami, dihantar ke peti masuk anda sebelum jam 8 pagi.</p>
+        <div class="nl-stats">
+          <div>
+            <div class="stat-n">84k</div>
+            <div class="stat-l">Pelanggan</div>
+          </div>
+          <div>
+            <div class="stat-n">4.9</div>
+            <div class="stat-l">Penilaian purata</div>
+          </div>
+          <div>
+            <div class="stat-n">Harian</div>
+            <div class="stat-l">Kekerapan</div>
+          </div>
+        </div>
+      </div>
+      <div class="nl-form">
+        <div class="nl-row">
+          <input class="nl-input" type="email" placeholder="anda@emel.com">
+          <button class="nl-btn">Langgan Percuma</button>
+        </div>
+        <p class="nl-note">Tiada spam, sama sekali. Berhenti langgan dengan satu klik. Dengan melanggan, anda bersetuju dengan Dasar Privasi kami.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">
+          Sharpable<span class="logo-dot" style="margin-bottom:3px;"></span>
+        </div>
+        <p class="footer-desc">Kewartawanan AI bebas untuk penyelidik, pembangun, dan pembuat keputusan. Meliput sempadan baharu sejak 2024.</p>
+        <div class="footer-social">
+          <a href="#" class="soc-link" title="X / Twitter">𝕏</a>
+          <a href="#" class="soc-link" title="LinkedIn">in</a>
+          <a href="#" class="soc-link" title="RSS Feed">
+            <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19.01 7.38 20 6.18 20 4.98 20 4 19.01 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="fc-title">Liputan</div>
+        <div class="fc-links">
+          <a href="#" class="fc-link">Penyelidikan</a>
+          <a href="#" class="fc-link">Permulaan</a>
+          <a href="#" class="fc-link">Alatan & Produk</a>
+          <a href="#" class="fc-link">Dasar</a>
+          <a href="#" class="fc-link">Analisis</a>
+          <a href="#" class="fc-link">Industri</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="fc-title">Syarikat</div>
+        <div class="fc-links">
+          <a href="#" class="fc-link">Tentang Kami</a>
+          <a href="#" class="fc-link">Lembaga Redaksi</a>
+          <a href="#" class="fc-link">Iklan</a>
+          <a href="#" class="fc-link">Kerjaya</a>
+          <a href="#" class="fc-link">Hubungi</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="fc-title">Surat Berita</div>
+        <div class="fc-links">
+          <a href="#" class="fc-link">Ringkasan Harian</a>
+          <a href="#" class="fc-link">Digest Penyelidikan</a>
+          <a href="#" class="fc-link">Pantau Permulaan</a>
+          <a href="#" class="fc-link">Monitor Dasar</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span class="fb-text">© 2026 Sharpable News. Hak cipta terpelihara.</span>
+      <div class="fb-links">
+        <a href="#" class="fb-link">Privasi</a>
+        <a href="#" class="fb-link">Syarat</a>
+        <a href="#" class="fb-link">Dasar Kuki</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════ SEARCH OVERLAY ═══════════ -->
+<div class="search-overlay" id="searchOverlay">
+  <button class="s-close" onclick="closeSearch()">✕</button>
+  <div class="s-wrap">
+    <input class="s-input" type="text" id="searchInput" placeholder="Cari rencana…">
+    <p class="s-hint">Carian popular:</p>
+    <div class="s-tags">
+      <span class="s-tag">GPT-5</span>
+      <span class="s-tag">Akta AI EU</span>
+      <span class="s-tag">keterepretasian</span>
+      <span class="s-tag">Mistral</span>
+      <span class="s-tag">Claude</span>
+      <span class="s-tag">ejen AI</span>
+      <span class="s-tag">RLHF</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Search ── */
+  function openSearch() {
+    document.getElementById('searchOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('searchInput').focus(), 60);
+  }
+  function closeSearch() {
+    document.getElementById('searchOverlay').classList.remove('open');
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSearch();
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+  });
+
+  /* ── Navbar border on scroll ── */
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').style.borderBottomColor =
+      window.scrollY > 60 ? 'rgba(237,232,223,0.13)' : 'rgba(237,232,223,0.07)';
+  }, { passive: true });
+
+  /* ── Scroll-reveal ── */
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.style.transition = 'opacity 0.55s ease, transform 0.55s ease';
+        en.target.style.opacity = '1';
+        en.target.style.transform = 'translateY(0)';
+        io.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(18px)';
+    el.style.transitionDelay = `${(i % 4) * 0.07}s`;
+    io.observe(el);
+  });
+
+  /* ── Nav active state ── */
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  /* ── Search tag chips ── */
+  document.querySelectorAll('.s-tag').forEach(tag => {
+    tag.addEventListener('click', function() {
+      document.getElementById('searchInput').value = this.textContent;
+      document.getElementById('searchInput').focus();
+    });
+  });
+</script>
+</body>
+</html>
