@@ -989,47 +989,30 @@
     /* ════════════════════════════════
        THEME TOGGLE
     ════════════════════════════════ */
-    /* Desktop pill toggle */
-    .theme-toggle {
-      position: relative;
-      width: 38px;
-      height: 21px;
-      border-radius: 999px;
-      background: var(--bg-hover);
+    .theme-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: transparent;
       border: 1px solid var(--border-mid);
+      color: var(--text-2);
       cursor: pointer;
       flex-shrink: 0;
-      transition: background 0.25s, border-color 0.25s;
+      transition: background 0.18s, color 0.18s, border-color 0.18s;
       padding: 0;
     }
-    .theme-toggle-thumb {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 15px;
-      height: 15px;
-      border-radius: 50%;
-      background: var(--text-3);
-      transition: transform 0.25s cubic-bezier(0.34,1.4,0.64,1), background 0.25s;
-      pointer-events: none;
+    .theme-icon-btn:hover {
+      background: var(--hover-tint-md);
+      color: var(--text-1);
     }
-    [data-theme="light"] .theme-toggle {
-      background: var(--accent-dim);
-      border-color: rgba(184,137,46,0.35);
-    }
-    [data-theme="light"] .theme-toggle-thumb {
-      transform: translateX(17px);
-      background: var(--accent);
-    }
-    /* Mobile icon button */
-    .theme-icon-btn {
-      display: none;
-    }
-    /* Icon visibility by theme */
-    .icon-sun { display: none; }
-    .icon-moon { display: block; }
-    [data-theme="light"] .icon-sun { display: block; }
-    [data-theme="light"] .icon-moon { display: none; }
+    /* Icon visibility — higher specificity to beat any svg overrides */
+    .theme-icon-btn .icon-sun { display: none; }
+    .theme-icon-btn .icon-moon { display: block; }
+    [data-theme="light"] .theme-icon-btn .icon-sun { display: block; }
+    [data-theme="light"] .theme-icon-btn .icon-moon { display: none; }
 
     /* ════════════════════════════════
        MOBILE
@@ -1051,29 +1034,6 @@
       .footer-grid { grid-template-columns: 1fr; }
       .footer-bottom { flex-direction: column; gap: 14px; text-align: center; }
       .s-input { font-size: 24px; }
-      /* Swap pill for icon button on mobile */
-      .theme-toggle { display: none; }
-      .theme-icon-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: transparent;
-        border: 1px solid var(--border-mid);
-        color: var(--text-2);
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: background 0.18s, color 0.18s, border-color 0.18s;
-        padding: 0;
-      }
-      .theme-icon-btn:hover {
-        background: var(--hover-tint-md);
-        color: var(--text-1);
-        border-color: var(--border-mid);
-      }
-      .theme-icon-btn svg { display: block; }
     }
     @media (max-width: 480px) {
       .trending-grid { grid-template-columns: 1fr; }
@@ -1110,14 +1070,9 @@
           <kbd>⌘K</kbd>
         </button>
         <button class="btn-subscribe">Langgan</button>
-        <!-- Desktop pill toggle -->
-        <button class="theme-toggle" id="themeToggle" aria-label="Tukar tema">
-          <span class="theme-toggle-thumb"></span>
-        </button>
-        <!-- Mobile icon button -->
         <button class="theme-icon-btn" id="themeIconBtn" aria-label="Tukar tema">
-          <svg class="icon-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          <svg class="icon-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon-sun" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         </button>
       </div>
     </div>
@@ -1748,7 +1703,7 @@
 
   /* ── Theme toggle ── */
   const html = document.documentElement;
-  const savedTheme = localStorage.getItem('sn-theme') || 'dark';
+  const savedTheme = localStorage.getItem('sn-theme') || 'light';
   html.setAttribute('data-theme', savedTheme);
 
   function toggleTheme() {
@@ -1757,7 +1712,6 @@
     localStorage.setItem('sn-theme', next);
   }
 
-  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
   document.getElementById('themeIconBtn').addEventListener('click', toggleTheme);
 
   /* ── Scroll-reveal ── */
