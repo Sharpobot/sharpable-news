@@ -24,6 +24,29 @@
       --font-serif: 'Fraunces', serif;
       --font-sans: 'DM Sans', sans-serif;
       --font-mono: 'Courier Prime', monospace;
+      /* Theme-aware helpers */
+      --navbar-bg: rgba(12,11,10,0.93);
+      --hover-tint: rgba(237,232,223,0.05);
+      --hover-tint-md: rgba(237,232,223,0.08);
+      --border-scroll: rgba(237,232,223,0.13);
+    }
+
+    [data-theme="light"] {
+      --bg: #f7f4ef;
+      --bg-2: #f0ece5;
+      --bg-card: #ebe6de;
+      --bg-hover: #e4dfd6;
+      --text-1: #18150f;
+      --text-2: #6b6560;
+      --text-3: #a8a29c;
+      --accent: #b8892e;
+      --accent-dim: rgba(184,137,46,0.12);
+      --border: rgba(24,21,15,0.09);
+      --border-mid: rgba(24,21,15,0.14);
+      --navbar-bg: rgba(247,244,239,0.95);
+      --hover-tint: rgba(24,21,15,0.05);
+      --hover-tint-md: rgba(24,21,15,0.09);
+      --border-scroll: rgba(24,21,15,0.16);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -71,11 +94,12 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 100;
-      background: rgba(12,11,10,0.93);
+      background: var(--navbar-bg);
       backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--border);
-      transition: border-color 0.3s;
+      transition: border-color 0.3s, background 0.3s;
     }
+    .navbar.scrolled { border-bottom-color: var(--border-scroll); }
 
     .navbar-inner {
       display: flex;
@@ -131,7 +155,7 @@
       transition: color 0.18s, background 0.18s;
       white-space: nowrap;
     }
-    .nav-link:hover { color: var(--text-1); background: rgba(237,232,223,0.05); }
+    .nav-link:hover { color: var(--text-1); background: var(--hover-tint); }
     .nav-link.active { color: var(--text-1); }
 
     .nav-right {
@@ -145,7 +169,7 @@
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      background: rgba(237,232,223,0.04);
+      background: var(--hover-tint);
       border: 1px solid var(--border);
       color: var(--text-2);
       padding: 6px 13px;
@@ -155,7 +179,7 @@
       font-size: 12.5px;
       transition: all 0.18s;
     }
-    .btn-search:hover { background: rgba(237,232,223,0.08); color: var(--text-1); }
+    .btn-search:hover { background: var(--hover-tint-md); color: var(--text-1); }
     .btn-search kbd {
       font-family: var(--font-mono);
       font-size: 10px;
@@ -963,6 +987,51 @@
     .s-tag:hover { background: rgba(237,232,223,0.09); color: var(--text-1); }
 
     /* ════════════════════════════════
+       THEME TOGGLE
+    ════════════════════════════════ */
+    /* Desktop pill toggle */
+    .theme-toggle {
+      position: relative;
+      width: 38px;
+      height: 21px;
+      border-radius: 999px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border-mid);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.25s, border-color 0.25s;
+      padding: 0;
+    }
+    .theme-toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--text-3);
+      transition: transform 0.25s cubic-bezier(0.34,1.4,0.64,1), background 0.25s;
+      pointer-events: none;
+    }
+    [data-theme="light"] .theme-toggle {
+      background: var(--accent-dim);
+      border-color: rgba(184,137,46,0.35);
+    }
+    [data-theme="light"] .theme-toggle-thumb {
+      transform: translateX(17px);
+      background: var(--accent);
+    }
+    /* Mobile icon button */
+    .theme-icon-btn {
+      display: none;
+    }
+    /* Icon visibility by theme */
+    .icon-sun { display: none; }
+    .icon-moon { display: block; }
+    [data-theme="light"] .icon-sun { display: block; }
+    [data-theme="light"] .icon-moon { display: none; }
+
+    /* ════════════════════════════════
        MOBILE
     ════════════════════════════════ */
     @media (max-width: 1060px) {
@@ -982,6 +1051,29 @@
       .footer-grid { grid-template-columns: 1fr; }
       .footer-bottom { flex-direction: column; gap: 14px; text-align: center; }
       .s-input { font-size: 24px; }
+      /* Swap pill for icon button on mobile */
+      .theme-toggle { display: none; }
+      .theme-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: transparent;
+        border: 1px solid var(--border-mid);
+        color: var(--text-2);
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.18s, color 0.18s, border-color 0.18s;
+        padding: 0;
+      }
+      .theme-icon-btn:hover {
+        background: var(--hover-tint-md);
+        color: var(--text-1);
+        border-color: var(--border-mid);
+      }
+      .theme-icon-btn svg { display: block; }
     }
     @media (max-width: 480px) {
       .trending-grid { grid-template-columns: 1fr; }
@@ -1018,6 +1110,15 @@
           <kbd>⌘K</kbd>
         </button>
         <button class="btn-subscribe">Langgan</button>
+        <!-- Desktop pill toggle -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Tukar tema">
+          <span class="theme-toggle-thumb"></span>
+        </button>
+        <!-- Mobile icon button -->
+        <button class="theme-icon-btn" id="themeIconBtn" aria-label="Tukar tema">
+          <svg class="icon-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -1642,9 +1743,22 @@
 
   /* ── Navbar border on scroll ── */
   window.addEventListener('scroll', () => {
-    document.getElementById('navbar').style.borderBottomColor =
-      window.scrollY > 60 ? 'rgba(237,232,223,0.13)' : 'rgba(237,232,223,0.07)';
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
   }, { passive: true });
+
+  /* ── Theme toggle ── */
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('sn-theme') || 'dark';
+  html.setAttribute('data-theme', savedTheme);
+
+  function toggleTheme() {
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('sn-theme', next);
+  }
+
+  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+  document.getElementById('themeIconBtn').addEventListener('click', toggleTheme);
 
   /* ── Scroll-reveal ── */
   const io = new IntersectionObserver((entries) => {
