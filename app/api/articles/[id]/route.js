@@ -1,0 +1,45 @@
+import { createAdminSupabaseClient } from '@/lib/db/supabase-admin'
+import { cookies } from 'next/headers'
+
+async function isAuthed() {
+  const cookieStore = await cookies()
+  return cookieStore.get('admin-auth')?.value === 'true'
+}
+
+export async function GET(request, { params }) {
+  if (!await isAuthed()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const db = createAdminSupabaseClient()
+  const { data, error } = await db
+    .from('articles')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) return Response.json({ error: error.message }, { status: 404 })
+  return Response.json({ article: data })
+}
+
+export async function PATCH(request, { params }) {
+  if (!await isAuthed()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const body = await request.json()
+
+  const allowed = ['title', 'body', 'slug', 'meta_description', 'tags', 'status']
+  const patch = Object.fromEntries(
+    Object.entries(body).filter(([k]) => allowed.includes(k))
+  )
+
+  const db = createAdminSupabaseClient()
+  const { data, error } = await db
+    .from('articles')
+    .update(patch)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json({ article: data })
+}
