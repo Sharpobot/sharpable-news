@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from 'next/link'
@@ -146,6 +146,12 @@ export default function EditorClient({ article }) {
   const [metaDescription, setMetaDescription] = useState(article.meta_description ?? '')
   const [tags, setTags] = useState(article.tags ?? [])
 
+  // Featured image
+  const [featuredImage, setFeaturedImage]   = useState(article.featured_image ?? null)
+  const [uploadStatus,  setUploadStatus]    = useState('idle') // idle | uploading | error
+  const [isDragging,    setIsDragging]      = useState(false)
+  const fileInputRef = useRef(null)
+
   // Save state
   const [saveStatus, setSaveStatus] = useState('idle') // idle | saving | saved | error
 
@@ -181,6 +187,23 @@ export default function EditorClient({ article }) {
     } catch {
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('idle'), 3000)
+    }
+  }
+
+  const uploadImage = async (file) => {
+    setUploadStatus('uploading')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('articleId', article.id)
+      const res = await fetch('/api/upload-image', { method: 'POST', body: fd })
+      const { url, error } = await res.json()
+      if (!res.ok || error) throw new Error(error ?? 'Gagal')
+      setFeaturedImage(url)
+      setUploadStatus('idle')
+    } catch {
+      setUploadStatus('error')
+      setTimeout(() => setUploadStatus('idle'), 4000)
     }
   }
 
@@ -334,6 +357,8 @@ export default function EditorClient({ article }) {
           {/* 3. Image section */}
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Imej Hero</SectionLabel>
+
+            {/* AI brief callout */}
             {article.image_brief && (
               <div style={{
                 padding: '14px 16px', borderRadius: '4px', marginBottom: '12px',
@@ -348,14 +373,84 @@ export default function EditorClient({ article }) {
                 </p>
               </div>
             )}
-            <div style={{
-              border: '2px dashed rgba(237,232,223,0.07)', borderRadius: '4px',
-              padding: '32px', textAlign: 'center', color: '#3a3530',
-              fontSize: '13px', background: '#0e0d0c',
-            }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>↑</div>
-              Muat naik imej (akan datang)
-            </div>
+
+            {/* Current image preview */}
+            {featuredImage && (
+              <div style={{ position: 'relative', marginBottom: '10px' }}>
+                <img
+                  src={featuredImage}
+                  alt="Imej hero"
+                  style={{ width: '100%', borderRadius: '4px', display: 'block', maxHeight: '340px', objectFit: 'cover' }}
+                />
+                <button
+                  onClick={() => setFeaturedImage(null)}
+                  style={{
+                    position: 'absolute', top: '10px', right: '10px',
+                    background: 'rgba(12,11,10,0.8)', border: '1px solid rgba(237,232,223,0.15)',
+                    color: '#ede8df', borderRadius: '4px', padding: '4px 10px',
+                    fontSize: '12px', cursor: 'pointer',
+                  }}
+                >
+                  × Tukar
+                </button>
+              </div>
+            )}
+
+            {/* Drop zone */}
+            {!featuredImage && (
+              <div
+                onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={async e => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                  const file = e.dataTransfer.files?.[0]
+                  if (file) await uploadImage(file)
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: `2px dashed ${isDragging ? '#d4a853' : 'rgba(237,232,223,0.11)'}`,
+                  borderRadius: '4px', padding: '40px 24px', textAlign: 'center',
+                  cursor: 'pointer', background: isDragging ? '#1a160e' : '#0e0d0c',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+              >
+                {uploadStatus === 'uploading' ? (
+                  <div style={{ color: '#8c857c', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <Spinner size={14} />
+                    Memuat naik…
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '28px', marginBottom: '8px', opacity: 0.4 }}>↑</div>
+                    <div style={{ fontSize: '13.5px', color: '#8c857c', marginBottom: '4px' }}>
+                      Seret & lepas imej di sini, atau klik untuk pilih
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>
+                      JPG, PNG, WebP · Maks 8 MB
+                    </div>
+                    {uploadStatus === 'error' && (
+                      <div style={{ marginTop: '8px', fontSize: '12px', color: '#ef4444' }}>
+                        Muat naik gagal. Cuba lagi.
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={async e => {
+                const file = e.target.files?.[0]
+                if (file) await uploadImage(file)
+                e.target.value = ''
+              }}
+            />
           </section>
 
           {/* 4. Sources */}

@@ -1,6 +1,9 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts'
 import { logoutAction } from './actions'
 
 /* ── Agent pipeline order ─────────────────────────────────── */
@@ -57,14 +60,16 @@ function Spinner({ size = 13 }) {
 }
 
 /* ── Progress card for a single generating article ────────── */
-function ProgressCard({ article, progress }) {
+function ProgressCard({ article, progress, onCancel }) {
   const map = {}
   ;(progress ?? []).forEach(row => {
     if (!map[row.agent_name]) map[row.agent_name] = row
   })
 
-  const allDone   = AGENTS.every(a => map[a.key]?.status === 'done')
-  const hasFailed = AGENTS.some(a => map[a.key]?.status === 'failed')
+  const doneCount  = AGENTS.filter(a => map[a.key]?.status === 'done').length
+  const allDone    = doneCount === AGENTS.length
+  const hasFailed  = AGENTS.some(a => map[a.key]?.status === 'failed')
+  const pct        = Math.round((doneCount / AGENTS.length) * 100)
 
   return (
     <div className="progress-card" style={{
@@ -73,7 +78,8 @@ function ProgressCard({ article, progress }) {
       borderRadius: '10px',
       marginBottom: '10px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         {allDone    ? <span style={{ color: '#10b981', fontSize: '14px', lineHeight: 1 }}>✓</span>
          : hasFailed ? <span style={{ color: '#ef4444', fontSize: '14px', lineHeight: 1 }}>✗</span>
          : <Spinner size={13} />}
@@ -81,10 +87,43 @@ function ProgressCard({ article, progress }) {
           {allDone ? 'Selesai' : hasFailed ? 'Gagal' : 'Sedang dijana…'}
         </span>
         <span style={{ fontSize: '11px', color: '#3a3a3a', fontFamily: 'monospace', marginLeft: '2px' }}>
-          {article.id.slice(0, 8)}
+          #{article.id.slice(0, 8)}
         </span>
+        <span style={{ fontSize: '11px', color: '#555', marginLeft: 'auto' }}>
+          {pct}%
+        </span>
+        {!allDone && !hasFailed && onCancel && (
+          <button
+            onClick={onCancel}
+            style={{
+              background: 'none', border: '1px solid #2a2a2a', color: '#555',
+              borderRadius: '4px', padding: '2px 8px', fontSize: '11px',
+              cursor: 'pointer', whiteSpace: 'nowrap',
+              transition: 'color 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={e => { e.target.style.color = '#ef4444'; e.target.style.borderColor = '#ef4444' }}
+            onMouseLeave={e => { e.target.style.color = '#555'; e.target.style.borderColor = '#2a2a2a' }}
+          >
+            Batal
+          </button>
+        )}
       </div>
 
+      {/* Progress bar */}
+      <div style={{
+        height: '3px', background: '#1a1a1a', borderRadius: '999px',
+        marginBottom: '12px', overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          width: `${pct}%`,
+          background: hasFailed ? '#ef4444' : allDone ? '#10b981' : '#d4a853',
+          borderRadius: '999px',
+          transition: 'width 0.5s ease',
+        }} />
+      </div>
+
+      {/* Agent rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {AGENTS.map(agent => {
           const row    = map[agent.key]
@@ -127,15 +166,138 @@ function ProgressCard({ article, progress }) {
   )
 }
 
-/* ── Stable date formatter (avoids server/client locale mismatch) ── */
+/* ── Stable date formatter ────────────────────────────────── */
 const MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis']
 function fmt(iso) {
   const d = new Date(iso)
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
+/* ── Stat card ────────────────────────────────────────────── */
+function StatCard({ label, value, accent }) {
+  return (
+    <div style={{
+      background: '#111', border: '1px solid #1e1e1e', borderRadius: '10px',
+      padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '6px',
+    }}>
+      <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444' }}>
+        {label}
+      </div>
+      <div style={{ fontSize: '32px', fontWeight: 700, fontFamily: "'Fraunces', serif", color: accent ?? '#f0f0f0', lineHeight: 1 }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+/* ── Custom tooltip for recharts ──────────────────────────── */
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: '#161412', border: '1px solid #2a2a2a', borderRadius: '6px',
+      padding: '8px 12px', fontSize: '12px', color: '#ede8df',
+    }}>
+      <div style={{ color: '#8c857c', marginBottom: '2px' }}>{label}</div>
+      <div style={{ fontWeight: 700 }}>{payload[0].value} artikel</div>
+    </div>
+  )
+}
+
+/* ── Analytics section ────────────────────────────────────── */
+function AnalyticsSection({ analytics }) {
+  if (!analytics) return null
+  const { totalPublished, totalDraft, totalGenerating, thisWeek, recentPublished, dailyCounts } = analytics
+
+  return (
+    <div style={{ marginBottom: '36px' }}>
+      <div style={{ marginBottom: '12px', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444' }}>
+        Analitik
+      </div>
+
+      {/* Stat cards */}
+      <div className="analytics-cards" style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
+        <StatCard label="Diterbit"       value={totalPublished}  accent="#10b981" />
+        <StatCard label="Draf"           value={totalDraft}      accent="#8c857c" />
+        <StatCard label="Menjana Kini"   value={totalGenerating} accent="#f59e0b" />
+        <StatCard label="7 Hari Ini"     value={thisWeek}        accent="#d4a853" />
+      </div>
+
+      {/* Bottom row: recent published + chart */}
+      <div className="analytics-bottom" style={{ display: 'grid', gap: '10px' }}>
+
+        {/* Recent published */}
+        <div style={{
+          background: '#111', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '18px 20px',
+        }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444', marginBottom: '12px' }}>
+            5 Artikel Terbaru Diterbit
+          </div>
+          {recentPublished.length === 0 ? (
+            <div style={{ fontSize: '13px', color: '#333' }}>Tiada artikel diterbit lagi.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {recentPublished.map(a => (
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                  <a
+                    href={`/artikel/${a.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '13px', color: '#d4a853', textDecoration: 'none', lineHeight: 1.4, flex: 1 }}
+                    onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={e => e.target.style.textDecoration = 'none'}
+                  >
+                    {a.title ?? '(Tanpa tajuk)'}
+                  </a>
+                  <div style={{ fontSize: '11px', color: '#444', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {fmt(a.created_at)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 7-day bar chart */}
+        <div style={{
+          background: '#111', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '18px 20px',
+        }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444', marginBottom: '12px' }}>
+            Artikel Diterbit 7 Hari Lepas
+          </div>
+          <ResponsiveContainer width="100%" height={120}>
+            <BarChart data={dailyCounts} barSize={18} margin={{ top: 0, right: 0, bottom: 0, left: -28 }}>
+              <XAxis
+                dataKey="label"
+                tick={{ fill: '#555', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                allowDecimals={false}
+                tick={{ fill: '#555', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+              <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                {dailyCounts.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={entry.count > 0 ? '#d4a853' : '#1e1e1e'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Main client component ────────────────────────────────── */
-export default function AdminClient({ initialArticles }) {
+export default function AdminClient({ initialArticles, analytics }) {
   const [articles,      setArticles]      = useState(initialArticles ?? [])
   const [generatingIds, setGeneratingIds] = useState(() =>
     (initialArticles ?? []).filter(a => a.status === 'generating').map(a => a.id)
@@ -236,6 +398,20 @@ export default function AdminClient({ initialArticles }) {
     }
   }
 
+  /* ── Cancel (generating) handler ────────────────────────── */
+  const handleCancel = async (article) => {
+    if (!window.confirm(`Batalkan penjanaan artikel #${article.id.slice(0, 8)}?`)) return
+
+    try {
+      const res = await fetch(`/api/articles/${article.id}`, { method: 'DELETE' })
+      if (!res.ok) { alert('Gagal membatalkan penjanaan.'); return }
+      setArticles(prev => prev.filter(a => a.id !== article.id))
+      setGeneratingIds(prev => prev.filter(id => id !== article.id))
+    } catch {
+      alert('Ralat semasa membatalkan.')
+    }
+  }
+
   const generatingArticles = articles.filter(a => generatingIds.includes(a.id))
 
   /* ── Render ──────────────────────────────────────────────── */
@@ -286,7 +462,13 @@ export default function AdminClient({ initialArticles }) {
           transition: color 0.15s;
         }
         .delete-btn:hover { color: #ef4444; }
+        .analytics-cards { grid-template-columns: repeat(4, 1fr); }
+        .analytics-bottom { grid-template-columns: 1fr 1fr; }
 
+        @media (max-width: 900px) {
+          .analytics-cards { grid-template-columns: repeat(2, 1fr) !important; }
+          .analytics-bottom { grid-template-columns: 1fr !important; }
+        }
         @media (max-width: 640px) {
           .admin-header { padding: 0 16px; height: auto; min-height: 56px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
           .admin-header-left { width: 100%; justify-content: space-between; gap: 8px; }
@@ -307,6 +489,8 @@ export default function AdminClient({ initialArticles }) {
           .article-delete-desktop { display: none; }
           .article-delete-mobile { display: flex; grid-column: 2; grid-row: 2; align-items: center; justify-content: flex-end; }
           .progress-card { padding: 12px 14px; }
+          .analytics-cards { grid-template-columns: repeat(2, 1fr) !important; }
+          .analytics-bottom { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
@@ -372,6 +556,9 @@ export default function AdminClient({ initialArticles }) {
       {/* ── Main ── */}
       <main className="admin-main">
 
+        {/* Analytics */}
+        <AnalyticsSection analytics={analytics} />
+
         {/* Live progress section */}
         {generatingArticles.length > 0 && (
           <div style={{ marginBottom: '28px' }}>
@@ -383,6 +570,7 @@ export default function AdminClient({ initialArticles }) {
                 key={article.id}
                 article={article}
                 progress={progressMap[article.id] ?? []}
+                onCancel={() => handleCancel(article)}
               />
             ))}
           </div>
@@ -446,19 +634,39 @@ export default function AdminClient({ initialArticles }) {
 
                 {/* Delete — desktop */}
                 <div className="article-delete-desktop">
-                  <button className="delete-btn" onClick={() => handleDelete(article)} title="Padam artikel">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-                    </svg>
+                  <button
+                    className="delete-btn"
+                    onClick={() => article.status === 'generating' ? handleCancel(article) : handleDelete(article)}
+                    title={article.status === 'generating' ? 'Batalkan penjanaan' : 'Padam artikel'}
+                  >
+                    {article.status === 'generating' ? (
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
 
-                {/* Delete — mobile (shown next to status) */}
+                {/* Delete — mobile */}
                 <div className="article-delete-mobile">
-                  <button className="delete-btn" onClick={() => handleDelete(article)} title="Padam artikel">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-                    </svg>
+                  <button
+                    className="delete-btn"
+                    onClick={() => article.status === 'generating' ? handleCancel(article) : handleDelete(article)}
+                    title={article.status === 'generating' ? 'Batalkan penjanaan' : 'Padam artikel'}
+                  >
+                    {article.status === 'generating' ? (
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>

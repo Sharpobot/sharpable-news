@@ -64,7 +64,7 @@ export default async function ArticlePage({ params }) {
 
   const { data: article, error } = await supabase
     .from('articles')
-    .select('id, title, slug, body, tags, meta_description, created_at')
+    .select('id, title, slug, body, tags, meta_description, featured_image, created_at')
     .eq('slug', slug)
     .eq('status', 'published')
     .single()
@@ -85,7 +85,7 @@ export default async function ArticlePage({ params }) {
 
         {/* ── Article header ── */}
         <header className="article-header">
-          <div className="container">
+          <div className="container" style={{ maxWidth: '720px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '24px', paddingRight: '24px', boxSizing: 'border-box' }}>
             <Link href="/" className="article-back">
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M19 12H5M12 5l-7 7 7 7"/>
@@ -116,8 +116,19 @@ export default async function ArticlePage({ params }) {
         {/* ── Divider ── */}
         <div className="divider" />
 
+        {/* ── Featured image ── */}
+        {article.featured_image && (
+          <div style={{ maxWidth: '720px', margin: '0 auto', padding: '32px 24px 0', boxSizing: 'border-box' }}>
+            <img
+              src={article.featured_image}
+              alt={article.title}
+              style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '4px' }}
+            />
+          </div>
+        )}
+
         {/* ── Article body ── */}
-        <article className="container">
+        <article className="container" style={{ maxWidth: '720px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '24px', paddingRight: '24px', boxSizing: 'border-box' }}>
           {bodyHTML ? (
             <div
               className="article-body"
@@ -132,7 +143,7 @@ export default async function ArticlePage({ params }) {
 
         {/* ── Footer nav ── */}
         <div className="article-footer-nav">
-          <div className="container">
+          <div className="container" style={{ maxWidth: '720px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '24px', paddingRight: '24px', boxSizing: 'border-box' }}>
             <Link href="/" className="article-back">
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M19 12H5M12 5l-7 7 7 7"/>

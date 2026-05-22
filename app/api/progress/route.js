@@ -13,9 +13,9 @@ export async function GET(request) {
   const db = createAdminSupabaseClient()
   const { data, error } = await db
     .from('article_generation_progress')
-    .select('agent_name, status, message, created_at')
+    .select('agent_name, status, message, updated_at')
     .eq('article_id', articleId)
-    .order('created_at', { ascending: false })
+    .order('updated_at', { ascending: false })
 
   if (error) return Response.json({ progress: [] })
 

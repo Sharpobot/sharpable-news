@@ -1073,7 +1073,9 @@ body {
 
 /* ── Prose body ── */
 .article-body {
-  max-width: 680px;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
   padding: 48px 0 80px;
   font-size: 17px;
   line-height: 1.78;
