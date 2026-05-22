@@ -43,3 +43,18 @@ export async function PATCH(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ article: data })
 }
+
+export async function DELETE(request, { params }) {
+  if (!await isAuthed()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const db = createAdminSupabaseClient()
+
+  // Remove progress rows first (FK constraint)
+  await db.from('article_generation_progress').delete().eq('article_id', id)
+
+  const { error } = await db.from('articles').delete().eq('id', id)
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+
+  return Response.json({ ok: true })
+}

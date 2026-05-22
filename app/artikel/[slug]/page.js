@@ -42,6 +42,8 @@ function tagClass(tag) {
 /* ── Body renderer ────────────────────────────────────────── */
 function renderBody(body) {
   if (!body) return ''
+  // Plain HTML string (saved by TipTap's getHTML())
+  if (typeof body === 'string') return body
   // ProseMirror/Tiptap JSON
   if (body.type === 'doc' && body.content) {
     try {

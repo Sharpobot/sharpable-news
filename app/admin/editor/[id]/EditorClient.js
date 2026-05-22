@@ -199,27 +199,44 @@ export default function EditorClient({ article }) {
         .tiptap-editor strong { color: #f0ebe2; }
         .tiptap-editor em { color: #c0b8ae; }
         .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #3a3530; pointer-events: none; float: left; height: 0; }
+
+        .editor-header { padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+        .editor-header-title { display: flex; align-items: center; gap: 16px; min-width: 0; }
+        .editor-header-label { font-size: 13px; font-weight: 600; color: #8c857c; white-space: nowrap; }
+        .editor-header-sep { color: #2a2520; }
+        .editor-save-buttons { display: flex; gap: 10px; flex-shrink: 0; }
+        .editor-layout { display: grid; grid-template-columns: 1fr 340px; max-width: 1400px; margin: 0 auto; }
+        .editor-main { padding: 36px 40px; border-right: 1px solid rgba(237,232,223,0.07); }
+        .editor-aside { padding: 36px 28px; position: sticky; top: 60px; align-self: start; height: calc(100vh - 60px); overflow-y: auto; }
+
+        @media (max-width: 768px) {
+          .editor-header { padding: 0 16px; height: auto; min-height: 56px; flex-wrap: wrap; gap: 10px; padding-top: 10px; padding-bottom: 10px; }
+          .editor-header-title { width: 100%; }
+          .editor-header-label { display: none; }
+          .editor-header-sep { display: none; }
+          .editor-save-buttons { width: 100%; }
+          .editor-save-buttons button { flex: 1; justify-content: center; padding: 9px 8px !important; font-size: 12px !important; }
+          .editor-layout { grid-template-columns: 1fr; }
+          .editor-main { padding: 20px 16px; border-right: none; border-bottom: 1px solid rgba(237,232,223,0.07); }
+          .editor-aside { position: static; height: auto; padding: 20px 16px; overflow-y: visible; }
+        }
       `}</style>
 
       {/* Header */}
-      <header style={{
+      <header className="editor-header" style={{
         borderBottom: '1px solid rgba(237,232,223,0.07)',
-        padding: '0 32px', height: '60px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, background: '#0c0b0a', zIndex: 20,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <Link href="/admin" style={{ color: '#56514d', fontSize: '13px', textDecoration: 'none' }}>
+        <div className="editor-header-title">
+          <Link href="/admin" style={{ color: '#56514d', fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             ← Admin
           </Link>
-          <span style={{ color: '#2a2520' }}>|</span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#8c857c' }}>
-            Penyunting Artikel
-          </span>
+          <span className="editor-header-sep">|</span>
+          <span className="editor-header-label">Penyunting Artikel</span>
         </div>
 
         {/* Save buttons */}
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="editor-save-buttons">
           <button
             onClick={() => save('draft')}
             disabled={saveStatus === 'saving'}
@@ -252,10 +269,10 @@ export default function EditorClient({ article }) {
       </header>
 
       {/* Two-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '0', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="editor-layout">
 
         {/* ── Left column ── */}
-        <main style={{ padding: '36px 40px', borderRight: '1px solid rgba(237,232,223,0.07)' }}>
+        <main className="editor-main">
 
           {/* 1. Headline picker */}
           <section style={{ marginBottom: '40px' }}>
@@ -360,7 +377,7 @@ export default function EditorClient({ article }) {
         </main>
 
         {/* ── Right sidebar ── */}
-        <aside style={{ padding: '36px 28px', position: 'sticky', top: '60px', alignSelf: 'start', height: 'calc(100vh - 60px)', overflowY: 'auto' }}>
+        <aside className="editor-aside">
 
           {/* SEO fields */}
           <section style={{ marginBottom: '32px' }}>

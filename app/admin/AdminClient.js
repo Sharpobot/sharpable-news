@@ -221,6 +221,21 @@ export default function AdminClient({ initialArticles }) {
     }
   }
 
+  /* ── Delete handler ─────────────────────────────────────── */
+  const handleDelete = async (article) => {
+    const label = article.title ?? `artikel ${article.id.slice(0, 8)}`
+    if (!window.confirm(`Padam "${label}"? Tindakan ini tidak boleh dibatalkan.`)) return
+
+    try {
+      const res = await fetch(`/api/articles/${article.id}`, { method: 'DELETE' })
+      if (!res.ok) { alert('Gagal memadam artikel.'); return }
+      setArticles(prev => prev.filter(a => a.id !== article.id))
+      setGeneratingIds(prev => prev.filter(id => id !== article.id))
+    } catch {
+      alert('Ralat semasa memadam artikel.')
+    }
+  }
+
   const generatingArticles = articles.filter(a => generatingIds.includes(a.id))
 
   /* ── Render ──────────────────────────────────────────────── */
@@ -248,7 +263,7 @@ export default function AdminClient({ initialArticles }) {
         .admin-main { padding: 32px; }
         .article-table-header {
           display: grid;
-          grid-template-columns: 1fr 140px 130px;
+          grid-template-columns: 1fr 140px 100px 36px;
           padding: 10px 20px;
           border-bottom: 1px solid #1e1e1e;
           font-size: 11px; font-weight: 700;
@@ -256,13 +271,21 @@ export default function AdminClient({ initialArticles }) {
         }
         .article-row {
           display: grid;
-          grid-template-columns: 1fr 140px 130px;
+          grid-template-columns: 1fr 140px 100px 36px;
           padding: 14px 20px;
           align-items: center;
         }
         .article-date { font-size: 12px; color: #555; }
         .article-status-mobile { display: none; }
+        .article-delete-mobile { display: none; }
         .progress-card { padding: 14px 18px; }
+        .delete-btn {
+          background: none; border: none; cursor: pointer;
+          color: #3a3a3a; padding: 4px; border-radius: 4px;
+          display: flex; align-items: center; justify-content: center;
+          transition: color 0.15s;
+        }
+        .delete-btn:hover { color: #ef4444; }
 
         @media (max-width: 640px) {
           .admin-header { padding: 0 16px; height: auto; min-height: 56px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
@@ -272,15 +295,17 @@ export default function AdminClient({ initialArticles }) {
           .admin-main { padding: 16px; }
           .article-table-header { display: none; }
           .article-row {
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr auto auto;
             grid-template-rows: auto auto;
             padding: 12px 16px;
             gap: 4px 8px;
           }
-          .article-row-title { grid-column: 1; grid-row: 1; }
-          .article-row-status { grid-column: 2; grid-row: 1; align-self: start; }
+          .article-row-title { grid-column: 1 / span 2; grid-row: 1; }
+          .article-row-status { grid-column: 1; grid-row: 2; align-self: center; }
           .article-date { display: none; }
-          .article-status-mobile { display: block; grid-column: 1; grid-row: 2; }
+          .article-status-mobile { display: block; }
+          .article-delete-desktop { display: none; }
+          .article-delete-mobile { display: flex; grid-column: 2; grid-row: 2; align-items: center; justify-content: flex-end; }
           .progress-card { padding: 12px 14px; }
         }
       `}</style>
@@ -374,6 +399,7 @@ export default function AdminClient({ initialArticles }) {
             <span>Tajuk</span>
             <span>Status</span>
             <span>Tarikh</span>
+            <span />
           </div>
 
           {articles.length === 0 ? (
@@ -417,6 +443,24 @@ export default function AdminClient({ initialArticles }) {
 
                 {/* Date — desktop only */}
                 <div className="article-date">{fmt(article.created_at)}</div>
+
+                {/* Delete — desktop */}
+                <div className="article-delete-desktop">
+                  <button className="delete-btn" onClick={() => handleDelete(article)} title="Padam artikel">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Delete — mobile (shown next to status) */}
+                <div className="article-delete-mobile">
+                  <button className="delete-btn" onClick={() => handleDelete(article)} title="Padam artikel">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))
           )}
