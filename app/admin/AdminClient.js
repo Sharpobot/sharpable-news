@@ -22,6 +22,9 @@ const STATUS_CFG = {
   published:       { label: 'Diterbit',  color: '#064e3b', bg: '#d1fae5', dot: '#10b981' },
 }
 
+/* Statuses that link to the editor */
+const EDITABLE_STATUSES = new Set(['ready_to_review', 'draft', 'published'])
+
 function StatusBadge({ status }) {
   const cfg = STATUS_CFG[status] ?? { label: status, color: '#374151', bg: '#f3f4f6', dot: '#9ca3af' }
   return (
@@ -55,26 +58,23 @@ function Spinner({ size = 13 }) {
 
 /* ── Progress card for a single generating article ────────── */
 function ProgressCard({ article, progress }) {
-  // Deduplicate by agent_name — keep most recent (progress sorted desc)
   const map = {}
   ;(progress ?? []).forEach(row => {
     if (!map[row.agent_name]) map[row.agent_name] = row
   })
 
-  const allDone  = AGENTS.every(a => map[a.key]?.status === 'done')
+  const allDone   = AGENTS.every(a => map[a.key]?.status === 'done')
   const hasFailed = AGENTS.some(a => map[a.key]?.status === 'failed')
 
   return (
-    <div style={{
+    <div className="progress-card" style={{
       background: '#0e0e0e',
       border: '1px solid #222',
       borderRadius: '10px',
-      padding: '14px 18px',
       marginBottom: '10px',
     }}>
-      {/* Card header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        {allDone   ? <span style={{ color: '#10b981', fontSize: '14px', lineHeight: 1 }}>✓</span>
+        {allDone    ? <span style={{ color: '#10b981', fontSize: '14px', lineHeight: 1 }}>✓</span>
          : hasFailed ? <span style={{ color: '#ef4444', fontSize: '14px', lineHeight: 1 }}>✗</span>
          : <Spinner size={13} />}
         <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#c0c0c0' }}>
@@ -85,11 +85,10 @@ function ProgressCard({ article, progress }) {
         </span>
       </div>
 
-      {/* Agent rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {AGENTS.map(agent => {
           const row    = map[agent.key]
-          const status = row?.status // 'running' | 'done' | 'failed' | undefined
+          const status = row?.status
 
           return (
             <div key={agent.key} style={{
@@ -98,15 +97,12 @@ function ProgressCard({ article, progress }) {
               background: status === 'running' ? '#161600' : 'transparent',
               transition: 'background 0.2s',
             }}>
-              {/* Status icon */}
               <span style={{ width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {status === 'running' && <Spinner size={12} />}
                 {status === 'done'    && <span style={{ color: '#10b981', fontSize: '13px' }}>✓</span>}
                 {status === 'failed'  && <span style={{ color: '#ef4444', fontSize: '13px' }}>✗</span>}
                 {!status              && <span style={{ color: '#2a2a2a', fontSize: '13px' }}>○</span>}
               </span>
-
-              {/* Agent name */}
               <span style={{
                 fontSize: '12px', fontFamily: 'monospace',
                 color: status === 'running' ? '#f0c040'
@@ -118,8 +114,6 @@ function ProgressCard({ article, progress }) {
               }}>
                 {agent.key}
               </span>
-
-              {/* Message */}
               {row?.message && (
                 <span style={{ fontSize: '11.5px', color: '#484848', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {row.message}
@@ -131,6 +125,13 @@ function ProgressCard({ article, progress }) {
       </div>
     </div>
   )
+}
+
+/* ── Stable date formatter (avoids server/client locale mismatch) ── */
+const MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis']
+function fmt(iso) {
+  const d = new Date(iso)
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
 /* ── Main client component ────────────────────────────────── */
@@ -145,12 +146,7 @@ export default function AdminClient({ initialArticles }) {
   const intervalRef      = useRef(null)
   const generatingIdsRef = useRef(generatingIds)
 
-  // Keep ref in sync so the interval callback always sees latest IDs
   useEffect(() => { generatingIdsRef.current = generatingIds }, [generatingIds])
-
-  const fmt = (iso) => new Date(iso).toLocaleDateString('ms-MY', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
 
   /* ── Polling logic ───────────────────────────────────────── */
   useEffect(() => {
@@ -172,14 +168,12 @@ export default function AdminClient({ initialArticles }) {
         )
       )
 
-      // Update progressMap
       setProgressMap(prev => {
         const next = { ...prev }
         results.forEach(({ id, progress }) => { next[id] = progress })
         return next
       })
 
-      // Detect finished articles (all 7 agents done or failed — no longer 'running')
       const finished = results
         .filter(({ progress }) => {
           const map = {}
@@ -189,21 +183,18 @@ export default function AdminClient({ initialArticles }) {
         .map(r => r.id)
 
       if (finished.length > 0) {
-        // Refresh article list to get final status
         try {
           const res = await fetch('/api/articles')
           const { articles: updated } = await res.json()
           if (updated) setArticles(updated)
-        } catch { /* ignore refresh failure */ }
-
+        } catch { /* ignore */ }
         setGeneratingIds(prev => prev.filter(id => !finished.includes(id)))
       }
     }
 
-    poll() // immediate first poll
+    poll()
     clearInterval(intervalRef.current)
     intervalRef.current = setInterval(poll, 3000)
-
     return () => clearInterval(intervalRef.current)
   }, [generatingIds])
 
@@ -215,7 +206,6 @@ export default function AdminClient({ initialArticles }) {
       const { articleId, error } = await res.json()
       if (error) { alert(`Ralat: ${error}`); return }
 
-      // Add placeholder article at the top
       setArticles(prev => [{
         id: articleId,
         title: null,
@@ -223,8 +213,6 @@ export default function AdminClient({ initialArticles }) {
         status: 'generating',
         created_at: new Date().toISOString(),
       }, ...prev])
-
-      // Start tracking
       setGeneratingIds(prev => [...prev, articleId])
     } catch (err) {
       alert(`Ralat: ${err.message}`)
@@ -239,24 +227,68 @@ export default function AdminClient({ initialArticles }) {
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}>
 
-      {/* Spinner keyframe */}
-      <style>{`@keyframes admin-spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes admin-spin { to { transform: rotate(360deg); } }
+
+        .admin-header {
+          border-bottom: 1px solid #1e1e1e;
+          padding: 0 32px;
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: sticky;
+          top: 0;
+          background: #0a0a0a;
+          z-index: 10;
+          gap: 12px;
+        }
+        .admin-header-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+        .admin-wordmark { display: flex; align-items: center; gap: 0; white-space: nowrap; flex-shrink: 0; }
+        .admin-main { padding: 32px; }
+        .article-table-header {
+          display: grid;
+          grid-template-columns: 1fr 140px 130px;
+          padding: 10px 20px;
+          border-bottom: 1px solid #1e1e1e;
+          font-size: 11px; font-weight: 700;
+          letter-spacing: 0.08em; text-transform: uppercase; color: #444;
+        }
+        .article-row {
+          display: grid;
+          grid-template-columns: 1fr 140px 130px;
+          padding: 14px 20px;
+          align-items: center;
+        }
+        .article-date { font-size: 12px; color: #555; }
+        .article-status-mobile { display: none; }
+        .progress-card { padding: 14px 18px; }
+
+        @media (max-width: 640px) {
+          .admin-header { padding: 0 16px; height: auto; min-height: 56px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+          .admin-header-left { width: 100%; justify-content: space-between; gap: 8px; }
+          .admin-wordmark { display: none; }
+          .admin-logout { align-self: flex-end; }
+          .admin-main { padding: 16px; }
+          .article-table-header { display: none; }
+          .article-row {
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+            padding: 12px 16px;
+            gap: 4px 8px;
+          }
+          .article-row-title { grid-column: 1; grid-row: 1; }
+          .article-row-status { grid-column: 2; grid-row: 1; align-self: start; }
+          .article-date { display: none; }
+          .article-status-mobile { display: block; grid-column: 1; grid-row: 2; }
+          .progress-card { padding: 12px 14px; }
+        }
+      `}</style>
 
       {/* ── Header ── */}
-      <header style={{
-        borderBottom: '1px solid #1e1e1e',
-        padding: '0 32px',
-        height: '60px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        background: '#0a0a0a',
-        zIndex: 10,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <div>
+      <header className="admin-header">
+        <div className="admin-header-left">
+          <div className="admin-wordmark">
             <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555' }}>
               Sharpable News
             </span>
@@ -264,12 +296,11 @@ export default function AdminClient({ initialArticles }) {
             <span style={{ fontSize: '14px', fontWeight: 600, color: '#f0f0f0' }}>Admin</span>
           </div>
 
-          {/* Artikel Baru AI button */}
           <button
             onClick={handleGenerate}
             disabled={isCreating}
             style={{
-              padding: '7px 16px',
+              padding: '7px 14px',
               background: isCreating ? '#333' : '#f0f0f0',
               color: isCreating ? '#666' : '#0a0a0a',
               border: 'none',
@@ -281,6 +312,8 @@ export default function AdminClient({ initialArticles }) {
               alignItems: 'center',
               gap: '7px',
               transition: 'background 0.15s',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {isCreating
@@ -295,7 +328,7 @@ export default function AdminClient({ initialArticles }) {
           </button>
         </div>
 
-        <form action={logoutAction}>
+        <form action={logoutAction} className="admin-logout">
           <button type="submit" style={{
             padding: '7px 14px',
             background: 'transparent',
@@ -304,6 +337,7 @@ export default function AdminClient({ initialArticles }) {
             borderRadius: '8px',
             fontSize: '13px',
             cursor: 'pointer',
+            whiteSpace: 'nowrap',
           }}>
             Log Keluar
           </button>
@@ -311,7 +345,7 @@ export default function AdminClient({ initialArticles }) {
       </header>
 
       {/* ── Main ── */}
-      <main style={{ padding: '32px' }}>
+      <main className="admin-main">
 
         {/* Live progress section */}
         {generatingArticles.length > 0 && (
@@ -336,12 +370,7 @@ export default function AdminClient({ initialArticles }) {
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px', overflow: 'hidden' }}>
-          {/* Table header */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 140px 130px',
-            padding: '10px 20px', borderBottom: '1px solid #1e1e1e',
-            fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#444',
-          }}>
+          <div className="article-table-header">
             <span>Tajuk</span>
             <span>Status</span>
             <span>Tarikh</span>
@@ -353,15 +382,13 @@ export default function AdminClient({ initialArticles }) {
             </div>
           ) : (
             articles.map((article, i) => (
-              <div key={article.id} style={{
-                display: 'grid', gridTemplateColumns: '1fr 140px 130px',
-                padding: '14px 20px',
+              <div key={article.id} className="article-row" style={{
                 borderBottom: i < articles.length - 1 ? '1px solid #181818' : 'none',
-                alignItems: 'center',
               }}>
-                <div>
+                {/* Title cell */}
+                <div className="article-row-title">
                   <div style={{ fontSize: '14px', fontWeight: 500, color: '#e0e0e0', lineHeight: 1.4 }}>
-                    {article.status === 'ready_to_review' && article.title ? (
+                    {EDITABLE_STATUSES.has(article.status) && article.title ? (
                       <Link
                         href={`/admin/editor/${article.id}`}
                         style={{ color: '#d4a853', textDecoration: 'none' }}
@@ -374,12 +401,22 @@ export default function AdminClient({ initialArticles }) {
                       article.title ?? <span style={{ color: '#444', fontStyle: 'italic' }}>Tanpa tajuk</span>
                     )}
                   </div>
-                  {article.slug && (
+                  {article.slug && !/^draft-\d+$/.test(article.slug) && (
                     <div style={{ fontSize: '11px', color: '#444', marginTop: '2px' }}>/artikel/{article.slug}</div>
                   )}
+                  {/* Date shown below title on mobile */}
+                  <div className="article-status-mobile" style={{ fontSize: '11px', color: '#555', marginTop: '4px' }}>
+                    {fmt(article.created_at)}
+                  </div>
                 </div>
-                <StatusBadge status={article.status} />
-                <div style={{ fontSize: '12px', color: '#555' }}>{fmt(article.created_at)}</div>
+
+                {/* Status badge */}
+                <div className="article-row-status">
+                  <StatusBadge status={article.status} />
+                </div>
+
+                {/* Date — desktop only */}
+                <div className="article-date">{fmt(article.created_at)}</div>
               </div>
             ))
           )}
