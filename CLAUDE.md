@@ -48,15 +48,17 @@ sharpable-news/
 
 ## Environment Variables (.env.local)
 ```
-NEXT_PUBLIC_SUPABASE_URL=           # Supabase project URL
+NEXT_PUBLIC_SUPABASE_URL=https://xymbpgyrdwlqpclwanol.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=      # Supabase anon key (safe for browser)
 SUPABASE_SERVICE_ROLE_KEY=          # Supabase service role (server-only, bypasses RLS)
-ANTHROPIC_API_KEY=                  # Anthropic API key (paid account)
+ANTHROPIC_API_KEY=                  # Anthropic API key (paid account — sk-ant-api03-...)
 GEMINI_API_KEY=                     # Old Gemini key (no longer used, can ignore)
 ADMIN_PASSWORD=sharpable2025        # Admin panel password
 INNGEST_DEV=1                       # Enables Inngest dev mode
 ```
 **Never commit `.env.local` — it is in `.gitignore`.**
+
+**Supabase project ID:** `xymbpgyrdwlqpclwanol` (used in Supabase dashboard URL)
 
 ---
 
@@ -88,6 +90,8 @@ INNGEST_DEV=1                       # Enables Inngest dev mode
 | message | text | Human-readable status message in BM |
 | created_at | timestamptz | |
 
+**Important:** Both tables use RLS. All server-side writes (from Inngest functions and API routes) must use `createAdminSupabaseClient()` (service role key) — never the anon client. The browser-side admin panel can use the anon client for reads only.
+
 ---
 
 ## How the AI Pipeline Works
@@ -113,6 +117,12 @@ INNGEST_DEV=1                       # Enables Inngest dev mode
 14. `save-article` — writes all outputs to Supabase, sets `status = 'ready_to_review'`
 
 **Total runtime:** ~9–10 minutes per article.
+
+**Inngest function config:**
+- Function ID: `generate-article`
+- Trigger event: `article/generate`
+- Retries: `1` (Inngest will retry the whole function once on failure)
+- The event payload must be: `{ name: "article/generate", data: { articleId: "<uuid>" } }`
 
 **Each agent step also writes to `article_generation_progress`** — one row inserted as `running` at start, updated to `done`/`failed` at end. This enables live progress tracking in the admin panel.
 
@@ -199,7 +209,7 @@ Switched to Anthropic paid API. Completely resolved all hanging issues. The 65s 
 
 - [x] Next.js 15 project setup with Tailwind
 - [x] Supabase schema (`articles` + `article_generation_progress` tables)
-- [x] Admin panel (password-protected, basic UI with "Artikel Baru AI" button)
+- [x] Admin panel at `/admin` (password-protected via middleware, basic UI with "Artikel Baru AI" button — button not yet wired up to the API)
 - [x] Inngest integration (client + dev server + route handler)
 - [x] All 7 AI agents (trend-scout → quality-checker) using Anthropic Claude
 - [x] Full `generateArticle` Inngest function with 65s rate-limit spacing
