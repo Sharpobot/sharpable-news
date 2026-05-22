@@ -209,32 +209,38 @@ Switched to Anthropic paid API. Completely resolved all hanging issues. The 65s 
 
 - [x] Next.js 15 project setup with Tailwind
 - [x] Supabase schema (`articles` + `article_generation_progress` tables)
-- [x] Admin panel at `/admin` (password-protected via middleware, basic UI with "Artikel Baru AI" button — button not yet wired up to the API)
+- [x] Admin panel at `/admin` (password-protected via middleware, "Artikel Baru AI" button fully wired to API)
 - [x] Inngest integration (client + dev server + route handler)
 - [x] All 7 AI agents (trend-scout → quality-checker) using Anthropic Claude
 - [x] Full `generateArticle` Inngest function with 65s rate-limit spacing
 - [x] Live progress rows written to `article_generation_progress` per agent
 - [x] End-to-end test: pipeline completes, saves article to Supabase ✅
+- [x] `app/api/generate/route.js` — POST: creates article row + fires Inngest event
+- [x] `app/api/progress/route.js` — GET: returns live agent progress rows for an articleId
+- [x] `app/api/articles/route.js` — GET: returns all articles for admin table
+- [x] Live progress tracker in admin panel — polls every 3s, shows all 7 agents with spinner/checkmark/message
 
 ---
 
 ## What Is Next (in order)
 
 ### Next task (not started):
-**"Wire up the admin panel article generation flow + live progress tracker"**
+**"Create the article editor view at `app/admin/editor/[id]/page.js`"**
 
 Specifically:
-1. **`app/api/generate/route.js`** — POST endpoint that:
-   - Creates a new `articles` row in Supabase with `status = 'generating'`
-   - Fires the `article/generate` Inngest event with the new `articleId`
-   - Returns `{ articleId }` to the caller
+1. Load article from Supabase by `id`
+2. **Headline picker** — 3 AI-generated `headline_options` as radio buttons + free text field
+3. **TipTap rich text editor** — pre-loaded with `article.body`
+4. **Image section** — show `image_brief` description + placeholder upload area
+5. **Sidebar** — editable SEO fields: `slug`, `meta_description`, `tags`
+6. **Quality flags panel** — show issues from `quality_flags` (verdict, score, required_fixes)
+7. **Sources list** — read-only list from `sources` field
+8. **Save as Draft** and **Publish Now** buttons — update article in Supabase
+9. **Link from admin article list** — articles with `status = 'ready_to_review'` should link to this editor
 
-2. **Wire "Artikel Baru AI" button** in the admin panel to call `POST /api/generate`
-
-3. **Live progress tracker in admin panel** — for each article with `status = 'generating'`:
-   - Poll `article_generation_progress` every 3 seconds
-   - Show all 7 agents with their status (spinner = running, ✅ = done, ○ = pending)
-   - Show the status `message` beside each agent name
+**Also needed:**
+- `app/api/articles/[id]/route.js` — GET + PATCH for single article (fetch + save)
+- Install TipTap: `npm install @tiptap/react @tiptap/pm @tiptap/starter-kit`
 
 ### Future tasks (after above):
 - Public article listing page
