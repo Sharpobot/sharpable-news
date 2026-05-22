@@ -3,6 +3,7 @@ import { useState, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 /* ── Spinner (matches admin panel) ────────────────────────── */
 function Spinner({ size = 13 }) {
@@ -182,11 +183,11 @@ export default function EditorClient({ article }) {
         }),
       })
       if (!res.ok) throw new Error('Gagal')
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 2500)
+      setSaveStatus('idle')
+      toast.success(newStatus === 'published' ? 'Artikel diterbitkan' : 'Draf disimpan')
     } catch {
-      setSaveStatus('error')
-      setTimeout(() => setSaveStatus('idle'), 3000)
+      setSaveStatus('idle')
+      toast.error('Gagal menyimpan artikel.')
     }
   }
 
@@ -266,13 +267,13 @@ export default function EditorClient({ article }) {
             style={{
               padding: '7px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
               border: '1px solid rgba(237,232,223,0.11)', background: 'transparent',
-              color: saveStatus === 'error' ? '#ef4444' : saveStatus === 'saved' ? '#10b981' : '#8c857c',
+              color: '#8c857c',
               cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', gap: '7px',
             }}
           >
             {saveStatus === 'saving' && <Spinner size={12} />}
-            {saveStatus === 'saved' ? 'Tersimpan ✓' : saveStatus === 'error' ? 'Ralat ✗' : 'Simpan Draf'}
+            Simpan Draf
           </button>
           <button
             onClick={() => save('published')}
@@ -563,13 +564,13 @@ export default function EditorClient({ article }) {
                 style={{
                   width: '100%', padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
                   border: '1px solid rgba(237,232,223,0.11)', background: 'transparent',
-                  color: saveStatus === 'error' ? '#ef4444' : saveStatus === 'saved' ? '#10b981' : '#8c857c',
+                  color: '#8c857c',
                   cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
                 }}
               >
                 {saveStatus === 'saving' && <Spinner size={12} />}
-                {saveStatus === 'saved' ? 'Tersimpan ✓' : saveStatus === 'error' ? 'Ralat ✗' : 'Simpan Draf'}
+                Simpan Draf
               </button>
               <button
                 onClick={() => save('published')}

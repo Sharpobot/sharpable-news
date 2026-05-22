@@ -215,7 +215,7 @@ export default function HomePageClient({ articles = [] }) {
                   <div className={`card-img-inner ci-${(i % 6) + 1}`}>
                     <img
                       className="card-photo"
-                      src={`https://picsum.photos/seed/${article.slug}/800/500`}
+                      src={article.featured_image ?? `https://picsum.photos/seed/${article.slug}/800/500`}
                       alt={article.title}
                     />
                   </div>
