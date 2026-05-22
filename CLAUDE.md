@@ -1,137 +1,270 @@
-# Sharpable News — Project Spec
+# Sharpable News — Project Spec & Session Context
 
-## Overview
-AI news publication in Malay. Editorial, professional, credible. Target: researchers, developers, decision-makers.
-
-**Stack:** Vanilla HTML/CSS/JS. Single-file pages for now. No framework.
+## What This Is
+AI-powered Malay-language news publication. Automatically generates full editorial articles using a 7-agent Claude AI pipeline. Target audience: researchers, developers, decision-makers in Malaysia.
 
 ---
 
-## Design Philosophy
+## Current Stack
+- **Framework:** Next.js 15 (App Router)
+- **Database:** Supabase (Postgres + RLS)
+- **Background jobs:** Inngest v4 (orchestrates the AI pipeline)
+- **AI:** Anthropic Claude API — model `claude-sonnet-4-5` via `@anthropic-ai/sdk`
+- **Styling:** Tailwind CSS
+- **Language:** Bahasa Malaysia throughout all UI and generated content
 
-**Tone:** Calm, mature, authoritative. Think MIT Tech Review meets The Economist online.
+---
+
+## Project Structure
+```
+sharpable-news/
+├── app/
+│   ├── api/
+│   │   └── inngest/route.js        # Inngest serve handler (GET/POST/PUT)
+│   ├── admin/                      # Admin panel (password-protected)
+│   └── ...                         # Public-facing pages (article listing, article page)
+├── lib/
+│   ├── agents/
+│   │   ├── _client.js              # Shared Anthropic SDK helper (ask() function)
+│   │   ├── trend-scout.js          # Agent 1: finds trending topics
+│   │   ├── topic-selector.js       # Agent 2: picks best topic for Malaysian readers
+│   │   ├── deep-researcher.js      # Agent 3: gathers key facts and sources
+│   │   ├── article-writer.js       # Agent 4: writes full BM article
+│   │   ├── seo-metadata.js         # Agent 5: generates slug, meta, tags
+│   │   ├── image-brief.js          # Agent 6: prepares hero image brief + Unsplash query
+│   │   ├── quality-checker.js      # Agent 7: QA pass, scores 0-100, gives verdict
+│   │   └── test.js                 # Standalone test runner for all agents
+│   ├── db/
+│   │   └── supabase-admin.js       # Admin Supabase client (service role, server-only)
+│   ├── inngest.js                  # Inngest client
+│   ├── inngest-functions.js        # generateArticle Inngest function (7 steps + save)
+│   └── functions/
+│       └── test-connection.js      # Test Inngest function
+├── .env.local                      # Local secrets (never commit)
+└── CLAUDE.md                       # This file
+```
+
+---
+
+## Environment Variables (.env.local)
+```
+NEXT_PUBLIC_SUPABASE_URL=           # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=      # Supabase anon key (safe for browser)
+SUPABASE_SERVICE_ROLE_KEY=          # Supabase service role (server-only, bypasses RLS)
+ANTHROPIC_API_KEY=                  # Anthropic API key (paid account)
+GEMINI_API_KEY=                     # Old Gemini key (no longer used, can ignore)
+ADMIN_PASSWORD=sharpable2025        # Admin panel password
+INNGEST_DEV=1                       # Enables Inngest dev mode
+```
+**Never commit `.env.local` — it is in `.gitignore`.**
+
+---
+
+## Supabase Schema (key tables)
+
+### `articles`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | Primary key |
+| title | text | First headline from article-writer |
+| slug | text | URL slug from seo-metadata |
+| body | text | Full article HTML/markdown |
+| meta_description | text | SEO description |
+| headline_options | text[] | All 3 headline variants |
+| tags | text[] | SEO tags |
+| image_brief | text | Hero image description + Unsplash query |
+| quality_flags | jsonb | verdict, overall_score, publish_readiness, required_fixes, checks |
+| sources | jsonb[] | [{title, description}] from research brief |
+| status | text | `generating` → `ready_to_review` → `published` |
+| created_at | timestamptz | |
+
+### `article_generation_progress`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | Primary key |
+| article_id | uuid | FK to articles |
+| agent_name | text | e.g. `trend-scout`, `article-writer` |
+| status | text | `running` \| `done` \| `failed` |
+| message | text | Human-readable status message in BM |
+| created_at | timestamptz | |
+
+---
+
+## How the AI Pipeline Works
+
+**Trigger:** Someone calls `POST /api/generate` (or sends an Inngest event directly)
+→ Creates a blank `articles` row with `status = 'generating'`
+→ Fires Inngest event `article/generate` with `{ articleId }`
+
+**Inngest runs these 8 steps in sequence:**
+1. `trend-scout` — finds trending topics (returns `trends[]`)
+2. ⏳ 65s sleep (rate-limit protection between Claude calls)
+3. `topic-selector` — picks best topic for Malaysian audience
+4. ⏳ 65s sleep
+5. `deep-researcher` — gathers facts, sources, key data
+6. ⏳ 65s sleep
+7. `article-writer` — writes the full BM article (headlines, body, wordCount)
+8. ⏳ 65s sleep
+9. `seo-metadata` — generates slug, metaDescription, tags
+10. ⏳ 65s sleep
+11. `image-brief` — prepares hero image description + Unsplash search query
+12. ⏳ 65s sleep
+13. `quality-checker` — scores article 0–100, gives verdict (publish/review/reject)
+14. `save-article` — writes all outputs to Supabase, sets `status = 'ready_to_review'`
+
+**Total runtime:** ~9–10 minutes per article.
+
+**Each agent step also writes to `article_generation_progress`** — one row inserted as `running` at start, updated to `done`/`failed` at end. This enables live progress tracking in the admin panel.
+
+---
+
+## The `ask()` Helper (`lib/agents/_client.js`)
+All 7 agents use this single shared function — it handles everything:
+- Calls `anthropic.messages.create()` with `claude-sonnet-4-5`, `max_tokens: 4096`
+- Extracts JSON from the response (handles ` ```json ``` ` blocks or raw `{}`)
+- Retries up to 3x on `429` (rate limit) or `529` (overloaded) with exponential backoff (5s, 10s, 20s)
+
+```js
+// Usage in any agent:
+import { ask } from './_client.js'
+const result = await ask(systemPrompt, userPrompt)
+// result is parsed JSON object
+```
+
+---
+
+## Running the Dev Servers
+Two servers must run simultaneously:
+
+**Terminal 1 — Next.js:**
+```bash
+cd "D:/ALIFF MC/Website Coding/sharpable-news"
+npm run dev
+# Runs on http://localhost:3000
+```
+
+**Terminal 2 — Inngest Dev Server:**
+```bash
+cd "D:/ALIFF MC/Website Coding/sharpable-news"
+npx inngest-cli@latest dev
+# Runs on http://localhost:8288
+# Dashboard: http://localhost:8288/runs
+```
+
+---
+
+## Sending a Test Event (bypass the broken Inngest UI Monaco editor)
+The Inngest dev UI's Send Event JSON editor has a bug where pasting compact JSON results in `data: null`. Use the browser console instead:
+
+```js
+// Open http://localhost:8288 in Chrome, open DevTools console, paste:
+fetch('http://localhost:8288/e/test', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: 'article/generate',
+    data: { articleId: 'YOUR-ARTICLE-UUID-HERE' }
+  })
+}).then(r => r.json()).then(console.log)
+```
+Then create a test article row in Supabase SQL editor first:
+```sql
+INSERT INTO articles (slug, status) VALUES ('test-artikel', 'generating') RETURNING id;
+```
+Use the returned `id` as `articleId` in the fetch above.
+
+---
+
+## Key Decisions & Fixes (session history)
+
+### Why Inngest?
+Normal web requests time out after ~30s. The 7-agent pipeline takes ~10 minutes. Inngest runs it as a background job with automatic retries, step isolation, and the dev dashboard for observability.
+
+### Why Anthropic instead of Gemini?
+Originally built with Google Gemini (free tier). The free tier caused:
+- Silent request hangs (no timeout, ran for 27+ minutes)
+- Quota exhaustion with no graceful error
+
+Switched to Anthropic paid API. Completely resolved all hanging issues. The 65s sleeps between agents are a leftover precaution (they also help avoid any accidental rate limits on Claude).
+
+### Model name gotcha
+`claude-sonnet-4-20250514` does NOT exist — returns a 404. The correct model ID is `claude-sonnet-4-5`. Always use exact model IDs from the Anthropic docs.
+
+### Admin password
+`sharpable2025` — stored in `ADMIN_PASSWORD` env var, checked in admin middleware.
+
+---
+
+## What Has Been Completed
+
+- [x] Next.js 15 project setup with Tailwind
+- [x] Supabase schema (`articles` + `article_generation_progress` tables)
+- [x] Admin panel (password-protected, basic UI with "Artikel Baru AI" button)
+- [x] Inngest integration (client + dev server + route handler)
+- [x] All 7 AI agents (trend-scout → quality-checker) using Anthropic Claude
+- [x] Full `generateArticle` Inngest function with 65s rate-limit spacing
+- [x] Live progress rows written to `article_generation_progress` per agent
+- [x] End-to-end test: pipeline completes, saves article to Supabase ✅
+
+---
+
+## What Is Next (in order)
+
+### Next task (not started):
+**"Wire up the admin panel article generation flow + live progress tracker"**
+
+Specifically:
+1. **`app/api/generate/route.js`** — POST endpoint that:
+   - Creates a new `articles` row in Supabase with `status = 'generating'`
+   - Fires the `article/generate` Inngest event with the new `articleId`
+   - Returns `{ articleId }` to the caller
+
+2. **Wire "Artikel Baru AI" button** in the admin panel to call `POST /api/generate`
+
+3. **Live progress tracker in admin panel** — for each article with `status = 'generating'`:
+   - Poll `article_generation_progress` every 3 seconds
+   - Show all 7 agents with their status (spinner = running, ✅ = done, ○ = pending)
+   - Show the status `message` beside each agent name
+
+### Future tasks (after above):
+- Public article listing page
+- Public article detail page (render `body` content)
+- Image fetching from Unsplash using `image_brief`
+- Scheduled article generation (cron via Inngest)
+- Article editor / approval flow before publishing
+
+---
+
+## Design System (for all UI)
+
+**Tone:** Calm, mature, authoritative. MIT Tech Review meets The Economist.
 
 **Typography:**
-- Headlines: `Fraunces` (variable serif, `font-optical-sizing: auto`)
-- Body: `DM Sans`
-- Labels/meta/tags: `DM Sans` (was Courier Prime — switched for readability)
-- Sizes: hero `clamp(30px,3.8vw,50px)` → section titles ~24px → card titles ~19px → body 14–16px
+- Headlines: `Fraunces` (variable serif)
+- Body/UI: `DM Sans`
+- Sizes: hero `clamp(30px,3.8vw,50px)` → section titles ~24px → body 14–16px
 
 **Color palette (dark editorial):**
 ```
 --bg: #0c0b0a
---bg-2: #111010        (ticker bar, trending strip, footer)
+--bg-2: #111010
 --bg-card: #161412
 --text-1: #ede8df      (primary)
 --text-2: #8c857c      (secondary)
 --text-3: #56514d      (meta/muted)
---accent: #d4a853      (amber gold — single accent, used sparingly)
+--accent: #d4a853      (amber gold — use sparingly)
 --border: rgba(237,232,223,0.07)
 --border-mid: rgba(237,232,223,0.11)
 ```
 
-**Avoid (strictly):**
-- Purple gradients, neon, cyberpunk
-- Rounded cards (border-radius max 4px on cards, 6px on buttons)
-- Flashy animations or parallax
-- Cluttered layouts, icon overload
-- Inter/Roboto/Arial/system fonts
-- AI-slop aesthetics of any kind
+**Avoid:** Purple gradients, neon, rounded cards (max 4px radius), flashy animations, Inter/Roboto/system fonts, AI-slop aesthetics.
 
----
+**Category tag colours:**
+- Penyelidikan: `#5a9ee0` (blue)
+- Analisis: `#c97c42` (amber)
+- Permulaan: `#50aa70` (green)
+- Dasar: `#c84c6a` (rose)
+- Alatan: `#9070cc` (violet)
+- Industri: `#c4a030` (gold)
 
-## Layout & Components
-
-### Navbar
-Fixed, blur backdrop. Logo (`Fraunces`) + amber dot + pipe + nav links + search (`⌘K`) + subscribe button. Nav links: Terkini, Penyelidikan, Permulaan, Alatan, Dasar, Analisis, Industri.
-
-### Breaking Ticker
-34px bar below navbar. Amber `LIVE` label left. Infinite scroll animation, pauses on hover.
-
-### Hero Section
-Two-column grid (`1fr 360px`). Left: large image (16/9) + eyebrow label + `Fraunces` headline + excerpt + meta row. Right: "Berita Utama" sidebar list (4 items, no images).
-
-### Article Cards (`.card`)
-Image (16/10 aspect) with `object-fit:cover`, `filter: brightness(0.82) saturate(0.65)`. Tag → title (`Fraunces`) → excerpt (`DM Sans`) → meta row. Hover: title turns `--accent`, image brightens slightly, scale(1.04).
-
-### Category Tags (`.tag`)
-`DM Sans`, 9px, weight 600, letter-spacing 0.05em, uppercase. Colour-coded per category:
-- Penyelidikan: blue tint `#5a9ee0`
-- Analisis: amber `#c97c42`
-- Permulaan: green `#50aa70`
-- Dasar: rose `#c84c6a`
-- Alatan: violet `#9070cc`
-- Industri: gold `#c4a030`
-
-### Trending Strip
-Dark bg (`--bg-2`), 4-column grid. Large faded serif numbers (01–04, `rgba(237,232,223,0.16)`) + tag + title + meta. `align-items: center` on each item.
-
-### Deep Dive
-Asymmetric grid (`1.15fr 1fr`). Featured card (4/3 image) left. Stack list (thumbnail 90×64 + text, `align-items: center`) right.
-
-### Category Spotlights
-`2fr 1fr` grid. Main card with 16/9 image. Side list of 4 text-only items with tags.
-
-### Newsletter
-2-column. Left: eyebrow + headline + desc + stats row. Right: email input + submit inline. Input border-radius `4px 0 0 4px`, button `0 4px 4px 0`.
-
-### Footer
-4-column grid (`1.8fr 1fr 1fr 1fr`). Logo + desc + social icons | Liputan | Syarikat | Surat Berita. Bottom bar: copyright left, legal links right.
-
-### Search Overlay
-Full-screen, `backdrop-filter: blur(24px)`. Large `Fraunces` input, borderless except bottom rule. Tag chips for popular searches. Toggle: `⌘K` or search button. Close: `Escape`.
-
----
-
-## Images
-Source: `https://picsum.photos/seed/{descriptor}/{w}/{h}` — deterministic, free, no API key.
-Always apply: `filter: brightness(0.82) saturate(0.65)` on cards, `brightness(0.72) saturate(0.55)` on hero.
-
----
-
-## Article Pages (not yet built)
-When building, follow this structure:
-1. Sticky navbar (same as homepage)
-2. Article header: category tag → large `Fraunces` headline → meta row (author avatar, date, read time) → featured image (16/9, full-width, same filter)
-3. Body: max-width ~680px centered, `DM Sans` 17px, line-height 1.75, generous paragraph spacing
-4. Pull quotes: left border `--accent`, italic `Fraunces`
-5. Related articles: 3-card grid at bottom (same `.card` component)
-6. Same footer
-
----
-
-## Development Guidelines
-
-**Responsiveness:**
-- Breakpoints: 1060px (collapse sidebars/deep-dive), 768px (single column, hide nav links), 480px (stack newsletter row)
-- Use `clamp()` for fluid type, CSS Grid for all layouts
-
-**Scroll reveal:** `IntersectionObserver` on `.reveal` elements — fade up 18px, 0.55s ease. Stagger via `transitionDelay` modulo 4.
-
-**Accessibility:** Semantic HTML (`<nav>`, `<section>`, `<footer>`, `<h1>`–`<h3>` hierarchy). `alt` text on all images. Keyboard-navigable search overlay (Escape closes).
-
-**Performance:** Fonts via Google Fonts with `preconnect`. Images lazy-loaded (add `loading="lazy"` on new img tags). No JS frameworks — keep it lean.
-
-**Consistency rules:**
-- All dates in Malay format: `DD Mei YYYY` or `DD Mei`
-- All content in Malay (natural, not literal translation)
-- Tag labels always uppercase, colour always matches category
-- Border-radius: 2px cards/images, 4–6px buttons/inputs only
-- Hover transitions: 0.18s ease (fast, subtle)
-- Section labels: 10px mono-style DM Sans, `--text-3`, uppercase, gold left-bar via `::before`
-
----
-
-## File Structure
-```
-sharpable-news/
-├── index.html          # Homepage (complete)
-├── CLAUDE.md           # This file
-└── article/            # Article pages (not yet built)
-    └── [slug].html
-```
-
----
-
-## Language
-All UI text in **Bahasa Malaysia** — natural, editorial Malay. Not direct translation. Refer to existing homepage copy as the tone standard.
+**All UI text in Bahasa Malaysia** — natural editorial tone, not direct translation.
