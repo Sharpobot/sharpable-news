@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -81,7 +83,7 @@ function Toolbar({ editor }) {
   )
 }
 
-/* ── Quality flags verdict colour ──────────────────────────── */
+/* ── Quality flags helpers ─────────────────────────────────── */
 function verdictColor(v) {
   if (!v) return '#8c857c'
   const lv = v.toLowerCase()
@@ -89,6 +91,162 @@ function verdictColor(v) {
   if (lv === 'review')  return '#d4a853'
   if (lv === 'reject')  return '#ef4444'
   return '#8c857c'
+}
+
+const VERDICT_LABEL = {
+  publish: 'Lulus Semak',
+  review:  'Perlu Semakan',
+  reject:  'Gagal Semak',
+}
+const READINESS_LABEL = {
+  ready:                'Sedia Diterbit',
+  needs_minor_fixes:    'Perlu Pembetulan Minor',
+  needs_major_revision: 'Perlu Semakan Major',
+}
+
+/* ── Fix item with WAJIB highlight + truncate ─────────────── */
+function FixItem({ text }) {
+  const [expanded, setExpanded] = useState(false)
+  const isWajib = text.startsWith('WAJIB:')
+  const truncate = text.length > 100 && !expanded
+  const display  = truncate ? text.slice(0, 100) + '…' : text
+
+  if (isWajib) {
+    const rest = text.slice('WAJIB:'.length)
+    const restDisplay = truncate ? rest.slice(0, 94) + '…' : rest
+    return (
+      <li style={{ fontSize: '12.5px', lineHeight: 1.55, color: '#8c857c' }}>
+        <span style={{ color: '#d4a853', fontWeight: 700 }}>WAJIB:</span>
+        {restDisplay}
+        {text.length > 100 && (
+          <button onClick={() => setExpanded(v => !v)} style={{
+            background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+            fontSize: '11.5px', padding: '0 0 0 4px', fontFamily: "'DM Sans', sans-serif",
+          }}>
+            {expanded ? 'Tutup' : 'Baca lagi'}
+          </button>
+        )}
+      </li>
+    )
+  }
+
+  return (
+    <li style={{ fontSize: '12.5px', lineHeight: 1.55, color: '#8c857c' }}>
+      {display}
+      {text.length > 100 && (
+        <button onClick={() => setExpanded(v => !v)} style={{
+          background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+          fontSize: '11.5px', padding: '0 0 0 4px', fontFamily: "'DM Sans', sans-serif",
+        }}>
+          {expanded ? 'Tutup' : 'Baca lagi'}
+        </button>
+      )}
+    </li>
+  )
+}
+
+/* ── Collapsible section ───────────────────────────────────── */
+function Collapsible({ title, titleColor = '#56514d', children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{ marginTop: '10px' }}>
+      <button onClick={() => setOpen(v => !v)} style={{
+        display: 'flex', alignItems: 'center', gap: '6px', width: '100%',
+        background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+        color: titleColor, fontSize: '10.5px', fontWeight: 700,
+        letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Sans', sans-serif",
+      }}>
+        <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
+          style={{ transition: 'transform 0.15s', transform: open ? 'rotate(90deg)' : 'none', flexShrink: 0 }}>
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        {title}
+      </button>
+      {open && <div style={{ marginTop: '6px', paddingLeft: '4px' }}>{children}</div>}
+    </div>
+  )
+}
+
+/* ── Quality flags panel ───────────────────────────────────── */
+function QualityPanel({ qf, originalQf }) {
+  if (!qf || !Object.keys(qf).length) return null
+
+  const hasRevision = !!(originalQf && Object.keys(originalQf).length)
+  const verdictLabel = VERDICT_LABEL[qf.verdict] ?? qf.verdict ?? '—'
+  const readinessLabel = READINESS_LABEL[qf.publish_readiness] ?? (qf.publish_readiness?.replace(/_/g, ' ') ?? '—')
+  const score = qf.overall_score
+  const scoreColor = score >= 70 ? '#10b981' : score >= 50 ? '#d4a853' : '#ef4444'
+
+  return (
+    <section style={{ marginBottom: '32px' }}>
+      <SectionLabel>Laporan Kualiti</SectionLabel>
+      <div style={{ background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderRadius: '6px', padding: '16px' }}>
+
+        {/* Verdict + Score header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: verdictColor(qf.verdict), marginBottom: '3px' }}>
+              {verdictLabel}
+            </div>
+            <div style={{ fontSize: '11.5px', color: '#56514d' }}>{readinessLabel}</div>
+          </div>
+          {score != null && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '28px', fontWeight: 700, color: scoreColor, lineHeight: 1 }}>
+                {score}
+              </div>
+              <div style={{ fontSize: '11px', color: '#56514d' }}>/ 100</div>
+            </div>
+          )}
+        </div>
+
+        {/* Required fixes */}
+        {qf.required_fixes?.length > 0 && (
+          <div>
+            <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '8px' }}>
+              Perlu Diperbaiki
+            </div>
+            <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {qf.required_fixes.map((fix, i) => <FixItem key={i} text={fix} />)}
+            </ul>
+          </div>
+        )}
+
+        {/* Revision sections — only shown when revision agent ran */}
+        {hasRevision && (
+          <>
+            {/* Original issues (greyed, collapsed) */}
+            <Collapsible title="Isu Asal" titleColor="#3a3530" defaultOpen={false}>
+              {originalQf.required_fixes?.length > 0 ? (
+                <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {originalQf.required_fixes.map((fix, i) => (
+                    <li key={i} style={{ fontSize: '12px', color: '#3a3530', lineHeight: 1.5 }}>
+                      {fix.length > 100 ? fix.slice(0, 100) + '…' : fix}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div style={{ fontSize: '12px', color: '#3a3530' }}>—</div>
+              )}
+            </Collapsible>
+
+            {/* Corrections made (green, collapsed) */}
+            {qf.corrections_made?.length > 0 && (
+              <Collapsible title="Pembetulan Dilakukan" titleColor="#10b981" defaultOpen={true}>
+                <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  {qf.corrections_made.map((c, i) => (
+                    <li key={i} style={{ fontSize: '12px', color: '#10b981', lineHeight: 1.5 }}>
+                      {c.length > 100 ? c.slice(0, 100) + '…' : c}
+                    </li>
+                  ))}
+                </ul>
+              </Collapsible>
+            )}
+          </>
+        )}
+      </div>
+    </section>
+  )
 }
 
 /* ── Section label ─────────────────────────────────────────── */
@@ -132,7 +290,81 @@ function AIBriefModal({ brief, onClose }) {
   )
 }
 
-/* ── Save / SEO / Quality content blocks (reused in both layouts) ── */
+/* ── Image Crop Modal ──────────────────────────────────────── */
+function CropModal({ src, onConfirm, onCancel }) {
+  const [crop, setCrop] = useState()
+  const [completedCrop, setCompletedCrop] = useState()
+  const imgRef = useRef(null)
+
+  const onImageLoad = (e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+    const c = centerCrop(makeAspectCrop({ unit: '%', width: 90 }, 16 / 9, w, h), w, h)
+    setCrop(c)
+  }
+
+  const handleConfirm = () => {
+    if (!completedCrop || !imgRef.current) return
+    const canvas = document.createElement('canvas')
+    const img = imgRef.current
+    const scaleX = img.naturalWidth / img.width
+    const scaleY = img.naturalHeight / img.height
+    // Output at 16:9 — 1280×720
+    canvas.width  = 1280
+    canvas.height = 720
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(
+      img,
+      completedCrop.x * scaleX, completedCrop.y * scaleY,
+      completedCrop.width * scaleX, completedCrop.height * scaleY,
+      0, 0, 1280, 720,
+    )
+    canvas.toBlob((blob) => {
+      if (blob) onConfirm(new File([blob], 'featured-image.jpg', { type: 'image/jpeg' }))
+    }, 'image/jpeg', 0.92)
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9100, background: 'rgba(0,0,0,0.85)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '20px', fontFamily: "'DM Sans', sans-serif",
+      }}>
+      <div style={{ background: '#161412', border: '1px solid rgba(237,232,223,0.11)', borderRadius: '10px', padding: '20px', width: '100%', maxWidth: '700px' }}>
+        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d', marginBottom: '12px' }}>
+          Potong Imej — Nisbah 16:9
+        </div>
+        <div style={{ background: '#0c0b0a', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
+          <ReactCrop
+            crop={crop}
+            onChange={(c) => setCrop(c)}
+            onComplete={(c) => setCompletedCrop(c)}
+            aspect={16 / 9}
+            style={{ maxWidth: '100%' }}
+          >
+            <img ref={imgRef} src={src} onLoad={onImageLoad}
+              style={{ maxWidth: '100%', maxHeight: '50vh', display: 'block' }}
+              alt="Potong imej" />
+          </ReactCrop>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button onClick={onCancel} style={{
+            padding: '8px 18px', borderRadius: '6px', border: '1px solid rgba(237,232,223,0.11)',
+            background: 'transparent', color: '#8c857c', fontSize: '13px', cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>Batal</button>
+          <button onClick={handleConfirm} style={{
+            padding: '8px 18px', borderRadius: '6px', border: 'none',
+            background: '#d4a853', color: '#0c0b0a', fontSize: '13px', fontWeight: 700,
+            cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+          }}>Gunakan Imej</button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+/* ── Save / SEO content blocks ─────────────────────────────── */
 function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, setTags }) {
   return (
     <section style={{ marginBottom: '32px' }}>
@@ -151,42 +383,6 @@ function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, s
           <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Tag</div>
           <TagInput tags={tags} onChange={setTags} />
         </div>
-      </div>
-    </section>
-  )
-}
-
-function QualityPanel({ qf }) {
-  if (!Object.keys(qf).length) return null
-  return (
-    <section style={{ marginBottom: '32px' }}>
-      <SectionLabel>Laporan Kualiti</SectionLabel>
-      <div style={{ background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderRadius: '4px', padding: '14px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, textTransform: 'capitalize', color: verdictColor(qf.verdict) }}>
-            {qf.verdict ?? '—'}
-          </span>
-          {qf.overall_score != null && (
-            <span style={{ fontSize: '22px', fontWeight: 700, fontFamily: "'Fraunces', serif", color: qf.overall_score >= 70 ? '#10b981' : qf.overall_score >= 50 ? '#d4a853' : '#ef4444' }}>
-              {qf.overall_score}<span style={{ fontSize: '13px', color: '#56514d' }}>/100</span>
-            </span>
-          )}
-        </div>
-        {qf.required_fixes?.length > 0 && (
-          <div>
-            <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '6px' }}>Perlu Diperbaiki</div>
-            <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {qf.required_fixes.map((fix, i) => (
-                <li key={i} style={{ fontSize: '12.5px', color: '#8c857c', lineHeight: 1.5 }}>{fix}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {qf.publish_readiness != null && (
-          <div style={{ marginTop: '10px', fontSize: '12px', color: '#56514d' }}>
-            Kesediaan terbit: <span style={{ color: '#8c857c' }}>{qf.publish_readiness}</span>
-          </div>
-        )}
       </div>
     </section>
   )
@@ -243,6 +439,9 @@ export default function EditorClient({ article }) {
   const [isDragging,    setIsDragging]    = useState(false)
   const fileInputRef = useRef(null)
 
+  // Crop state
+  const [cropSrc, setCropSrc] = useState(null)
+
   const [saveStatus, setSaveStatus] = useState('idle')
   const [isDirty,    setIsDirty]    = useState(false)
   const savedStateRef = useRef({ slug, metaDescription, tags, featuredImage })
@@ -251,7 +450,7 @@ export default function EditorClient({ article }) {
   const [pendingNav,  setPendingNav]  = useState(null)
   const [showBrief,   setShowBrief]   = useState(false)
 
-  // Mobile tab state — tabs only affect mobile layout; desktop ignores this
+  // Mobile tab state
   const [activeTab, setActiveTab] = useState('kandungan')
 
   const editor = useEditor({
@@ -322,11 +521,20 @@ export default function EditorClient({ article }) {
     }
   }
 
+  // Opens crop modal instead of uploading directly
+  const handleFileSelect = (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => setCropSrc(e.target.result)
+    reader.readAsDataURL(file)
+  }
+
   const handleBackClick = (e) => {
     if (isDirty) { e.preventDefault(); setPendingNav('/admin'); setModal('unsaved') }
   }
 
   const qf      = article.quality_flags ?? {}
+  const originalQf = article.original_quality_flags ?? {}
   const sources = article.sources ?? []
 
   // CSS class helpers — only take effect inside the @media (max-width: 768px) block
@@ -338,8 +546,8 @@ export default function EditorClient({ article }) {
         @keyframes editor-spin { to { transform: rotate(360deg); } }
 
         .tiptap-editor { outline: none; min-height: 320px; font-size: 15px; line-height: 1.75; color: #ede8df; }
-        .tiptap-editor h2 { font-family: 'Fraunces', serif; font-size: 22px; margin: 24px 0 8px; }
-        .tiptap-editor h3 { font-family: 'Fraunces', serif; font-size: 18px; margin: 20px 0 6px; }
+        .tiptap-editor h2 { font-family: 'DM Sans', sans-serif; font-size: 20px; font-weight: 700; margin: 24px 0 8px; }
+        .tiptap-editor h3 { font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; margin: 20px 0 6px; }
         .tiptap-editor p  { margin: 0 0 14px; }
         .tiptap-editor ul, .tiptap-editor ol { padding-left: 20px; margin: 0 0 14px; }
         .tiptap-editor strong { color: #f0ebe2; }
@@ -357,8 +565,13 @@ export default function EditorClient({ article }) {
         .editor-header-sep   { color: #2a2520; }
         .editor-save-btns    { display: flex; gap: 10px; flex-shrink: 0; }
 
-        /* ── Mobile tab bar (hidden on desktop) ── */
-        .editor-tab-bar { display: none; }
+        /* ── Mobile tab bar — sticky below header ── */
+        .editor-tab-bar {
+          display: none;
+          position: sticky; top: 52px; z-index: 15;
+          background: #0c0b0a;
+          border-bottom: 1px solid rgba(237,232,223,0.07);
+        }
         .editor-tab-btn {
           flex: 1; padding: 12px 8px; border: none; background: none;
           color: #56514d; font-size: 13px; font-weight: 600;
@@ -375,23 +588,25 @@ export default function EditorClient({ article }) {
 
         .dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: #d4a853; flex-shrink: 0; }
 
+        /* react-image-crop overrides */
+        .ReactCrop__crop-selection { border-color: #d4a853; }
+        .ReactCrop__drag-handle::after { background: #d4a853; border-color: #d4a853; }
+
         /* ── Mobile overrides ── */
         @media (max-width: 768px) {
           .editor-header { padding: 0 16px; height: auto; min-height: 52px; flex-wrap: wrap; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
           .editor-header-title { width: 100%; }
           .editor-header-label, .editor-header-sep { display: none; }
-          .editor-save-btns { display: none; } /* buttons move to Semakan tab on mobile */
+          .editor-save-btns { display: none; }
 
-          .editor-tab-bar { display: flex; border-bottom: 1px solid rgba(237,232,223,0.07); background: #0c0b0a; overflow-x: auto; }
+          .editor-tab-bar { display: flex; }
           .editor-layout  { display: block; }
           .editor-main    { padding: 20px 16px; border-right: none; }
           .editor-aside   { position: static; height: auto; padding: 0; }
 
-          /* Tab visibility — these classes only take effect here */
           .mob-tab-hide { display: none; }
           .mob-tab-show { display: block; }
 
-          /* Aside sections need padding when visible */
           .aside-section { padding: 20px 16px; }
         }
       `}</style>
@@ -412,6 +627,14 @@ export default function EditorClient({ article }) {
         {showBrief && article.image_brief && (
           <AIBriefModal brief={article.image_brief} onClose={() => setShowBrief(false)} />
         )}
+        {cropSrc && (
+          <CropModal
+            key="crop"
+            src={cropSrc}
+            onConfirm={async (file) => { setCropSrc(null); await uploadImage(file) }}
+            onCancel={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+          />
+        )}
       </AnimatePresence>
 
       {/* ── Sticky header ── */}
@@ -426,7 +649,7 @@ export default function EditorClient({ article }) {
           <span className="editor-header-label">Penyunting Artikel</span>
         </div>
 
-        {/* Desktop save buttons (hidden on mobile — moved to Semakan tab) */}
+        {/* Desktop save buttons */}
         <div className="editor-save-btns">
           <button onClick={() => save('draft')} disabled={saveStatus === 'saving'} style={{
             padding: '7px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
@@ -450,7 +673,7 @@ export default function EditorClient({ article }) {
         </div>
       </header>
 
-      {/* ── Mobile tab bar (invisible on desktop via CSS) ── */}
+      {/* ── Mobile tab bar ── */}
       <div className="editor-tab-bar">
         {[
           { id: 'kandungan', label: 'Kandungan' },
@@ -467,9 +690,6 @@ export default function EditorClient({ article }) {
       {/* ── Two-column layout (desktop) / tab-controlled blocks (mobile) ── */}
       <div className="editor-layout">
 
-        {/* ── Left column / Kandungan tab ──
-            On desktop: always visible (mob-tab-hide/show do nothing outside the @media block)
-            On mobile: visible only when activeTab === 'kandungan' */}
         <main className={`editor-main ${mob('kandungan')}`}>
 
           {/* 1. Headline picker */}
@@ -489,7 +709,7 @@ export default function EditorClient({ article }) {
                     onChange={() => { setSelectedIdx(i); setCustomHeadline(''); setIsDirty(true) }}
                     style={{ marginTop: '2px', accentColor: '#d4a853', flexShrink: 0 }}
                   />
-                  <span style={{ fontSize: '15px', lineHeight: 1.5, fontFamily: "'Fraunces', serif", color: '#ede8df' }}>{h}</span>
+                  <span style={{ fontSize: '15px', lineHeight: 1.5, color: '#ede8df' }}>{h}</span>
                 </label>
               ))}
               <div style={{ marginTop: '4px' }}>
@@ -501,7 +721,7 @@ export default function EditorClient({ article }) {
                     ...inputStyle,
                     border: `1px solid ${customHeadline ? '#d4a853' : 'rgba(237,232,223,0.11)'}`,
                     background: customHeadline ? '#1a160e' : '#0e0d0c',
-                    fontSize: '15px', fontFamily: "'Fraunces', serif",
+                    fontSize: '15px',
                   }}
                 />
               </div>
@@ -512,7 +732,6 @@ export default function EditorClient({ article }) {
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Imej Hero</SectionLabel>
 
-            {/* AI brief — desktop: inline; mobile: button */}
             {article.image_brief && (
               <>
                 <div style={{ padding: '14px 16px', borderRadius: '4px', marginBottom: '12px', background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderLeft: '3px solid #d4a853' }}
@@ -526,7 +745,7 @@ export default function EditorClient({ article }) {
                   color: '#d4a853', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
                   fontFamily: "'DM Sans', sans-serif",
                 }}>
-                  💡 Lihat Cadangan AI
+                  Lihat Cadangan AI
                 </button>
               </>
             )}
@@ -534,7 +753,7 @@ export default function EditorClient({ article }) {
             {featuredImage ? (
               <div style={{ position: 'relative', marginBottom: '10px' }}>
                 <img src={featuredImage} alt="Imej hero"
-                  style={{ width: '100%', borderRadius: '4px', display: 'block', maxHeight: '300px', objectFit: 'cover' }} />
+                  style={{ width: '100%', borderRadius: '4px', display: 'block', aspectRatio: '16/9', objectFit: 'cover' }} />
                 <button onClick={() => setModal('removeImage')} style={{
                   position: 'absolute', top: '10px', right: '10px',
                   background: 'rgba(12,11,10,0.8)', border: '1px solid rgba(237,232,223,0.15)',
@@ -545,7 +764,7 @@ export default function EditorClient({ article }) {
               <div
                 onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
                 onDragLeave={() => setIsDragging(false)}
-                onDrop={async e => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) await uploadImage(f) }}
+                onDrop={async e => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) handleFileSelect(f) }}
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   border: `2px dashed ${isDragging ? '#d4a853' : 'rgba(237,232,223,0.11)'}`,
@@ -562,18 +781,17 @@ export default function EditorClient({ article }) {
                   <>
                     <div style={{ fontSize: '28px', marginBottom: '8px', opacity: 0.4 }}>↑</div>
                     <div style={{ fontSize: '13.5px', color: '#8c857c', marginBottom: '4px' }}>Seret & lepas imej, atau klik untuk pilih</div>
-                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Maks 8 MB</div>
+                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Nisbah 16:9 akan dipotong · Maks 8 MB</div>
                     {uploadStatus === 'error' && <div style={{ marginTop: '8px', fontSize: '12px', color: '#ef4444' }}>Muat naik gagal. Cuba lagi.</div>}
                   </>
                 )}
               </div>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={async e => { const f = e.target.files?.[0]; if (f) await uploadImage(f); e.target.value = '' }} />
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }} />
           </section>
 
-          {/* 3. TipTap body editor
-              IMPORTANT: always mounted (CSS show/hide) so content is never lost on tab switch */}
+          {/* 3. TipTap body editor — always mounted */}
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Kandungan Artikel</SectionLabel>
             <div style={{ border: '1px solid rgba(237,232,223,0.11)', borderRadius: '4px', background: '#0e0d0c', padding: '16px' }}>
@@ -600,20 +818,17 @@ export default function EditorClient({ article }) {
           )}
         </main>
 
-        {/* ── Right sidebar ──
-            On desktop: always shown as a sticky column
-            On mobile: split into two tabs ('seo' and 'semakan') via mob-tab-hide/show on each section */}
         <aside className="editor-aside">
 
-          {/* SEO — desktop: always visible; mobile: visible on 'seo' tab */}
+          {/* SEO — desktop: always visible; mobile: 'seo' tab */}
           <div className={`aside-section ${mob('seo')}`}>
             <SEOFields slug={slug} setSlug={setSlug} metaDescription={metaDescription}
               setMetaDescription={setMetaDescription} tags={tags} setTags={setTags} />
           </div>
 
-          {/* Quality + Save — desktop: always visible; mobile: visible on 'semakan' tab */}
+          {/* Quality + Save — desktop: always visible; mobile: 'semakan' tab */}
           <div className={`aside-section ${mob('semakan')}`}>
-            <QualityPanel qf={qf} />
+            <QualityPanel qf={qf} originalQf={originalQf} />
             <SaveButtons saveStatus={saveStatus}
               onDraft={() => save('draft')}
               onPublish={() => setModal('publish')} />
@@ -621,7 +836,6 @@ export default function EditorClient({ article }) {
         </aside>
       </div>
 
-      {/* Global show/hide helpers for AI brief button */}
       <style>{`
         .hide-on-mobile { display: block; }
         .show-on-mobile { display: none; }

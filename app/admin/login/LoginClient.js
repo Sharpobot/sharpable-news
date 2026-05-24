@@ -61,7 +61,7 @@ export default function LoginClient() {
           <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#444', marginBottom: '6px' }}>
             Sharpable News
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, fontFamily: "'Fraunces', serif", color: '#ede8df' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", color: '#ede8df' }}>
             Admin Panel
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 
 const NAV = [
@@ -66,6 +67,8 @@ const TOAST_OPTS = {
 
 export default function AdminSidebar({ children, logoutAction }) {
   const pathname = usePathname()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
   const isEditor = pathname.startsWith('/admin/editor/')
   const isLogin  = pathname === '/admin/login'
 
@@ -87,23 +90,44 @@ export default function AdminSidebar({ children, logoutAction }) {
       <Toaster position="bottom-right" toastOptions={TOAST_OPTS} />
 
       <style>{`
-        /* ── Mobile top bar (column item above content) ── */
+        /* ── Mobile topbar ── */
         .admin-topbar {
           display: none;
           position: sticky; top: 0; z-index: 30;
           background: #0a0a0a; border-bottom: 1px solid #1a1a1a;
-          overflow-x: auto; flex-shrink: 0;
+          height: 48px; align-items: center; justify-content: space-between;
+          padding: 0 16px; flex-shrink: 0;
         }
-        .admin-topbar-inner {
-          display: flex; align-items: center;
-          padding: 0 4px; min-width: max-content; width: 100%;
+        .admin-hamburger {
+          display: flex; align-items: center; justify-content: center;
+          width: 36px; height: 36px; background: none; border: none;
+          cursor: pointer; color: #8c857c; border-radius: 6px;
+          transition: background 0.15s, color 0.15s;
         }
-        .mobile-nav-link {
-          display: flex; align-items: center; gap: 6px;
-          padding: 13px 14px; text-decoration: none; font-size: 13px;
-          white-space: nowrap; border-bottom: 2px solid transparent;
-          transition: color 0.15s; font-family: "'DM Sans', sans-serif";
+        .admin-hamburger:hover { background: #111; color: #f0f0f0; }
+        .admin-topbar-title {
+          font-size: 13px; font-weight: 600; color: #8c857c;
+          letter-spacing: 0.02em;
         }
+        /* invisible spacer to balance hamburger on left */
+        .admin-topbar-spacer { width: 36px; }
+
+        /* ── Drawer overlay ── */
+        .admin-drawer-overlay {
+          display: none;
+          position: fixed; inset: 0; z-index: 40;
+          background: rgba(0,0,0,0.6);
+        }
+        .admin-drawer-overlay.open { display: block; }
+        .admin-drawer {
+          position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+          width: 240px; background: #0a0a0a;
+          border-right: 1px solid #1a1a1a;
+          display: flex; flex-direction: column;
+          transform: translateX(-100%);
+          transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        .admin-drawer.open { transform: translateX(0); }
 
         /* ── Desktop sidebar + content row ── */
         .admin-body {
@@ -134,27 +158,83 @@ export default function AdminSidebar({ children, logoutAction }) {
         }
       `}</style>
 
-      {/* Mobile top bar — sits above content in the column flow */}
+      {/* Mobile topbar */}
       <div className="admin-topbar">
-        <div className="admin-topbar-inner">
-          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#333', padding: '0 12px', flexShrink: 0 }}>
-            SN
-          </span>
-          {NAV.map(nav => (
-            <Link key={nav.href} href={nav.href} prefetch className="mobile-nav-link" style={{
-              color: isActive(nav) ? '#d4a853' : '#56514d',
-              borderBottomColor: isActive(nav) ? '#d4a853' : 'transparent',
-              fontWeight: isActive(nav) ? 600 : 400,
-            }}>
-              {nav.label}
-            </Link>
-          ))}
-          <form action={logoutAction} style={{ padding: '0 8px', flexShrink: 0 }}>
+        <button
+          className="admin-hamburger"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Buka menu"
+        >
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <span className="admin-topbar-title">Admin</span>
+        <div className="admin-topbar-spacer" />
+      </div>
+
+      {/* Mobile drawer overlay */}
+      <div
+        className={`admin-drawer-overlay${drawerOpen ? ' open' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+      />
+
+      {/* Mobile drawer */}
+      <div className={`admin-drawer${drawerOpen ? ' open' : ''}`}>
+        <div style={{ padding: '16px', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#444', marginBottom: '2px' }}>
+              Sharpable News
+            </div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#f0f0f0' }}>Admin Panel</div>
+          </div>
+          <button
+            onClick={() => setDrawerOpen(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', padding: '4px', borderRadius: '4px' }}
+            aria-label="Tutup menu"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <nav style={{ flex: 1, padding: '10px 8px' }}>
+          {NAV.map(nav => {
+            const active = isActive(nav)
+            return (
+              <Link
+                key={nav.href}
+                href={nav.href}
+                prefetch
+                className="sidebar-nav-link"
+                style={{
+                  background: active ? '#161412' : 'transparent',
+                  color: active ? '#d4a853' : '#56514d',
+                  fontWeight: active ? 600 : 400,
+                }}
+                onClick={() => setDrawerOpen(false)}
+              >
+                <span style={{ color: active ? '#d4a853' : '#3a3a3a', flexShrink: 0 }}>
+                  {nav.icon}
+                </span>
+                {nav.label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div style={{ padding: '12px 8px', borderTop: '1px solid #1a1a1a' }}>
+          <form action={logoutAction}>
             <button type="submit" style={{
-              background: 'none', border: 'none', color: '#3a3a3a',
-              fontSize: '12px', cursor: 'pointer', padding: '4px 8px',
+              width: '100%', padding: '8px 12px', background: 'none',
+              border: '1px solid #1e1e1e', borderRadius: '6px',
+              color: '#3a3a3a', fontSize: '12.5px', cursor: 'pointer',
+              textAlign: 'left', fontFamily: "'DM Sans', sans-serif",
             }}>
-              Keluar
+              Log Keluar
             </button>
           </form>
         </div>

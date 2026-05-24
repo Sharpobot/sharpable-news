@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 const AGENTS = [
-  { key: 'trend-scout',     label: 'trend-scout' },
-  { key: 'topic-selector',  label: 'topic-selector' },
-  { key: 'deep-researcher', label: 'deep-researcher' },
-  { key: 'article-writer',  label: 'article-writer' },
-  { key: 'seo-metadata',    label: 'seo-metadata' },
-  { key: 'image-brief',     label: 'image-brief' },
-  { key: 'quality-checker', label: 'quality-checker' },
+  { key: 'trend-scout',     label: 'trend-scout',     optional: false },
+  { key: 'topic-selector',  label: 'topic-selector',  optional: false },
+  { key: 'deep-researcher', label: 'deep-researcher', optional: false },
+  { key: 'article-writer',  label: 'article-writer',  optional: false },
+  { key: 'seo-metadata',    label: 'seo-metadata',    optional: false },
+  { key: 'image-brief',     label: 'image-brief',     optional: false },
+  { key: 'quality-checker', label: 'quality-checker', optional: false },
+  { key: 'revision-agent',  label: 'revision-agent',  optional: true  },
 ]
 
 function Spinner({ size = 13 }) {
@@ -81,10 +82,17 @@ function ProgressCard({ article, progress, onCancel }) {
   const map = {}
   ;(progress ?? []).forEach(row => { if (!map[row.agent_name]) map[row.agent_name] = row })
 
+  // Required agents must be done; optional agents (revision-agent) only count if they ran
+  const required = AGENTS.filter(a => !a.optional)
+  const requiredDone = required.filter(a => map[a.key]?.status === 'done').length
+  const allRequiredDone = requiredDone === required.length
+  // revision-agent may or may not run — count it if it appeared
+  const revisionRan = !!map['revision-agent']
+  const totalExpected = revisionRan ? AGENTS.length : required.length
   const doneCount = AGENTS.filter(a => map[a.key]?.status === 'done').length
-  const allDone   = doneCount === AGENTS.length
+  const allDone   = allRequiredDone
   const hasFailed = AGENTS.some(a => map[a.key]?.status === 'failed')
-  const pct       = Math.round((doneCount / AGENTS.length) * 100)
+  const pct       = Math.round((doneCount / totalExpected) * 100)
 
   return (
     <motion.div
@@ -191,11 +199,16 @@ export default function JanaClient({ initialGenerating }) {
         return next
       })
 
+      const REQUIRED_AGENTS = AGENTS.filter(a => !a.optional)
       const finished = results
         .filter(({ progress }) => {
           const m = {}
           progress.forEach(r => { if (!m[r.agent_name]) m[r.agent_name] = r })
-          return AGENTS.every(a => m[a.key]?.status === 'done' || m[a.key]?.status === 'failed')
+          // All required agents must be done or failed
+          // If revision-agent appeared, it must also be done or failed
+          const requiredDone = REQUIRED_AGENTS.every(a => m[a.key]?.status === 'done' || m[a.key]?.status === 'failed')
+          const revisionDone = !m['revision-agent'] || m['revision-agent']?.status === 'done' || m['revision-agent']?.status === 'failed'
+          return requiredDone && revisionDone
         })
         .map(r => r.id)
 

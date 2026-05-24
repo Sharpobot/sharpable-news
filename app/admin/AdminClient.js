@@ -22,7 +22,7 @@ function StatCard({ label, value, accent }) {
       <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444' }}>
         {label}
       </div>
-      <div style={{ fontSize: '32px', fontWeight: 700, fontFamily: "'Fraunces', serif", color: accent ?? '#f0f0f0', lineHeight: 1 }}>
+      <div style={{ fontSize: '32px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", color: accent ?? '#f0f0f0', lineHeight: 1 }}>
         {value}
       </div>
     </div>
