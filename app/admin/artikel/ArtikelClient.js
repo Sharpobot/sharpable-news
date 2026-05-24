@@ -79,8 +79,9 @@ export default function ArtikelClient({ initialArticles }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}
+      transition={{ duration: 0.15 }}
+      className="admin-page-content"
+      style={{ fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}
     >
       <style>{`
         .at-header { display: grid; grid-template-columns: 1fr 140px 100px 36px; padding: 10px 20px; border-bottom: 1px solid #1e1e1e; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #444; }

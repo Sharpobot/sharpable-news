@@ -1,5 +1,4 @@
 'use client'
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Toaster } from 'react-hot-toast'
@@ -66,15 +65,15 @@ const TOAST_OPTS = {
 }
 
 export default function AdminSidebar({ children, logoutAction }) {
-  const pathname  = usePathname()
-  const [open, setOpen] = useState(false)
-  const isEditor  = pathname.startsWith('/admin/editor/')
+  const pathname = usePathname()
+  const isEditor = pathname.startsWith('/admin/editor/')
+  const isLogin  = pathname === '/admin/login'
 
   const isActive = (nav) =>
     nav.exact ? pathname === nav.href : pathname.startsWith(nav.href)
 
-  /* ── Editor: no sidebar, just toaster ── */
-  if (isEditor) {
+  /* ── Login page or Editor: no shell, just toaster ── */
+  if (isLogin || isEditor) {
     return (
       <>
         <Toaster position="bottom-right" toastOptions={TOAST_OPTS} />
@@ -83,25 +82,40 @@ export default function AdminSidebar({ children, logoutAction }) {
     )
   }
 
-  /* ── Sidebar shell ── */
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0a', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0', display: 'flex', flexDirection: 'column' }}>
       <Toaster position="bottom-right" toastOptions={TOAST_OPTS} />
 
       <style>{`
-        .admin-sidebar {
-          width: 220px;
-          border-right: 1px solid #1a1a1a;
-          display: flex;
-          flex-direction: column;
-          position: sticky;
-          top: 0;
-          height: 100vh;
-          flex-shrink: 0;
-          overflow-y: auto;
-          background: #0a0a0a;
+        /* ── Mobile top bar (column item above content) ── */
+        .admin-topbar {
+          display: none;
+          position: sticky; top: 0; z-index: 30;
+          background: #0a0a0a; border-bottom: 1px solid #1a1a1a;
+          overflow-x: auto; flex-shrink: 0;
         }
-        .admin-content { flex: 1; overflow: auto; min-width: 0; }
+        .admin-topbar-inner {
+          display: flex; align-items: center;
+          padding: 0 4px; min-width: max-content; width: 100%;
+        }
+        .mobile-nav-link {
+          display: flex; align-items: center; gap: 6px;
+          padding: 13px 14px; text-decoration: none; font-size: 13px;
+          white-space: nowrap; border-bottom: 2px solid transparent;
+          transition: color 0.15s; font-family: "'DM Sans', sans-serif";
+        }
+
+        /* ── Desktop sidebar + content row ── */
+        .admin-body {
+          display: flex; flex: 1; min-height: 0;
+        }
+        .admin-sidebar {
+          width: 220px; border-right: 1px solid #1a1a1a;
+          display: flex; flex-direction: column;
+          position: sticky; top: 0; height: 100vh;
+          flex-shrink: 0; overflow-y: auto; background: #0a0a0a;
+        }
+        .admin-content { flex: 1; min-width: 0; overflow-x: hidden; }
         .sidebar-nav-link {
           display: flex; align-items: center; gap: 10px;
           padding: 9px 12px; border-radius: 6px;
@@ -109,51 +123,33 @@ export default function AdminSidebar({ children, logoutAction }) {
           margin-bottom: 2px; transition: background 0.15s, color 0.15s;
         }
         .sidebar-nav-link:hover { background: #111 !important; }
-        .mobile-topbar { display: none; }
+
+        /* ── Admin page content padding ── */
+        .admin-page-content { padding: 32px; }
 
         @media (max-width: 768px) {
+          .admin-topbar { display: flex; }
           .admin-sidebar { display: none; }
-          .admin-content { overflow: visible; }
-          .mobile-topbar {
-            display: flex; align-items: center; gap: 0;
-            position: sticky; top: 0; z-index: 30;
-            background: #0a0a0a; border-bottom: 1px solid #1a1a1a;
-            overflow-x: auto;
-          }
-          .mobile-topbar-inner {
-            display: flex; align-items: center;
-            gap: 0; padding: 0 4px; min-width: max-content;
-          }
-          .mobile-nav-link {
-            display: flex; align-items: center; gap: 6px;
-            padding: 12px 14px; text-decoration: none; font-size: 12.5px;
-            white-space: nowrap; border-bottom: 2px solid transparent;
-            transition: color 0.15s;
-          }
+          .admin-page-content { padding: 16px; }
         }
       `}</style>
 
-      {/* ── Mobile top bar ── */}
-      <div className="mobile-topbar">
-        <div className="mobile-topbar-inner">
-          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444', padding: '0 14px', flexShrink: 0 }}>
+      {/* Mobile top bar — sits above content in the column flow */}
+      <div className="admin-topbar">
+        <div className="admin-topbar-inner">
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#333', padding: '0 12px', flexShrink: 0 }}>
             SN
           </span>
           {NAV.map(nav => (
-            <Link
-              key={nav.href}
-              href={nav.href}
-              className="mobile-nav-link"
-              style={{
-                color: isActive(nav) ? '#d4a853' : '#56514d',
-                borderBottomColor: isActive(nav) ? '#d4a853' : 'transparent',
-                fontWeight: isActive(nav) ? 600 : 400,
-              }}
-            >
+            <Link key={nav.href} href={nav.href} prefetch className="mobile-nav-link" style={{
+              color: isActive(nav) ? '#d4a853' : '#56514d',
+              borderBottomColor: isActive(nav) ? '#d4a853' : 'transparent',
+              fontWeight: isActive(nav) ? 600 : 400,
+            }}>
               {nav.label}
             </Link>
           ))}
-          <form action={logoutAction} style={{ padding: '0 8px' }}>
+          <form action={logoutAction} style={{ padding: '0 8px', flexShrink: 0 }}>
             <button type="submit" style={{
               background: 'none', border: 'none', color: '#3a3a3a',
               fontSize: '12px', cursor: 'pointer', padding: '4px 8px',
@@ -164,61 +160,58 @@ export default function AdminSidebar({ children, logoutAction }) {
         </div>
       </div>
 
-      {/* ── Desktop sidebar ── */}
-      <aside className="admin-sidebar">
-        {/* Brand */}
-        <div style={{ padding: '20px 16px 12px', borderBottom: '1px solid #1a1a1a' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#444', marginBottom: '2px' }}>
-            Sharpable News
-          </div>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: '#f0f0f0' }}>Admin Panel</div>
-        </div>
+      {/* Body row: sidebar + content */}
+      <div className="admin-body">
 
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: '10px 8px' }}>
-          {NAV.map(nav => {
-            const active = isActive(nav)
-            return (
-              <Link
-                key={nav.href}
-                href={nav.href}
-                className="sidebar-nav-link"
-                style={{
+        {/* Desktop sidebar */}
+        <aside className="admin-sidebar">
+          <div style={{ padding: '20px 16px 12px', borderBottom: '1px solid #1a1a1a' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#444', marginBottom: '2px' }}>
+              Sharpable News
+            </div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#f0f0f0' }}>Admin Panel</div>
+          </div>
+
+          <nav style={{ flex: 1, padding: '10px 8px' }}>
+            {NAV.map(nav => {
+              const active = isActive(nav)
+              return (
+                <Link key={nav.href} href={nav.href} prefetch className="sidebar-nav-link" style={{
                   background: active ? '#161412' : 'transparent',
                   color: active ? '#d4a853' : '#56514d',
                   fontWeight: active ? 600 : 400,
-                }}
+                }}>
+                  <span style={{ color: active ? '#d4a853' : '#3a3a3a', flexShrink: 0 }}>
+                    {nav.icon}
+                  </span>
+                  {nav.label}
+                </Link>
+              )
+            })}
+          </nav>
+
+          <div style={{ padding: '12px 8px', borderTop: '1px solid #1a1a1a' }}>
+            <form action={logoutAction}>
+              <button type="submit" style={{
+                width: '100%', padding: '8px 12px', background: 'none',
+                border: '1px solid #1e1e1e', borderRadius: '6px',
+                color: '#3a3a3a', fontSize: '12.5px', cursor: 'pointer',
+                textAlign: 'left', transition: 'color 0.15s, border-color 0.15s',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#8c857c'; e.currentTarget.style.borderColor = '#2a2a2a' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#3a3a3a'; e.currentTarget.style.borderColor = '#1e1e1e' }}
               >
-                <span style={{ color: active ? '#d4a853' : '#3a3a3a', flexShrink: 0 }}>
-                  {nav.icon}
-                </span>
-                {nav.label}
-              </Link>
-            )
-          })}
-        </nav>
+                Log Keluar
+              </button>
+            </form>
+          </div>
+        </aside>
 
-        {/* Logout */}
-        <div style={{ padding: '12px 8px', borderTop: '1px solid #1a1a1a' }}>
-          <form action={logoutAction}>
-            <button type="submit" style={{
-              width: '100%', padding: '8px 12px', background: 'none',
-              border: '1px solid #1e1e1e', borderRadius: '6px',
-              color: '#3a3a3a', fontSize: '12.5px', cursor: 'pointer',
-              textAlign: 'left', transition: 'color 0.15s, border-color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#8c857c'; e.currentTarget.style.borderColor = '#2a2a2a' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#3a3a3a'; e.currentTarget.style.borderColor = '#1e1e1e' }}
-            >
-              Log Keluar
-            </button>
-          </form>
+        {/* Main content */}
+        <div className="admin-content">
+          {children}
         </div>
-      </aside>
-
-      {/* ── Main content ── */}
-      <div className="admin-content">
-        {children}
       </div>
     </div>
   )

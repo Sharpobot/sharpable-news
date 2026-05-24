@@ -253,8 +253,9 @@ export default function JanaClient({ initialGenerating }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}
+      transition={{ duration: 0.15 }}
+      className="admin-page-content"
+      style={{ fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}
     >
       <style>{`@keyframes jana-spin { to { transform: rotate(360deg); } }`}</style>
 
