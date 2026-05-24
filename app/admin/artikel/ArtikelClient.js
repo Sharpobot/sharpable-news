@@ -2,24 +2,24 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { motion } from 'framer-motion'
+import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 /* ── Status badge ─────────────────────────────────────────── */
 const STATUS_CFG = {
-  generating:      { label: 'Menjana',   color: '#92400e', bg: '#fef3c7', dot: '#f59e0b' },
-  ready_to_review: { label: 'Semak',     color: '#1e3a8a', bg: '#dbeafe', dot: '#3b82f6' },
-  draft:           { label: 'Draf',      color: '#374151', bg: '#f3f4f6', dot: '#9ca3af' },
-  published:       { label: 'Diterbit',  color: '#064e3b', bg: '#d1fae5', dot: '#10b981' },
+  generating:      { label: 'Menjana',   color: '#92400e', bg: 'rgba(245,158,11,0.12)',  dot: '#f59e0b' },
+  ready_to_review: { label: 'Semak',     color: '#93c5fd', bg: 'rgba(59,130,246,0.12)',  dot: '#3b82f6' },
+  draft:           { label: 'Draf',      color: '#8c857c', bg: 'rgba(140,133,124,0.1)',  dot: '#56514d' },
+  published:       { label: 'Diterbit',  color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)', dot: '#10b981' },
 }
-
 function StatusBadge({ status }) {
-  const cfg = STATUS_CFG[status] ?? { label: status, color: '#374151', bg: '#f3f4f6', dot: '#9ca3af' }
+  const cfg = STATUS_CFG[status] ?? { label: status, color: '#8c857c', bg: 'rgba(140,133,124,0.1)', dot: '#56514d' }
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: '5px',
       background: cfg.bg, color: cfg.color,
       padding: '3px 10px', borderRadius: '999px',
-      fontSize: '11.5px', fontWeight: 600,
-      letterSpacing: '0.02em', whiteSpace: 'nowrap',
+      fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.02em', whiteSpace: 'nowrap',
     }}>
       <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
       {cfg.label}
@@ -27,7 +27,7 @@ function StatusBadge({ status }) {
   )
 }
 
-/* ── Stable date formatter ────────────────────────────────── */
+/* ── Date formatter ───────────────────────────────────────── */
 const MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis']
 function fmt(iso) {
   const d = new Date(iso)
@@ -39,29 +39,36 @@ const EDITABLE = new Set(['ready_to_review', 'draft', 'published'])
 export default function ArtikelClient({ initialArticles }) {
   const [articles, setArticles] = useState(initialArticles)
 
-  const handleDelete = async (article) => {
-    const label = article.title ?? `artikel ${article.id.slice(0, 8)}`
-    if (!window.confirm(`Padam "${label}"? Tindakan ini tidak boleh dibatalkan.`)) return
+  // Modal state
+  const [modal, setModal]           = useState(null) // null | 'delete' | 'cancel'
+  const [targetArticle, setTarget]  = useState(null)
 
+  const openDelete = (article) => { setTarget(article); setModal('delete') }
+  const openCancel = (article) => { setTarget(article); setModal('cancel') }
+
+  const handleDelete = async () => {
+    if (!targetArticle) return
+    setModal(null)
+    const label = targetArticle.title ?? `artikel ${targetArticle.id.slice(0, 8)}`
     const tid = toast.loading('Memadam artikel...')
     try {
-      const res = await fetch(`/api/articles/${article.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/articles/${targetArticle.id}`, { method: 'DELETE' })
       if (!res.ok) { toast.error('Gagal memadam artikel.', { id: tid }); return }
-      setArticles(prev => prev.filter(a => a.id !== article.id))
-      toast.success('Artikel dipadam.', { id: tid })
+      setArticles(prev => prev.filter(a => a.id !== targetArticle.id))
+      toast.success(`"${label}" dipadam.`, { id: tid })
     } catch {
       toast.error('Ralat semasa memadam.', { id: tid })
     }
   }
 
-  const handleCancel = async (article) => {
-    if (!window.confirm(`Batalkan penjanaan artikel #${article.id.slice(0, 8)}?`)) return
-
+  const handleCancel = async () => {
+    if (!targetArticle) return
+    setModal(null)
     const tid = toast.loading('Membatalkan...')
     try {
-      const res = await fetch(`/api/articles/${article.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/articles/${targetArticle.id}`, { method: 'DELETE' })
       if (!res.ok) { toast.error('Gagal membatalkan.', { id: tid }); return }
-      setArticles(prev => prev.filter(a => a.id !== article.id))
+      setArticles(prev => prev.filter(a => a.id !== targetArticle.id))
       toast.success('Penjanaan dibatalkan.', { id: tid })
     } catch {
       toast.error('Ralat semasa membatalkan.', { id: tid })
@@ -69,16 +76,27 @@ export default function ArtikelClient({ initialArticles }) {
   }
 
   return (
-    <div style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}
+    >
       <style>{`
         .at-header { display: grid; grid-template-columns: 1fr 140px 100px 36px; padding: 10px 20px; border-bottom: 1px solid #1e1e1e; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #444; }
-        .at-row { display: grid; grid-template-columns: 1fr 140px 100px 36px; padding: 14px 20px; align-items: center; }
+        .at-row { display: grid; grid-template-columns: 1fr 140px 100px 36px; padding: 14px 20px; align-items: center; transition: background 0.15s; }
+        .at-row:hover { background: rgba(255,255,255,0.02); }
         .at-date { font-size: 12px; color: #555; }
         .delete-btn { background: none; border: none; cursor: pointer; color: #3a3a3a; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.15s; }
         .delete-btn:hover { color: #ef4444; }
+
         @media (max-width: 640px) {
           .at-header { display: none; }
-          .at-row { grid-template-columns: 1fr auto; grid-template-rows: auto auto; padding: 12px 16px; gap: 4px 8px; }
+          .at-row {
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+            padding: 14px 16px; gap: 6px 10px;
+          }
           .at-date { display: none; }
           .at-title-cell { grid-column: 1; grid-row: 1; }
           .at-status-cell { grid-column: 1; grid-row: 2; }
@@ -86,6 +104,29 @@ export default function ArtikelClient({ initialArticles }) {
         }
       `}</style>
 
+      {/* Confirmation modals */}
+      <ConfirmationModal
+        open={modal === 'delete'}
+        title="Padam Artikel?"
+        message={`Artikel "${targetArticle?.title ?? targetArticle?.id?.slice(0, 8) ?? ''}" akan dipadam secara kekal.`}
+        confirmLabel="Ya, Padam"
+        cancelLabel="Batal"
+        confirmColor="red"
+        onConfirm={handleDelete}
+        onCancel={() => setModal(null)}
+      />
+      <ConfirmationModal
+        open={modal === 'cancel'}
+        title="Batalkan Penjanaan?"
+        message={`Penjanaan artikel #${targetArticle?.id?.slice(0, 8) ?? ''} akan dibatalkan dan dipadam.`}
+        confirmLabel="Ya, Batalkan"
+        cancelLabel="Batal"
+        confirmColor="red"
+        onConfirm={handleCancel}
+        onCancel={() => setModal(null)}
+      />
+
+      {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
           <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>Semua Artikel</h1>
@@ -120,8 +161,8 @@ export default function ArtikelClient({ initialArticles }) {
                 <div style={{ fontSize: '14px', fontWeight: 500, color: '#e0e0e0', lineHeight: 1.4 }}>
                   {EDITABLE.has(article.status) && article.title ? (
                     <Link href={`/admin/editor/${article.id}`} style={{ color: '#d4a853', textDecoration: 'none' }}
-                      onMouseEnter={e => e.target.style.textDecoration = 'underline'}
-                      onMouseLeave={e => e.target.style.textDecoration = 'none'}
+                      onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
                     >
                       {article.title}
                     </Link>
@@ -140,7 +181,7 @@ export default function ArtikelClient({ initialArticles }) {
               <div className="at-action-cell" style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   className="delete-btn"
-                  onClick={() => article.status === 'generating' ? handleCancel(article) : handleDelete(article)}
+                  onClick={() => article.status === 'generating' ? openCancel(article) : openDelete(article)}
                   title={article.status === 'generating' ? 'Batalkan penjanaan' : 'Padam artikel'}
                 >
                   {article.status === 'generating' ? (
@@ -158,6 +199,6 @@ export default function ArtikelClient({ initialArticles }) {
           ))
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }

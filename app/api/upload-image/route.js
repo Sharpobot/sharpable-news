@@ -1,13 +1,11 @@
 import { createAdminSupabaseClient } from '@/lib/db/supabase-admin'
-import { cookies } from 'next/headers'
+import { isAuthed } from '@/lib/api/isAuthed'
 
 const BUCKET = 'article-images'
 const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
 
 export async function POST(request) {
-  const cookieStore = await cookies()
-  if (cookieStore.get('admin-auth')?.value !== 'true')
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!await isAuthed()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const formData = await request.formData()
   const file      = formData.get('file')

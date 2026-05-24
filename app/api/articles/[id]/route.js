@@ -1,10 +1,5 @@
 import { createAdminSupabaseClient } from '@/lib/db/supabase-admin'
-import { cookies } from 'next/headers'
-
-async function isAuthed() {
-  const cookieStore = await cookies()
-  return cookieStore.get('admin-auth')?.value === 'true'
-}
+import { isAuthed } from '@/lib/api/isAuthed'
 
 export async function GET(request, { params }) {
   if (!await isAuthed()) return Response.json({ error: 'Unauthorized' }, { status: 401 })

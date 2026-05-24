@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
@@ -47,7 +48,12 @@ export default function AdminClient({ analytics }) {
   const { totalPublished, totalDraft, totalGenerating, thisWeek, recentPublished, dailyCounts } = analytics
 
   return (
-    <div style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}
+    >
 
       <style>{`
         .analytics-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
@@ -124,6 +130,6 @@ export default function AdminClient({ analytics }) {
           </ResponsiveContainer>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

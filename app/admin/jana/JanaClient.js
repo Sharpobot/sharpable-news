@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
+import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 const AGENTS = [
   { key: 'trend-scout',     label: 'trend-scout' },
@@ -22,6 +24,59 @@ function Spinner({ size = 13 }) {
   )
 }
 
+function AgentRow({ agent, row }) {
+  const status = row?.status
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: -4 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.2 }}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '5px 8px', borderRadius: '6px',
+        background: status === 'running' ? '#161600' : 'transparent',
+        transition: 'background 0.3s',
+      }}
+    >
+      <span style={{ width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <AnimatePresence mode="wait">
+          {status === 'running' && (
+            <motion.span key="running" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}>
+              <Spinner size={12} />
+            </motion.span>
+          )}
+          {status === 'done' && (
+            <motion.span key="done" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              style={{ color: '#10b981', fontSize: '13px' }}>✓</motion.span>
+          )}
+          {status === 'failed' && (
+            <motion.span key="failed" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+              style={{ color: '#ef4444', fontSize: '13px' }}>✗</motion.span>
+          )}
+          {!status && (
+            <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ color: '#2a2a2a', fontSize: '13px' }}>○</motion.span>
+          )}
+        </AnimatePresence>
+      </span>
+      <span style={{
+        fontSize: '12px', fontFamily: 'monospace', minWidth: '130px',
+        color: status === 'running' ? '#f0c040' : status === 'done' ? '#10b981' : status === 'failed' ? '#ef4444' : '#2e2e2e',
+        fontWeight: status === 'running' ? 600 : 400,
+        transition: 'color 0.3s',
+      }}>
+        {agent.key}
+      </span>
+      {row?.message && (
+        <span style={{ fontSize: '11.5px', color: '#484848', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {row.message}
+        </span>
+      )}
+    </motion.div>
+  )
+}
+
 function ProgressCard({ article, progress, onCancel }) {
   const map = {}
   ;(progress ?? []).forEach(row => { if (!map[row.agent_name]) map[row.agent_name] = row })
@@ -32,28 +87,45 @@ function ProgressCard({ article, progress, onCancel }) {
   const pct       = Math.round((doneCount / AGENTS.length) * 100)
 
   return (
-    <div style={{
-      background: '#0e0e0e', border: '1px solid #222', borderRadius: '10px',
-      padding: '14px 18px', marginBottom: '10px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-        {allDone ? <span style={{ color: '#10b981', fontSize: '14px' }}>✓</span>
-         : hasFailed ? <span style={{ color: '#ef4444', fontSize: '14px' }}>✗</span>
-         : <Spinner size={13} />}
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+      transition={{ duration: 0.25 }}
+      style={{
+        background: '#0e0e0e', border: '1px solid #222', borderRadius: '10px',
+        padding: '14px 18px', marginBottom: '10px',
+      }}
+    >
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+        <AnimatePresence mode="wait">
+          {allDone ? (
+            <motion.span key="done" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              style={{ color: '#10b981', fontSize: '14px' }}>✓</motion.span>
+          ) : hasFailed ? (
+            <motion.span key="fail" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              style={{ color: '#ef4444', fontSize: '14px' }}>✗</motion.span>
+          ) : (
+            <motion.span key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Spinner size={13} />
+            </motion.span>
+          )}
+        </AnimatePresence>
         <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#c0c0c0' }}>
           {allDone ? 'Selesai' : hasFailed ? 'Gagal' : 'Sedang dijana…'}
         </span>
         <span style={{ fontSize: '11px', color: '#3a3a3a', fontFamily: 'monospace' }}>#{article.id.slice(0, 8)}</span>
         <span style={{ fontSize: '11px', color: '#555', marginLeft: 'auto' }}>{pct}%</span>
         {!allDone && !hasFailed && onCancel && (
-          <button
-            onClick={onCancel}
-            style={{
-              background: 'none', border: '1px solid #2a2a2a', color: '#555',
-              borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer',
-            }}
-            onMouseEnter={e => { e.target.style.color = '#ef4444'; e.target.style.borderColor = '#ef4444' }}
-            onMouseLeave={e => { e.target.style.color = '#555'; e.target.style.borderColor = '#2a2a2a' }}
+          <button onClick={onCancel} style={{
+            background: 'none', border: '1px solid #2a2a2a', color: '#555',
+            borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = '#ef4444' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = '#2a2a2a' }}
           >
             Batal
           </button>
@@ -62,47 +134,23 @@ function ProgressCard({ article, progress, onCancel }) {
 
       {/* Progress bar */}
       <div style={{ height: '3px', background: '#1a1a1a', borderRadius: '999px', marginBottom: '12px', overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', width: `${pct}%`, borderRadius: '999px',
-          background: hasFailed ? '#ef4444' : allDone ? '#10b981' : '#d4a853',
-          transition: 'width 0.5s ease',
-        }} />
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          style={{
+            height: '100%', borderRadius: '999px',
+            background: hasFailed ? '#ef4444' : allDone ? '#10b981' : '#d4a853',
+          }}
+        />
       </div>
 
       {/* Agent rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        {AGENTS.map(agent => {
-          const row = map[agent.key]
-          const status = row?.status
-          return (
-            <div key={agent.key} style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '5px 8px', borderRadius: '6px',
-              background: status === 'running' ? '#161600' : 'transparent',
-            }}>
-              <span style={{ width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {status === 'running' && <Spinner size={12} />}
-                {status === 'done'    && <span style={{ color: '#10b981', fontSize: '13px' }}>✓</span>}
-                {status === 'failed'  && <span style={{ color: '#ef4444', fontSize: '13px' }}>✗</span>}
-                {!status              && <span style={{ color: '#2a2a2a', fontSize: '13px' }}>○</span>}
-              </span>
-              <span style={{
-                fontSize: '12px', fontFamily: 'monospace', minWidth: '130px',
-                color: status === 'running' ? '#f0c040' : status === 'done' ? '#10b981' : status === 'failed' ? '#ef4444' : '#2e2e2e',
-                fontWeight: status === 'running' ? 600 : 400,
-              }}>
-                {agent.key}
-              </span>
-              {row?.message && (
-                <span style={{ fontSize: '11.5px', color: '#484848', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {row.message}
-                </span>
-              )}
-            </div>
-          )
-        })}
+        {AGENTS.map(agent => (
+          <AgentRow key={agent.key} agent={agent} row={map[agent.key]} />
+        ))}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -111,6 +159,10 @@ export default function JanaClient({ initialGenerating }) {
   const [generatingIds, setGeneratingIds] = useState(initialGenerating.map(a => a.id))
   const [progressMap,   setProgressMap]   = useState({})
   const [isCreating,    setIsCreating]    = useState(false)
+
+  // Cancel modal
+  const [modal,         setModal]         = useState(false)
+  const [cancelTarget,  setCancelTarget]  = useState(null)
 
   const intervalRef      = useRef(null)
   const generatingIdsRef = useRef(generatingIds)
@@ -180,14 +232,17 @@ export default function JanaClient({ initialGenerating }) {
   }
 
   /* ── Cancel ──────────────────────────────────────────────── */
-  const handleCancel = async (article) => {
-    if (!window.confirm(`Batalkan penjanaan artikel #${article.id.slice(0, 8)}?`)) return
+  const openCancel = (article) => { setCancelTarget(article); setModal(true) }
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return
+    setModal(false)
     const tid = toast.loading('Membatalkan...')
     try {
-      const res = await fetch(`/api/articles/${article.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/articles/${cancelTarget.id}`, { method: 'DELETE' })
       if (!res.ok) { toast.error('Gagal membatalkan.', { id: tid }); return }
-      setArticles(prev => prev.filter(a => a.id !== article.id))
-      setGeneratingIds(prev => prev.filter(id => id !== article.id))
+      setArticles(prev => prev.filter(a => a.id !== cancelTarget.id))
+      setGeneratingIds(prev => prev.filter(id => id !== cancelTarget.id))
       toast.success('Penjanaan dibatalkan.', { id: tid })
     } catch {
       toast.error('Ralat semasa membatalkan.', { id: tid })
@@ -195,8 +250,25 @@ export default function JanaClient({ initialGenerating }) {
   }
 
   return (
-    <div style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{ padding: '32px', fontFamily: "'DM Sans', sans-serif", color: '#f0f0f0' }}
+    >
       <style>{`@keyframes jana-spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* Cancel modal */}
+      <ConfirmationModal
+        open={modal}
+        title="Batalkan Penjanaan?"
+        message={`Penjanaan artikel #${cancelTarget?.id?.slice(0, 8) ?? ''} akan dibatalkan dan dipadam.`}
+        confirmLabel="Ya, Batalkan"
+        cancelLabel="Teruskan"
+        confirmColor="red"
+        onConfirm={confirmCancel}
+        onCancel={() => setModal(false)}
+      />
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', gap: '12px', flexWrap: 'wrap' }}>
@@ -215,6 +287,7 @@ export default function JanaClient({ initialGenerating }) {
             color: isCreating ? '#666' : '#0a0a0a', border: 'none',
             borderRadius: '8px', fontSize: '13.5px', fontWeight: 700,
             cursor: isCreating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
+            transition: 'background 0.15s, color 0.15s',
           }}
         >
           {isCreating ? (
@@ -232,11 +305,8 @@ export default function JanaClient({ initialGenerating }) {
         </button>
       </div>
 
-      {/* How it works */}
-      <div style={{
-        background: '#0e0e0e', border: '1px solid #1e1e1e', borderRadius: '10px',
-        padding: '16px 20px', marginBottom: '28px',
-      }}>
+      {/* Pipeline info */}
+      <div style={{ background: '#0e0e0e', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '16px 20px', marginBottom: '28px' }}>
         <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444', marginBottom: '10px' }}>
           Pipeline AI
         </div>
@@ -254,28 +324,36 @@ export default function JanaClient({ initialGenerating }) {
       </div>
 
       {/* Live progress */}
-      {articles.length === 0 ? (
-        <div style={{
-          padding: '48px 20px', textAlign: 'center', color: '#444', fontSize: '14px',
-          background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px',
-        }}>
-          Tiada artikel sedang dijana. Klik "Jana Artikel Baru" untuk mula.
-        </div>
-      ) : (
-        <div>
-          <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444', marginBottom: '10px' }}>
-            Sedang Dijana — {articles.length} artikel
-          </div>
-          {articles.map(article => (
-            <ProgressCard
-              key={article.id}
-              article={article}
-              progress={progressMap[article.id] ?? []}
-              onCancel={() => handleCancel(article)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+      <AnimatePresence mode="popLayout">
+        {articles.length === 0 ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{
+              padding: '48px 20px', textAlign: 'center', color: '#444', fontSize: '14px',
+              background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px',
+            }}
+          >
+            Tiada artikel sedang dijana. Klik "Jana Artikel Baru" untuk mula.
+          </motion.div>
+        ) : (
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#444', marginBottom: '10px' }}>
+              Sedang Dijana — {articles.length} artikel
+            </div>
+            <AnimatePresence>
+              {articles.map(article => (
+                <ProgressCard
+                  key={article.id}
+                  article={article}
+                  progress={progressMap[article.id] ?? []}
+                  onCancel={() => openCancel(article)}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
