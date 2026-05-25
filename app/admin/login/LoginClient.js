@@ -36,105 +36,145 @@ export default function LoginClient() {
       background: '#0c0b0a', fontFamily: "'DM Sans', sans-serif", padding: '24px',
     }}>
       <style>{`
-        @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .login-box { animation: fade-in 0.35s ease both; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .login-card { animation: fade-in 0.3s ease both; }
         .login-input {
           width: 100%; padding: 10px 12px; border-radius: 6px;
-          border: 1px solid rgba(237,232,223,0.11); background: #111010;
-          color: #ede8df; fontSize: 14px; fontFamily: "'DM Sans', sans-serif";
+          border: 1px solid rgba(237,232,223,0.11); background: #0e0d0c;
+          color: #ede8df; font-size: 14px; font-family: "'DM Sans', sans-serif";
           outline: none; box-sizing: border-box; transition: border-color 0.15s;
         }
-        .login-input:focus { border-color: rgba(212,168,83,0.4); }
+        .login-input:focus { border-color: rgba(212,168,83,0.45); }
         .login-btn {
           width: 100%; padding: 11px; border-radius: 6px; border: none;
           background: #d4a853; color: #0c0b0a; font-size: 14px; font-weight: 700;
           cursor: pointer; transition: opacity 0.15s;
-          font-family: "'DM Sans', sans-serif";
+          font-family: "'DM Sans', sans-serif"; letter-spacing: 0.01em;
         }
         .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .login-btn:not(:disabled):hover { opacity: 0.88; }
       `}</style>
 
-      <div className="login-box" style={{ width: '100%', maxWidth: '360px' }}>
-        {/* Brand */}
-        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#444', marginBottom: '6px' }}>
-            Sharpable News
+      <div className="login-card" style={{ width: '100%', maxWidth: '400px' }}>
+
+        {/* Card */}
+        <div style={{
+          background: '#111010',
+          border: '1px solid rgba(237,232,223,0.1)',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 32px 96px rgba(0,0,0,0.55)',
+        }}>
+
+          {/* Brand header */}
+          <div style={{
+            padding: '24px 28px 20px',
+            borderBottom: '1px solid rgba(237,232,223,0.07)',
+            background: '#0e0d0c',
+            display: 'flex', alignItems: 'center', gap: '12px',
+          }}>
+            {/* Logo mark */}
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '8px',
+              background: '#d4a853', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="16" height="16" fill="none" stroke="#0c0b0a" strokeWidth="2.5" viewBox="0 0 24 24">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#444' }}>
+                Sharpable News
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#ede8df', lineHeight: 1.1 }}>
+                Admin Panel
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", color: '#ede8df' }}>
-            Admin Panel
+
+          {/* Form section */}
+          <div style={{ padding: '28px 28px 32px' }}>
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#ede8df', marginBottom: '5px' }}>
+                Log Masuk
+              </div>
+              <div style={{ fontSize: '13px', color: '#56514d', lineHeight: 1.5 }}>
+                Masukkan kelayakan admin anda untuk meneruskan.
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Email */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: '#56514d', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  E-mel
+                </label>
+                <input
+                  className="login-input"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  required
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: '#56514d', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Kata Laluan
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    className="login-input"
+                    type={showPw ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    style={{ paddingRight: '44px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(v => !v)}
+                    style={{
+                      position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+                      padding: '4px', display: 'flex', alignItems: 'center',
+                    }}
+                    tabIndex={-1}
+                  >
+                    {showPw ? (
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div style={{ fontSize: '12.5px', color: '#ef4444', padding: '10px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  {error}
+                </div>
+              )}
+
+              <button className="login-btn" type="submit" disabled={loading} style={{ marginTop: '4px' }}>
+                {loading ? 'Melog masuk…' : 'Log Masuk'}
+              </button>
+            </form>
           </div>
         </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {/* Email */}
-          <div>
-            <label style={{ display: 'block', fontSize: '11.5px', color: '#56514d', marginBottom: '5px', fontWeight: 600, letterSpacing: '0.04em' }}>
-              E-MEL
-            </label>
-            <input
-              className="login-input"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="admin@example.com"
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label style={{ display: 'block', fontSize: '11.5px', color: '#56514d', marginBottom: '5px', fontWeight: 600, letterSpacing: '0.04em' }}>
-              KATA LALUAN
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                className="login-input"
-                type={showPw ? 'text' : 'password'}
-                autoComplete="current-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                style={{ paddingRight: '44px' }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(v => !v)}
-                style={{
-                  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
-                  padding: '4px', display: 'flex', alignItems: 'center',
-                }}
-                tabIndex={-1}
-              >
-                {showPw ? (
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{ fontSize: '12.5px', color: '#ef4444', padding: '10px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.2)' }}>
-              {error}
-            </div>
-          )}
-
-          <button className="login-btn" type="submit" disabled={loading}>
-            {loading ? 'Melog masuk…' : 'Log Masuk'}
-          </button>
-        </form>
       </div>
     </div>
   )

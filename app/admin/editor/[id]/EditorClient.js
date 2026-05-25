@@ -216,17 +216,17 @@ function QualityPanel({ qf, originalQf }) {
         {hasRevision && (
           <>
             {/* Original issues (greyed, collapsed) */}
-            <Collapsible title="Isu Asal" titleColor="#3a3530" defaultOpen={false}>
+            <Collapsible title="Isu Asal" titleColor="#56514d" defaultOpen={false}>
               {originalQf.required_fixes?.length > 0 ? (
                 <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   {originalQf.required_fixes.map((fix, i) => (
-                    <li key={i} style={{ fontSize: '12px', color: '#3a3530', lineHeight: 1.5 }}>
+                    <li key={i} style={{ fontSize: '12px', color: '#8c857c', lineHeight: 1.5 }}>
                       {fix.length > 100 ? fix.slice(0, 100) + '…' : fix}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <div style={{ fontSize: '12px', color: '#3a3530' }}>—</div>
+                <div style={{ fontSize: '12px', color: '#8c857c' }}>—</div>
               )}
             </Collapsible>
 
@@ -326,15 +326,19 @@ function CropModal({ src, onConfirm, onCancel }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9100, background: 'rgba(0,0,0,0.85)',
+        position: 'fixed', inset: 0, zIndex: 9100, background: 'rgba(0,0,0,0.65)',
+        backdropFilter: 'blur(4px)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         padding: '20px', fontFamily: "'DM Sans', sans-serif",
       }}>
-      <div style={{ background: '#161412', border: '1px solid rgba(237,232,223,0.11)', borderRadius: '10px', padding: '20px', width: '100%', maxWidth: '700px' }}>
-        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d', marginBottom: '12px' }}>
+      <div style={{ background: '#1e1c1a', border: '1px solid rgba(237,232,223,0.15)', borderRadius: '10px', padding: '20px', width: '100%', maxWidth: '700px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
+        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8c857c', marginBottom: '12px' }}>
           Potong Imej — Nisbah 16:9
         </div>
-        <div style={{ background: '#0c0b0a', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
+        <div style={{
+          background: '#111010', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px',
+        }}>
           <ReactCrop
             crop={crop}
             onChange={(c) => setCrop(c)}
@@ -343,7 +347,7 @@ function CropModal({ src, onConfirm, onCancel }) {
             style={{ maxWidth: '100%' }}
           >
             <img ref={imgRef} src={src} onLoad={onImageLoad}
-              style={{ maxWidth: '100%', maxHeight: '50vh', display: 'block' }}
+              style={{ maxWidth: '100%', maxHeight: '52vh', display: 'block', margin: '0 auto' }}
               alt="Potong imej" />
           </ReactCrop>
         </div>
