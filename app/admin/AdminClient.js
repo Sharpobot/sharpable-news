@@ -1,64 +1,89 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 
-/* ── Stable date formatter ────────────────────────────────── */
+/* ── Date helpers ─────────────────────────────────────────────── */
 const MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis']
-function fmt(iso) {
-  const d = new Date(iso)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+function fmt(iso)    { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` }
+function fmtShort(iso) { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]}` }
+
+/* ── Count-up hook ────────────────────────────────────────────── */
+function useCountUp(target, delay = 0) {
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    if (target === 0) return
+    let raf, start = null
+    const duration = 650
+    const run = (ts) => {
+      if (!start) start = ts + delay
+      if (ts < start) { raf = requestAnimationFrame(run); return }
+      const p = Math.min((ts - start) / duration, 1)
+      const ease = 1 - Math.pow(1 - p, 3)   // cubic ease-out
+      setVal(Math.round(ease * target))
+      if (p < 1) raf = requestAnimationFrame(run)
+    }
+    raf = requestAnimationFrame(run)
+    return () => cancelAnimationFrame(raf)
+  }, [target, delay])
+  return val
 }
 
-/* ── Stat card ────────────────────────────────────────────── */
-function StatCard({ label, value, accent, lm }) {
+/* ── Metric cell (used inside the unified strip) ──────────────── */
+function MetricCell({ label, target, accent, isLast, delay, dividerColor }) {
+  const val = useCountUp(target, delay)
   return (
     <div style={{
-      background: lm ? '#fff' : '#111',
-      border: `1px solid ${lm ? 'rgba(24,21,15,0.1)' : '#1e1e1e'}`,
-      borderRadius: '10px',
-      padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '6px',
-      boxShadow: lm ? '0 1px 4px rgba(24,21,15,0.06)' : 'none',
+      flex: 1, padding: '20px 22px',
+      borderRight: isLast ? 'none' : `1px solid ${dividerColor}`,
+      display: 'flex', flexDirection: 'column', gap: '10px',
     }}>
-      <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: lm ? '#a8a29c' : '#444' }}>
+      <div style={{
+        fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em',
+        textTransform: 'uppercase', color: 'var(--t3)',
+      }}>
         {label}
       </div>
-      <div style={{ fontSize: '32px', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", color: accent ?? (lm ? '#18150f' : '#f0f0f0'), lineHeight: 1 }}>
-        {value}
+      <div style={{
+        fontSize: '38px', fontWeight: 700, lineHeight: 1,
+        fontFamily: "'DM Sans', sans-serif",
+        fontVariantNumeric: 'tabular-nums',
+        color: accent,
+      }}>
+        {val}
       </div>
     </div>
   )
 }
 
-/* ── Custom tooltip ───────────────────────────────────────── */
-function ChartTooltip({ active, payload, label, lm }) {
+/* ── Chart tooltip ────────────────────────────────────────────── */
+function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div style={{
-      background: lm ? '#fff' : '#161412',
-      border: `1px solid ${lm ? 'rgba(24,21,15,0.12)' : '#2a2a2a'}`,
-      borderRadius: '6px',
-      padding: '8px 12px', fontSize: '12px',
-      color: lm ? '#18150f' : '#ede8df',
-      boxShadow: lm ? '0 4px 16px rgba(24,21,15,0.1)' : 'none',
+      background: 'var(--surface2)',
+      border: '1px solid var(--border)',
+      borderRadius: '5px', padding: '8px 12px',
+      fontSize: '12px', color: 'var(--t1)',
+      boxShadow: '0 6px 24px rgba(0,0,0,0.35)',
     }}>
-      <div style={{ color: lm ? '#a8a29c' : '#8c857c', marginBottom: '2px' }}>{label}</div>
-      <div style={{ fontWeight: 700 }}>{payload[0].value} artikel</div>
+      <div style={{ color: 'var(--t3)', marginBottom: '3px', fontSize: '10.5px' }}>{label}</div>
+      <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{payload[0].value} artikel</div>
     </div>
   )
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Main dashboard
+═══════════════════════════════════════════════════════════════ */
 export default function AdminClient({ analytics }) {
   const [lm, setLm] = useState(false)
 
   useEffect(() => {
-    // Read saved theme
     const saved = localStorage.getItem('admin-theme') || 'dark'
     setLm(saved === 'light')
-    // Listen for live theme changes from AdminSidebar
     const handler = (e) => setLm(e.detail === 'light')
     window.addEventListener('admin-theme-change', handler)
     return () => window.removeEventListener('admin-theme-change', handler)
@@ -66,97 +91,233 @@ export default function AdminClient({ analytics }) {
 
   if (!analytics) return null
   const { totalPublished, totalDraft, totalGenerating, thisWeek, recentPublished, dailyCounts } = analytics
+  const totalWeek = dailyCounts.reduce((s, d) => s + d.count, 0)
 
-  const cardBg   = lm ? '#fff' : '#111'
-  const cardBdr  = lm ? 'rgba(24,21,15,0.1)' : '#1e1e1e'
-  const text1    = lm ? '#18150f' : '#f0f0f0'
-  const text2    = lm ? '#6b6560' : '#8c857c'
-  const text3    = lm ? '#a8a29c' : '#444'
-  const cardShadow = lm ? '0 1px 4px rgba(24,21,15,0.06)' : 'none'
+  const todayLabel = new Date().toLocaleDateString('ms-MY', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  })
+
+  // CSS custom properties — switched by lm flag
+  const vars = lm ? `
+    --bg: #f5f3f0;
+    --surface: #ffffff;
+    --surface2: #f0ede9;
+    --border: rgba(24,21,15,0.09);
+    --divider: rgba(24,21,15,0.07);
+    --t1: #18150f;
+    --t2: #6b6560;
+    --t3: #a8a29e;
+    --bar-empty: rgba(24,21,15,0.07);
+    --surface-shadow: 0 1px 3px rgba(24,21,15,0.07);
+    --surface-inset: none;
+  ` : `
+    --bg: #0c0b0a;
+    --surface: #0f0e0d;
+    --surface2: #131110;
+    --border: rgba(237,232,223,0.07);
+    --divider: rgba(237,232,223,0.06);
+    --t1: #ede8df;
+    --t2: #8c857c;
+    --t3: #3d3830;
+    --bar-empty: rgba(237,232,223,0.05);
+    --surface-shadow: none;
+    --surface-inset: inset 0 1px 0 rgba(237,232,223,0.04);
+  `
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: 0.18 }}
       className="admin-page-content"
-      style={{ fontFamily: "'DM Sans', sans-serif", color: text1 }}
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
-
       <style>{`
-        .analytics-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
-        .analytics-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .admin-page-content { ${vars} }
+
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.45; transform: scale(0.85); }
+        }
+
+        .status-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #10b981; display: inline-block; flex-shrink: 0;
+          animation: pulse-dot 2.4s ease-in-out infinite;
+        }
+
+        /* Metrics strip */
+        .metrics-strip {
+          display: flex;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+          margin-bottom: 12px;
+          box-shadow: var(--surface-shadow), var(--surface-inset);
+        }
+        .metrics-strip > div:nth-child(3) { /* Menjana accent */
+          background: transparent;
+        }
+
+        /* Mobile: 2-col strip */
         @media (max-width: 900px) {
-          .analytics-cards { grid-template-columns: repeat(2,1fr) !important; }
+          .metrics-strip { flex-wrap: wrap; }
+          .metrics-strip > div {
+            min-width: 50%; flex: 0 0 50%;
+            border-right: none !important;
+            border-bottom: 1px solid var(--divider);
+          }
+          .metrics-strip > div:nth-last-child(-n+2) { border-bottom: none; }
           .analytics-bottom { grid-template-columns: 1fr !important; }
         }
-        @media (max-width: 640px) {
-          .analytics-cards { grid-template-columns: repeat(2,1fr) !important; }
-          .analytics-bottom { grid-template-columns: 1fr !important; }
+
+        /* Analytics bottom */
+        .analytics-bottom {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+
+        /* Panel shared style */
+        .dash-panel {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 18px 20px;
+          box-shadow: var(--surface-shadow), var(--surface-inset);
+        }
+
+        .panel-label {
+          font-size: 9px; font-weight: 700;
+          letter-spacing: 0.13em; text-transform: uppercase;
+          color: var(--t3); margin-bottom: 14px;
+        }
+
+        /* Article rows */
+        .article-row {
+          display: flex; justify-content: space-between;
+          align-items: baseline; gap: 12px;
+          padding: 9px 0;
+          border-bottom: 1px solid var(--divider);
+        }
+        .article-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .article-row:first-child { padding-top: 0; }
+        .article-link {
+          font-size: 13px; color: #d4a853; text-decoration: none;
+          line-height: 1.4; transition: color 0.12s;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .article-link:hover { color: #e8c86c; }
+        .article-idx {
+          font-size: 9.5px; color: var(--t3);
+          font-variant-numeric: tabular-nums;
+          flex-shrink: 0; width: 16px; line-height: 1.4;
+        }
+        .article-date {
+          font-size: 10.5px; color: var(--t3);
+          white-space: nowrap; flex-shrink: 0;
+          font-variant-numeric: tabular-nums;
         }
       `}</style>
 
-      <h1 style={{ margin: '0 0 24px', fontSize: '20px', fontWeight: 700, color: text1 }}>Papan Pemuka</h1>
-
-      {/* Stat cards */}
-      <div className="analytics-cards">
-        <StatCard label="Diterbit"      value={totalPublished}  accent="#10b981" lm={lm} />
-        <StatCard label="Draf"          value={totalDraft}      accent={lm ? '#a8a29c' : '#8c857c'} lm={lm} />
-        <StatCard label="Menjana Kini"  value={totalGenerating} accent="#f59e0b" lm={lm} />
-        <StatCard label="7 Hari Ini"    value={thisWeek}        accent="#d4a853" lm={lm} />
+      {/* ── Page header ── */}
+      <div style={{ marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--t1)', letterSpacing: '-0.015em' }}>
+            Papan Pemuka
+          </h1>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+            <span className="status-dot" />
+            <span style={{ fontSize: '11.5px', color: 'var(--t2)' }}>Sistem aktif</span>
+          </span>
+        </div>
+        <div style={{ fontSize: '11.5px', color: 'var(--t3)' }}>{todayLabel}</div>
       </div>
 
-      {/* Bottom row */}
+      {/* ── Metrics strip — one unified instrument surface ── */}
+      <div className="metrics-strip">
+        <MetricCell label="Diterbit"     target={totalPublished}  accent="#10b981" delay={0}   dividerColor="var(--divider)" />
+        <MetricCell label="Draf"         target={totalDraft}      accent="var(--t2)" delay={80}  dividerColor="var(--divider)" />
+        <MetricCell label="Menjana Kini" target={totalGenerating} accent="#f59e0b" delay={160} dividerColor="var(--divider)" />
+        <MetricCell label="7 Hari Ini"   target={thisWeek}        accent="#d4a853" delay={240} dividerColor="var(--divider)" isLast />
+      </div>
+
+      {/* ── Bottom row ── */}
       <div className="analytics-bottom">
 
         {/* Recent published */}
-        <div style={{ background: cardBg, border: `1px solid ${cardBdr}`, borderRadius: '10px', padding: '18px 20px', boxShadow: cardShadow }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: text3, marginBottom: '14px' }}>
-            5 Artikel Terbaru Diterbit
-          </div>
+        <div className="dash-panel">
+          <div className="panel-label">5 Artikel Terbaru Diterbit</div>
           {recentPublished.length === 0 ? (
-            <div style={{ fontSize: '13px', color: text3 }}>Tiada artikel diterbit lagi.</div>
+            <div style={{ fontSize: '13px', color: 'var(--t3)', padding: '4px 0' }}>Tiada artikel diterbit lagi.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {recentPublished.map(a => (
-                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                  <a
-                    href={`/artikel/${a.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '13px', color: '#d4a853', textDecoration: 'none', lineHeight: 1.4, flex: 1 }}
-                    onMouseEnter={e => e.target.style.textDecoration = 'underline'}
-                    onMouseLeave={e => e.target.style.textDecoration = 'none'}
-                  >
-                    {a.title ?? '(Tanpa tajuk)'}
-                  </a>
-                  <div style={{ fontSize: '11px', color: text3, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {fmt(a.created_at)}
+            <div>
+              {recentPublished.map((a, i) => (
+                <motion.div
+                  key={a.id}
+                  className="article-row"
+                  initial={{ opacity: 0, x: -5 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + i * 0.055, duration: 0.18 }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '9px', flex: 1, minWidth: 0 }}>
+                    <span className="article-idx">{String(i + 1).padStart(2, '0')}</span>
+                    <a
+                      href={`/artikel/${a.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="article-link"
+                    >
+                      {a.title ?? '(Tanpa tajuk)'}
+                    </a>
                   </div>
-                </div>
+                  <span className="article-date">{fmtShort(a.created_at)}</span>
+                </motion.div>
               ))}
             </div>
           )}
         </div>
 
         {/* 7-day bar chart */}
-        <div style={{ background: cardBg, border: `1px solid ${cardBdr}`, borderRadius: '10px', padding: '18px 20px', boxShadow: cardShadow }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: text3, marginBottom: '14px' }}>
-            Artikel Diterbit — 7 Hari Lepas
+        <div className="dash-panel">
+          {/* Header: label left, weekly total right */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div className="panel-label" style={{ margin: 0 }}>Artikel Diterbit — 7 Hari Lepas</div>
+            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+              <span style={{ fontSize: '26px', fontWeight: 700, color: '#d4a853', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                {totalWeek}
+              </span>
+              <span style={{ fontSize: '10.5px', color: 'var(--t3)', display: 'block', marginTop: '1px' }}>artikel minggu ini</span>
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={130}>
-            <BarChart data={dailyCounts} barSize={18} margin={{ top: 0, right: 0, bottom: 0, left: -28 }}>
-              <XAxis dataKey="label" tick={{ fill: lm ? '#a8a29c' : '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fill: lm ? '#a8a29c' : '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip lm={lm} />} cursor={{ fill: lm ? 'rgba(24,21,15,0.04)' : 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+
+          <ResponsiveContainer width="100%" height={126}>
+            <BarChart data={dailyCounts} barSize={15} margin={{ top: 2, right: 0, bottom: 0, left: -28 }}>
+              <XAxis
+                dataKey="label"
+                tick={{ fill: 'var(--t3)', fontSize: 10 }}
+                axisLine={false} tickLine={false}
+              />
+              <YAxis
+                allowDecimals={false}
+                tick={{ fill: 'var(--t3)', fontSize: 10 }}
+                axisLine={false} tickLine={false}
+              />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ fill: lm ? 'rgba(24,21,15,0.04)' : 'rgba(237,232,223,0.03)' }}
+              />
+              <Bar dataKey="count" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationBegin={200}>
                 {dailyCounts.map((entry, i) => (
-                  <Cell key={i} fill={entry.count > 0 ? '#d4a853' : (lm ? 'rgba(24,21,15,0.08)' : '#1e1e1e')} />
+                  <Cell
+                    key={i}
+                    fill={entry.count > 0 ? '#d4a853' : (lm ? 'rgba(24,21,15,0.07)' : 'rgba(237,232,223,0.05)')}
+                  />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
+
       </div>
     </motion.div>
   )
