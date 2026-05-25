@@ -185,28 +185,27 @@ function QualityPanel({ qf, originalQf }) {
       <div style={{ background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderRadius: '6px', padding: '16px' }}>
 
         {/* Compact header — always visible */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: verdictColor(qf.verdict) }}>
-              {verdictLabel}
-            </span>
-            {score != null && (
-              <span style={{ fontSize: '22px', fontWeight: 700, color: scoreColor, lineHeight: 1 }}>
-                {score}
-                <span style={{ fontSize: '11px', color: '#56514d', fontWeight: 400, marginLeft: '2px' }}>/100</span>
-              </span>
-            )}
-          </div>
+        {/* Row 1: verdict label + toggle button (no score here — avoids wrapping) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: verdictColor(qf.verdict), minWidth: 0 }}>
+            {verdictLabel}
+          </span>
           <button onClick={() => setExpanded(v => !v)} style={{
-            background: 'none', border: '1px solid rgba(237,232,223,0.11)',
+            flexShrink: 0, background: 'none', border: '1px solid rgba(237,232,223,0.11)',
             color: '#56514d', fontSize: '11px', cursor: 'pointer', padding: '4px 10px',
             borderRadius: '4px', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap',
           }}>
             {expanded ? 'Tutup' : 'Lihat Laporan'}
           </button>
         </div>
-
-        {/* Summary line */}
+        {/* Row 2: score */}
+        {score != null && (
+          <div style={{ marginBottom: '4px' }}>
+            <span style={{ fontSize: '26px', fontWeight: 700, color: scoreColor, lineHeight: 1 }}>{score}</span>
+            <span style={{ fontSize: '12px', color: '#56514d', fontWeight: 400, marginLeft: '2px' }}>/100</span>
+          </div>
+        )}
+        {/* Row 3: summary */}
         <div style={{ fontSize: '11.5px', color: '#56514d' }}>{summaryLine}</div>
 
         {/* Expanded detail */}
@@ -715,6 +714,48 @@ export default function EditorClient({ article }) {
     setIsDirty(true)
   }
 
+  // ── Image move (↑↓) state ───────────────────────────────────
+  const editorContainerRef = useRef(null)
+  const [imgMove, setImgMove] = useState(null) // {top, canUp, canDown}
+
+  useEffect(() => {
+    if (!editor) return
+    const update = () => {
+      const selectedImg = document.querySelector('.tiptap-editor img.ProseMirror-selectednode')
+      if (!selectedImg || !editorContainerRef.current) { setImgMove(null); return }
+      const containerRect = editorContainerRef.current.getBoundingClientRect()
+      const imgRect = selectedImg.getBoundingClientRect()
+      const top = imgRect.top - containerRect.top + imgRect.height / 2 - 28
+      const { selection, doc } = editor.state
+      const $pos = doc.resolve(selection.from)
+      const index = $pos.index($pos.depth - 1)
+      const parent = $pos.node($pos.depth - 1)
+      setImgMove({ top, canUp: index > 0, canDown: index < parent.childCount - 1 })
+    }
+    editor.on('selectionUpdate', update)
+    editor.on('transaction', update)
+    return () => { editor.off('selectionUpdate', update); editor.off('transaction', update) }
+  }, [editor])
+
+  const moveImage = (direction) => {
+    if (!editor) return
+    const { state, dispatch } = editor.view
+    const { doc, tr, selection } = state
+    const $pos = doc.resolve(selection.from)
+    const index = $pos.index($pos.depth - 1)
+    const parent = $pos.node($pos.depth - 1)
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= parent.childCount) return
+    const minIdx = Math.min(index, targetIndex)
+    const maxIdx = Math.max(index, targetIndex)
+    let startPos = $pos.start($pos.depth - 1)
+    for (let i = 0; i < minIdx; i++) startPos += parent.child(i).nodeSize
+    const nodeA = parent.child(minIdx)
+    const nodeB = parent.child(maxIdx)
+    dispatch(tr.replaceWith(startPos, startPos + nodeA.nodeSize + nodeB.nodeSize, [nodeB, nodeA]))
+    setIsDirty(true)
+  }
+
   const handleBackClick = (e) => {
     if (isDirty) { e.preventDefault(); setPendingNav('/admin'); setModal('unsaved') }
   }
@@ -737,9 +778,12 @@ export default function EditorClient({ article }) {
         .tiptap-editor ul, .tiptap-editor ol { padding-left: 20px; margin: 0 0 14px; }
         .tiptap-editor strong { color: #f0ebe2; }
         .tiptap-editor em { color: #c0b8ae; }
-        .tiptap-editor img { max-width: 100%; border-radius: 4px; display: block; margin: 16px 0 4px; cursor: default; }
+        .tiptap-editor img { max-width: 100%; width: auto; height: auto; max-height: 500px; border-radius: 4px; display: block; margin: 16px auto 4px; cursor: default; }
         .tiptap-editor img.ProseMirror-selectednode { outline: 2px solid #d4a853; border-radius: 4px; }
         .tiptap-editor img[title]::after { content: attr(title); }
+        .img-move-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:4px; border:1px solid rgba(237,232,223,0.18); background:#1e1c1a; color:#ede8df; cursor:pointer; font-size:14px; line-height:1; transition:background 0.1s; }
+        .img-move-btn:hover { background:#2a2824; }
+        .img-move-btn:disabled { opacity:0.25; cursor:default; }
 
         /* ── Header ── */
         .editor-header {
@@ -991,8 +1035,20 @@ export default function EditorClient({ article }) {
             <SectionLabel>Kandungan Artikel</SectionLabel>
             <div style={{ border: '1px solid rgba(237,232,223,0.11)', borderRadius: '4px', background: '#0e0d0c', padding: '16px' }}>
               <Toolbar editor={editor} onInsertImage={() => setShowInlineImageModal(true)} />
-              <div style={{ borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px' }}>
+              <div ref={editorContainerRef} style={{ borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px', position: 'relative' }}>
                 <EditorContent editor={editor} className="tiptap-editor" />
+                {/* ↑↓ move buttons — appear when an image is selected */}
+                {imgMove && (
+                  <div style={{
+                    position: 'absolute', right: '-40px', top: `${imgMove.top}px`,
+                    display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 10,
+                  }}>
+                    <button className="img-move-btn" disabled={!imgMove.canUp}
+                      onMouseDown={e => { e.preventDefault(); moveImage('up') }} title="Gerak imej ke atas">↑</button>
+                    <button className="img-move-btn" disabled={!imgMove.canDown}
+                      onMouseDown={e => { e.preventDefault(); moveImage('down') }} title="Gerak imej ke bawah">↓</button>
+                  </div>
+                )}
               </div>
             </div>
           </section>

@@ -1168,10 +1168,12 @@ body {
 
 .article-body img {
   max-width: 100%;
+  width: auto;
   height: auto;
+  max-height: 500px;
   display: block;
   border-radius: 4px;
-  margin: 24px 0 6px;
+  margin: 24px auto 6px;
 }
 
 .article-figure {
