@@ -1182,7 +1182,10 @@ body {
 
 .article-figure img {
   margin: 0 0 8px;
-  width: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  display: block;
 }
 
 .article-figure figcaption {

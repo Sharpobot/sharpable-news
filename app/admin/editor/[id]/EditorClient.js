@@ -283,18 +283,52 @@ function AIBriefModal({ brief, onClose }) {
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        transition={{ type: 'spring', stiffness: 350, damping: 32 }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9000,
+        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}>
+      <motion.div
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 400, damping: 34 }}
         onClick={e => e.stopPropagation()}
-        style={{ background: '#161412', border: '1px solid rgba(237,232,223,0.11)', borderRadius: '12px 12px 0 0', padding: '24px 20px 32px', width: '100%', maxWidth: '600px', fontFamily: "'DM Sans', sans-serif" }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d' }}>Cadangan AI</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#56514d', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '4px' }}>×</button>
+        style={{
+          background: '#161412',
+          border: '1px solid rgba(237,232,223,0.1)',
+          borderTop: '3px solid #d4a853',
+          borderRadius: '12px 12px 0 0',
+          padding: '22px 24px 36px',
+          width: '100%', maxWidth: '600px',
+          fontFamily: "'DM Sans', sans-serif",
+          boxShadow: '0 -16px 64px rgba(0,0,0,0.5)',
+        }}>
+        {/* Drag handle */}
+        <div style={{ width: '36px', height: '3px', background: 'rgba(237,232,223,0.15)', borderRadius: '999px', margin: '0 auto 20px' }} />
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+          <div>
+            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>Cadangan AI</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df' }}>Imej Hero</div>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
+            color: '#8c857c', cursor: 'pointer', padding: '6px', borderRadius: '6px',
+            display: 'flex', alignItems: 'center', flexShrink: 0,
+          }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
-        <p style={{ margin: 0, fontSize: '14px', color: '#8c857c', lineHeight: 1.7 }}>{brief}</p>
+        <p style={{
+          margin: 0, fontSize: '14px', color: '#8c857c', lineHeight: 1.7,
+          borderLeft: '3px solid rgba(212,168,83,0.3)', paddingLeft: '14px',
+        }}>
+          {brief}
+        </p>
       </motion.div>
     </motion.div>
   )
@@ -333,19 +367,47 @@ function CropModal({ src, onConfirm, onCancel }) {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9100, background: 'rgba(0,0,0,0.65)',
-        backdropFilter: 'blur(4px)',
+        position: 'fixed', inset: 0, zIndex: 9100,
+        background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(5px)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         padding: '20px', fontFamily: "'DM Sans', sans-serif",
       }}>
-      <div style={{ background: '#1e1c1a', border: '1px solid rgba(237,232,223,0.15)', borderRadius: '10px', padding: '20px', width: '100%', maxWidth: '700px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
-        <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8c857c', marginBottom: '12px' }}>
-          Potong Imej — Nisbah 16:9
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 8 }}
+        transition={{ type: 'spring', stiffness: 480, damping: 34 }}
+        style={{
+          background: '#161412',
+          border: '1px solid rgba(237,232,223,0.12)',
+          borderTop: '3px solid #d4a853',
+          borderRadius: '10px', padding: '22px',
+          width: '100%', maxWidth: '700px',
+          boxShadow: '0 32px 96px rgba(0,0,0,0.7)',
+        }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df', marginBottom: '2px' }}>Potong Imej Hero</div>
+            <div style={{ fontSize: '11.5px', color: '#56514d' }}>Nisbah 16:9 · Resolusi output 1280×720</div>
+          </div>
+          <button onClick={onCancel} style={{
+            background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+            padding: '4px', fontSize: '20px', lineHeight: 1, display: 'flex',
+          }}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
+        {/* Crop area */}
         <div style={{
-          background: '#111010', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px',
+          background: '#0c0b0a', borderRadius: '6px', overflow: 'hidden', marginBottom: '18px',
+          border: '1px solid rgba(237,232,223,0.07)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px',
         }}>
           <ReactCrop
@@ -360,19 +422,29 @@ function CropModal({ src, onConfirm, onCancel }) {
               alt="Potong imej" />
           </ReactCrop>
         </div>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
           <button onClick={onCancel} style={{
-            padding: '8px 18px', borderRadius: '6px', border: '1px solid rgba(237,232,223,0.11)',
-            background: 'transparent', color: '#8c857c', fontSize: '13px', cursor: 'pointer',
-            fontFamily: "'DM Sans', sans-serif",
-          }}>Batal</button>
+            padding: '9px 18px', borderRadius: '6px',
+            border: '1px solid rgba(237,232,223,0.11)',
+            background: 'transparent', color: '#8c857c', fontSize: '13px',
+            fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+            transition: 'border-color 0.12s, color 0.12s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = '#ede8df' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.11)'; e.currentTarget.style.color = '#8c857c' }}
+          >Batal</button>
           <button onClick={handleConfirm} style={{
-            padding: '8px 18px', borderRadius: '6px', border: 'none',
+            padding: '9px 20px', borderRadius: '6px', border: 'none',
             background: '#d4a853', color: '#0c0b0a', fontSize: '13px', fontWeight: 700,
             cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-          }}>Gunakan Imej</button>
+            transition: 'background 0.12s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#c49640' }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#d4a853' }}
+          >Gunakan Imej</button>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   )
 }
@@ -427,77 +499,129 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
     }}>{label}</button>
   )
 
+  const fieldLabel = {
+    fontSize: '11px', fontWeight: 700, letterSpacing: '0.07em',
+    textTransform: 'uppercase', color: '#56514d', marginBottom: '6px',
+  }
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 9200, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'DM Sans', sans-serif" }}>
-      <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9200,
+        background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(5px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px', fontFamily: "'DM Sans', sans-serif",
+      }}>
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 8 }}
+        transition={{ type: 'spring', stiffness: 480, damping: 34 }}
         onClick={e => e.stopPropagation()}
-        style={{ background: '#1a1816', border: '1px solid rgba(237,232,223,0.13)', borderRadius: '10px', width: '100%', maxWidth: '480px', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}>
+        style={{
+          background: '#161412',
+          border: '1px solid rgba(237,232,223,0.1)',
+          borderTop: '3px solid #d4a853',
+          borderRadius: '10px', width: '100%', maxWidth: '460px',
+          overflow: 'hidden', boxShadow: '0 32px 96px rgba(0,0,0,0.7)',
+        }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(237,232,223,0.07)' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d' }}>Sisip Imej</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#56514d', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '4px' }}>×</button>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 22px 14px',
+        }}>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: '#ede8df', marginBottom: '1px' }}>Sisip Imej</div>
+            <div style={{ fontSize: '11.5px', color: '#56514d' }}>Muat naik fail atau masukkan URL</div>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
+            color: '#8c857c', cursor: 'pointer', padding: '6px', borderRadius: '6px',
+            display: 'flex', alignItems: 'center', transition: 'background 0.1s',
+          }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(237,232,223,0.07)', paddingLeft: '8px' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(237,232,223,0.07)', paddingLeft: '12px' }}>
           {tabBtn('upload', 'Muat Naik')}
           {tabBtn('url', 'URL')}
         </div>
 
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: '20px 22px' }}>
 
           {tab === 'upload' && (
-            <div>
+            <div style={{ marginBottom: '14px' }}>
               {url ? (
-                <div style={{ position: 'relative', marginBottom: '12px' }}>
-                  <img src={url} alt="preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '4px', display: 'block' }} />
+                <div style={{ position: 'relative', marginBottom: '4px' }}>
+                  <img src={url} alt="preview" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />
                   <button onClick={() => setUrl('')} style={{
                     position: 'absolute', top: '8px', right: '8px',
-                    background: 'rgba(12,11,10,0.8)', border: '1px solid rgba(237,232,223,0.15)',
-                    color: '#ede8df', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer',
-                  }}>× Tukar</button>
+                    background: 'rgba(12,11,10,0.85)', border: '1px solid rgba(237,232,223,0.18)',
+                    color: '#ede8df', borderRadius: '5px', padding: '4px 10px',
+                    fontSize: '11.5px', cursor: 'pointer', fontWeight: 600,
+                  }}>Tukar</button>
                 </div>
               ) : (
                 <div
                   onClick={() => fileRef.current?.click()}
                   style={{
-                    border: '2px dashed rgba(237,232,223,0.11)', borderRadius: '4px', padding: '32px',
-                    textAlign: 'center', cursor: 'pointer', marginBottom: '12px', background: '#0e0d0c',
-                  }}>
+                    border: `2px dashed ${uploading ? 'rgba(212,168,83,0.3)' : 'rgba(237,232,223,0.1)'}`,
+                    borderRadius: '7px', padding: '28px 20px',
+                    textAlign: 'center', cursor: 'pointer',
+                    background: '#0e0d0c',
+                    transition: 'border-color 0.15s, background 0.15s',
+                  }}
+                  onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = 'rgba(237,232,223,0.2)' }}
+                  onMouseLeave={e => { if (!uploading) e.currentTarget.style.borderColor = 'rgba(237,232,223,0.1)' }}
+                >
                   {uploading ? (
                     <div style={{ color: '#8c857c', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                       <Spinner size={13} /> Memuat naik…
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontSize: '24px', marginBottom: '6px', opacity: 0.4 }}>↑</div>
-                      <div style={{ fontSize: '13px', color: '#8c857c' }}>Klik untuk pilih imej</div>
-                      <div style={{ fontSize: '11.5px', color: '#3a3530', marginTop: '3px' }}>JPG, PNG, WebP · Maks 8 MB</div>
+                      <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+                        <svg width="28" height="28" fill="none" stroke="rgba(237,232,223,0.2)" strokeWidth="1.5" viewBox="0 0 24 24">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="17 8 12 3 7 8"/>
+                          <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#8c857c', marginBottom: '3px' }}>Klik untuk pilih imej</div>
+                      <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Maks 8 MB</div>
                     </>
                   )}
                 </div>
               )}
-              {uploadErr && <div style={{ fontSize: '12px', color: '#ef4444', marginBottom: '10px' }}>{uploadErr}</div>}
+              {uploadErr && (
+                <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', padding: '8px 10px', background: 'rgba(239,68,68,0.07)', borderRadius: '5px', border: '1px solid rgba(239,68,68,0.15)' }}>
+                  {uploadErr}
+                </div>
+              )}
               <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = '' }} />
             </div>
           )}
 
           {tab === 'url' && (
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>URL Imej</div>
+            <div style={{ marginBottom: '14px' }}>
+              <div style={fieldLabel}>URL Imej</div>
               <input
                 type="url" value={url} onChange={e => setUrl(e.target.value)}
-                placeholder="https://..."
+                placeholder="https://…"
                 style={{ ...inputStyle, marginBottom: url ? '10px' : 0 }}
               />
               {url && (
                 <img src={url} alt="preview"
-                  style={{ width: '100%', maxHeight: '150px', objectFit: 'cover', borderRadius: '4px', marginTop: '8px', display: 'block' }}
+                  style={{ width: '100%', maxHeight: '140px', objectFit: 'cover', borderRadius: '6px', marginTop: '8px', display: 'block' }}
                   onError={e => { e.currentTarget.style.display = 'none' }}
                 />
               )}
@@ -505,29 +629,43 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
           )}
 
           {/* Shared fields */}
-          <div style={{ marginBottom: '10px' }}>
-            <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Teks Alt (untuk aksesibiliti)</div>
-            <input type="text" value={alt} onChange={e => setAlt(e.target.value)}
-              placeholder="Huraikan imej ini…" style={inputStyle} />
-          </div>
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Kapsyen (pilihan)</div>
-            <input type="text" value={caption} onChange={e => setCaption(e.target.value)}
-              placeholder="Kapsyen di bawah imej…" style={inputStyle} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+            <div>
+              <div style={fieldLabel}>Teks Alt <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(aksesibiliti)</span></div>
+              <input type="text" value={alt} onChange={e => setAlt(e.target.value)}
+                placeholder="Huraikan imej ini…" style={inputStyle} />
+            </div>
+            <div>
+              <div style={fieldLabel}>Kapsyen <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(pilihan)</span></div>
+              <input type="text" value={caption} onChange={e => setCaption(e.target.value)}
+                placeholder="Kapsyen di bawah imej…" style={inputStyle} />
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
             <button onClick={onClose} style={{
-              padding: '8px 18px', borderRadius: '6px', border: '1px solid rgba(237,232,223,0.11)',
-              background: 'transparent', color: '#8c857c', fontSize: '13px', cursor: 'pointer',
+              padding: '9px 18px', borderRadius: '6px',
+              border: '1px solid rgba(237,232,223,0.11)',
+              background: 'transparent', color: '#8c857c',
+              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
               fontFamily: "'DM Sans', sans-serif",
-            }}>Batal</button>
+              transition: 'border-color 0.12s, color 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = '#ede8df' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.11)'; e.currentTarget.style.color = '#8c857c' }}
+            >Batal</button>
             <button onClick={handleInsert} disabled={!url.trim()} style={{
-              padding: '8px 20px', borderRadius: '6px', border: 'none',
-              background: url.trim() ? '#d4a853' : '#2a2520',
-              color: url.trim() ? '#0c0b0a' : '#56514d', fontSize: '13px', fontWeight: 700,
-              cursor: url.trim() ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans', sans-serif",
-            }}>Sisip Imej</button>
+              padding: '9px 20px', borderRadius: '6px', border: 'none',
+              background: url.trim() ? '#d4a853' : '#1e1c1a',
+              color: url.trim() ? '#0c0b0a' : '#3a3530',
+              fontSize: '13px', fontWeight: 700,
+              cursor: url.trim() ? 'pointer' : 'not-allowed',
+              fontFamily: "'DM Sans', sans-serif",
+              transition: 'background 0.12s',
+            }}
+            onMouseEnter={e => { if (url.trim()) e.currentTarget.style.background = '#c49640' }}
+            onMouseLeave={e => { if (url.trim()) e.currentTarget.style.background = '#d4a853' }}
+            >Sisip Imej</button>
           </div>
         </div>
       </motion.div>

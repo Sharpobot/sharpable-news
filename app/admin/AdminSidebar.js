@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
+import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 const NAV = [
   {
@@ -89,6 +90,7 @@ export default function AdminSidebar({ children, logoutAction }) {
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [theme, setTheme] = useState('dark')
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-theme') || 'dark'
@@ -144,6 +146,11 @@ export default function AdminSidebar({ children, logoutAction }) {
 
   const isActive = (nav) =>
     nav.exact ? pathname === nav.href : pathname.startsWith(nav.href)
+
+  const handleLogoutConfirm = async () => {
+    setShowLogoutModal(false)
+    await logoutAction()
+  }
 
   /* ── Login page or Editor: no shell, just toaster ── */
   if (isLogin || isEditor) {
@@ -203,6 +210,17 @@ export default function AdminSidebar({ children, logoutAction }) {
       style={{ minHeight: '100vh', background: C.pageBg, fontFamily: "'DM Sans', sans-serif", color: C.text1, display: 'flex', flexDirection: 'column' }}
     >
       <Toaster position="bottom-right" toastOptions={TOAST_OPTS} />
+
+      <ConfirmationModal
+        open={showLogoutModal}
+        title="Log Keluar?"
+        message="Anda akan keluar dari panel admin Sharpable News."
+        confirmLabel="Ya, Log Keluar"
+        cancelLabel="Batal"
+        confirmColor="red"
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setShowLogoutModal(false)}
+      />
 
       <style>{`
         /* ── Mobile topbar ── */
@@ -322,16 +340,21 @@ export default function AdminSidebar({ children, logoutAction }) {
         </nav>
 
         <div style={{ padding: '12px 8px', borderTop: `1px solid ${C.border}` }}>
-          <form action={logoutAction}>
-            <button type="submit" style={{
-              width: '100%', padding: '8px 12px', background: 'none',
-              border: `1px solid ${C.logoutBorder}`, borderRadius: '6px',
-              color: C.logoutText, fontSize: '12.5px', cursor: 'pointer',
-              textAlign: 'left', fontFamily: "'DM Sans', sans-serif",
-            }}>
-              Log Keluar
-            </button>
-          </form>
+          <button onClick={() => setShowLogoutModal(true)} style={{
+            width: '100%', padding: '8px 12px', background: 'none',
+            border: `1px solid ${C.logoutBorder}`, borderRadius: '6px',
+            color: C.logoutText, fontSize: '12.5px', cursor: 'pointer',
+            textAlign: 'left', fontFamily: "'DM Sans', sans-serif",
+            display: 'flex', alignItems: 'center', gap: '7px',
+            transition: 'color 0.12s, border-color 0.12s',
+          }}>
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Log Keluar
+          </button>
         </div>
       </div>
 
