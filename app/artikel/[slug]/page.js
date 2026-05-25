@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/db/supabase-server'
 import { generateHTML } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -47,7 +48,7 @@ function renderBody(body) {
   // ProseMirror/Tiptap JSON
   if (body.type === 'doc' && body.content) {
     try {
-      return generateHTML(body, [StarterKit])
+      return generateHTML(body, [StarterKit, Image])
     } catch {
       return ''
     }
@@ -55,6 +56,16 @@ function renderBody(body) {
   // Fallback: plain html string stored under body.html
   if (typeof body.html === 'string') return body.html
   return ''
+}
+
+/** Wrap <img title="caption"> in <figure><figcaption> for rendered articles */
+function addCaptions(html) {
+  if (!html) return html
+  return html.replace(
+    /<img([^>]*?)title="([^"]+)"([^>]*)>/gi,
+    (_, before, caption, after) =>
+      `<figure class="article-figure"><img${before}${after}><figcaption>${caption}</figcaption></figure>`
+  )
 }
 
 /* ── Page ─────────────────────────────────────────────────── */
@@ -71,7 +82,7 @@ export default async function ArticlePage({ params }) {
 
   if (!article || error) notFound()
 
-  const bodyHTML = renderBody(article.body)
+  const bodyHTML = addCaptions(renderBody(article.body))
   const publishedDate = new Date(article.created_at).toLocaleDateString('ms-MY', {
     day: 'numeric', month: 'long', year: 'numeric',
   })

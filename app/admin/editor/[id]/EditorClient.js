@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import Link from 'next/link'
@@ -60,7 +61,7 @@ function TagInput({ tags, onChange }) {
 }
 
 /* ── TipTap toolbar ────────────────────────────────────────── */
-function Toolbar({ editor }) {
+function Toolbar({ editor, onInsertImage }) {
   if (!editor) return null
   const btn = (label, action, isActive) => (
     <button key={label} onMouseDown={e => { e.preventDefault(); action() }} style={{
@@ -72,13 +73,25 @@ function Toolbar({ editor }) {
     }}>{label}</button>
   )
   return (
-    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px', alignItems: 'center' }}>
       {btn('B', () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'))}
       {btn('I', () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic'))}
       {btn('H2', () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }))}
       {btn('H3', () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive('heading', { level: 3 }))}
       {btn('• Senarai', () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'))}
       {btn('1. Senarai', () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'))}
+      {/* Image insert button */}
+      <button onMouseDown={e => { e.preventDefault(); onInsertImage() }} title="Sisip Imej" style={{
+        padding: '4px 8px', borderRadius: '3px', cursor: 'pointer',
+        border: '1px solid rgba(237,232,223,0.11)', background: 'transparent', color: '#8c857c',
+        display: 'flex', alignItems: 'center', lineHeight: 1,
+      }}>
+        <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </button>
     </div>
   )
 }
@@ -98,18 +111,16 @@ const VERDICT_LABEL = {
   review:  'Perlu Semakan',
   reject:  'Gagal Semak',
 }
-const READINESS_LABEL = {
-  ready:                'Sedia Diterbit',
-  needs_minor_fixes:    'Perlu Pembetulan Minor',
-  needs_major_revision: 'Perlu Semakan Major',
-}
 
 /* ── Fix item with WAJIB highlight + truncate ─────────────── */
 function FixItem({ text }) {
   const [expanded, setExpanded] = useState(false)
-  const isWajib = text.startsWith('WAJIB:')
-  const truncate = text.length > 100 && !expanded
-  const display  = truncate ? text.slice(0, 100) + '…' : text
+  const isWajib   = text.startsWith('WAJIB:')
+  const truncate  = text.length > 100 && !expanded
+  const btnStyle  = {
+    background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+    fontSize: '11.5px', padding: '0 0 0 4px', fontFamily: "'DM Sans', sans-serif",
+  }
 
   if (isWajib) {
     const rest = text.slice('WAJIB:'.length)
@@ -119,10 +130,7 @@ function FixItem({ text }) {
         <span style={{ color: '#d4a853', fontWeight: 700 }}>WAJIB:</span>
         {restDisplay}
         {text.length > 100 && (
-          <button onClick={() => setExpanded(v => !v)} style={{
-            background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
-            fontSize: '11.5px', padding: '0 0 0 4px', fontFamily: "'DM Sans', sans-serif",
-          }}>
+          <button onClick={() => setExpanded(v => !v)} style={btnStyle}>
             {expanded ? 'Tutup' : 'Baca lagi'}
           </button>
         )}
@@ -132,12 +140,9 @@ function FixItem({ text }) {
 
   return (
     <li style={{ fontSize: '12.5px', lineHeight: 1.55, color: '#8c857c' }}>
-      {display}
+      {truncate ? text.slice(0, 100) + '…' : text}
       {text.length > 100 && (
-        <button onClick={() => setExpanded(v => !v)} style={{
-          background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
-          fontSize: '11.5px', padding: '0 0 0 4px', fontFamily: "'DM Sans', sans-serif",
-        }}>
+        <button onClick={() => setExpanded(v => !v)} style={btnStyle}>
           {expanded ? 'Tutup' : 'Baca lagi'}
         </button>
       )}
@@ -145,104 +150,110 @@ function FixItem({ text }) {
   )
 }
 
-/* ── Collapsible section ───────────────────────────────────── */
-function Collapsible({ title, titleColor = '#56514d', children, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div style={{ marginTop: '10px' }}>
-      <button onClick={() => setOpen(v => !v)} style={{
-        display: 'flex', alignItems: 'center', gap: '6px', width: '100%',
-        background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-        color: titleColor, fontSize: '10.5px', fontWeight: 700,
-        letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Sans', sans-serif",
-      }}>
-        <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
-          style={{ transition: 'transform 0.15s', transform: open ? 'rotate(90deg)' : 'none', flexShrink: 0 }}>
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-        {title}
-      </button>
-      {open && <div style={{ marginTop: '6px', paddingLeft: '4px' }}>{children}</div>}
-    </div>
-  )
-}
-
-/* ── Quality flags panel ───────────────────────────────────── */
+/* ── Quality flags panel (progressive disclosure) ──────────── */
 function QualityPanel({ qf, originalQf }) {
   if (!qf || !Object.keys(qf).length) return null
 
-  const hasRevision = !!(originalQf && Object.keys(originalQf).length)
-  const verdictLabel = VERDICT_LABEL[qf.verdict] ?? qf.verdict ?? '—'
-  const readinessLabel = READINESS_LABEL[qf.publish_readiness] ?? (qf.publish_readiness?.replace(/_/g, ' ') ?? '—')
-  const score = qf.overall_score
-  const scoreColor = score >= 70 ? '#10b981' : score >= 50 ? '#d4a853' : '#ef4444'
+  const [expanded,        setExpanded]        = useState(false)
+  const [correctionsOpen, setCorrectionsOpen] = useState(false)
+
+  const hasRevision    = !!(originalQf && Object.keys(originalQf).length)
+  const score          = qf.overall_score
+  const scoreColor     = score >= 70 ? '#10b981' : score >= 50 ? '#d4a853' : '#ef4444'
+  const verdictLabel   = VERDICT_LABEL[qf.verdict] ?? qf.verdict ?? '—'
+
+  const attentionItems = qf.required_fixes ?? []
+  const correctionItems = hasRevision ? (qf.corrections_made ?? []) : []
+
+  // Summary line
+  const issuesFound    = hasRevision
+    ? (originalQf.required_fixes?.length ?? 0)
+    : attentionItems.length
+  const corrsMade      = correctionItems.length
+  const remaining      = attentionItems.length
+
+  const summaryParts = []
+  if (issuesFound > 0)   summaryParts.push(`${issuesFound} isu ditemui`)
+  if (corrsMade > 0)     summaryParts.push(`${corrsMade} diperbetulkan`)
+  if (remaining > 0)     summaryParts.push(`${remaining} perlu perhatian`)
+  else if (issuesFound > 0) summaryParts.push('semua diperbetulkan')
+  const summaryLine = summaryParts.join(' · ') || 'Tiada isu ditemui'
 
   return (
     <section style={{ marginBottom: '32px' }}>
       <SectionLabel>Laporan Kualiti</SectionLabel>
       <div style={{ background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderRadius: '6px', padding: '16px' }}>
 
-        {/* Verdict + Score header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <div>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: verdictColor(qf.verdict), marginBottom: '3px' }}>
+        {/* Compact header — always visible */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: verdictColor(qf.verdict) }}>
               {verdictLabel}
-            </div>
-            <div style={{ fontSize: '11.5px', color: '#56514d' }}>{readinessLabel}</div>
-          </div>
-          {score != null && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '28px', fontWeight: 700, color: scoreColor, lineHeight: 1 }}>
+            </span>
+            {score != null && (
+              <span style={{ fontSize: '22px', fontWeight: 700, color: scoreColor, lineHeight: 1 }}>
                 {score}
-              </div>
-              <div style={{ fontSize: '11px', color: '#56514d' }}>/ 100</div>
-            </div>
-          )}
+                <span style={{ fontSize: '11px', color: '#56514d', fontWeight: 400, marginLeft: '2px' }}>/100</span>
+              </span>
+            )}
+          </div>
+          <button onClick={() => setExpanded(v => !v)} style={{
+            background: 'none', border: '1px solid rgba(237,232,223,0.11)',
+            color: '#56514d', fontSize: '11px', cursor: 'pointer', padding: '4px 10px',
+            borderRadius: '4px', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap',
+          }}>
+            {expanded ? 'Tutup' : 'Lihat Laporan'}
+          </button>
         </div>
 
-        {/* Required fixes */}
-        {qf.required_fixes?.length > 0 && (
-          <div>
-            <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '8px' }}>
-              Perlu Diperbaiki
-            </div>
-            <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {qf.required_fixes.map((fix, i) => <FixItem key={i} text={fix} />)}
-            </ul>
-          </div>
-        )}
+        {/* Summary line */}
+        <div style={{ fontSize: '11.5px', color: '#56514d' }}>{summaryLine}</div>
 
-        {/* Revision sections — only shown when revision agent ran */}
-        {hasRevision && (
-          <>
-            {/* Original issues (greyed, collapsed) */}
-            <Collapsible title="Isu Asal" titleColor="#56514d" defaultOpen={false}>
-              {originalQf.required_fixes?.length > 0 ? (
-                <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {originalQf.required_fixes.map((fix, i) => (
-                    <li key={i} style={{ fontSize: '12px', color: '#8c857c', lineHeight: 1.5 }}>
-                      {fix.length > 100 ? fix.slice(0, 100) + '…' : fix}
-                    </li>
-                  ))}
+        {/* Expanded detail */}
+        {expanded && (
+          <div style={{ marginTop: '16px', borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px' }}>
+
+            {/* Perlu Perhatian Anda */}
+            <div style={{ marginBottom: hasRevision && correctionItems.length > 0 ? '14px' : 0 }}>
+              <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#d4a853', marginBottom: '8px' }}>
+                Perlu Perhatian Anda
+              </div>
+              {attentionItems.length > 0 ? (
+                <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {attentionItems.map((fix, i) => <FixItem key={i} text={fix} />)}
                 </ul>
               ) : (
-                <div style={{ fontSize: '12px', color: '#8c857c' }}>—</div>
+                <div style={{ fontSize: '12.5px', color: '#10b981' }}>Tiada isu kritikal</div>
               )}
-            </Collapsible>
+            </div>
 
-            {/* Corrections made (green, collapsed) */}
-            {qf.corrections_made?.length > 0 && (
-              <Collapsible title="Pembetulan Dilakukan" titleColor="#10b981" defaultOpen={true}>
-                <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {qf.corrections_made.map((c, i) => (
-                    <li key={i} style={{ fontSize: '12px', color: '#10b981', lineHeight: 1.5 }}>
-                      {c.length > 100 ? c.slice(0, 100) + '…' : c}
-                    </li>
-                  ))}
-                </ul>
-              </Collapsible>
+            {/* Diperbetulkan oleh AI — only if revision ran and made corrections */}
+            {hasRevision && correctionItems.length > 0 && (
+              <div>
+                <button onClick={() => setCorrectionsOpen(v => !v)} style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', width: '100%',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                  color: '#10b981', fontSize: '10.5px', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
+                    style={{ transition: 'transform 0.15s', transform: correctionsOpen ? 'rotate(90deg)' : 'none', flexShrink: 0 }}>
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                  Diperbetulkan oleh AI ({correctionItems.length})
+                </button>
+                {correctionsOpen && (
+                  <ul style={{ margin: '6px 0 0', padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {correctionItems.map((c, i) => (
+                      <li key={i} style={{ fontSize: '12px', color: '#10b981', lineHeight: 1.5 }}>
+                        {c.length > 120 ? c.slice(0, 120) + '…' : c}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </section>
@@ -308,7 +319,6 @@ function CropModal({ src, onConfirm, onCancel }) {
     const img = imgRef.current
     const scaleX = img.naturalWidth / img.width
     const scaleY = img.naturalHeight / img.height
-    // Output at 16:9 — 1280×720
     canvas.width  = 1280
     canvas.height = 720
     const ctx = canvas.getContext('2d')
@@ -364,6 +374,164 @@ function CropModal({ src, onConfirm, onCancel }) {
           }}>Gunakan Imej</button>
         </div>
       </div>
+    </motion.div>
+  )
+}
+
+/* ── Inline Image Modal ────────────────────────────────────── */
+function InlineImageModal({ articleId, onInsert, onClose }) {
+  const [tab,       setTab]       = useState('upload') // 'upload' | 'url'
+  const [url,       setUrl]       = useState('')
+  const [alt,       setAlt]       = useState('')
+  const [caption,   setCaption]   = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadErr, setUploadErr] = useState('')
+  const fileRef = useRef(null)
+
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [onClose])
+
+  const handleFileUpload = async (file) => {
+    if (!file) return
+    setUploading(true); setUploadErr('')
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('articleId', articleId)
+    try {
+      const res = await fetch('/api/upload-inline-image', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || 'Muat naik gagal')
+      setUrl(data.url)
+    } catch (err) {
+      setUploadErr(err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleInsert = () => {
+    const src = url.trim()
+    if (!src) return
+    onInsert({ src, alt: alt.trim(), caption: caption.trim() })
+    onClose()
+  }
+
+  const tabBtn = (id, label) => (
+    <button onClick={() => setTab(id)} style={{
+      padding: '8px 16px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+      background: 'none', borderBottom: `2px solid ${tab === id ? '#d4a853' : 'transparent'}`,
+      color: tab === id ? '#d4a853' : '#56514d', fontFamily: "'DM Sans', sans-serif",
+      transition: 'color 0.1s, border-color 0.1s',
+    }}>{label}</button>
+  )
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 9200, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'DM Sans', sans-serif" }}>
+      <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        onClick={e => e.stopPropagation()}
+        style={{ background: '#1a1816', border: '1px solid rgba(237,232,223,0.13)', borderRadius: '10px', width: '100%', maxWidth: '480px', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(237,232,223,0.07)' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d' }}>Sisip Imej</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#56514d', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '4px' }}>×</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(237,232,223,0.07)', paddingLeft: '8px' }}>
+          {tabBtn('upload', 'Muat Naik')}
+          {tabBtn('url', 'URL')}
+        </div>
+
+        <div style={{ padding: '20px' }}>
+
+          {tab === 'upload' && (
+            <div>
+              {url ? (
+                <div style={{ position: 'relative', marginBottom: '12px' }}>
+                  <img src={url} alt="preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '4px', display: 'block' }} />
+                  <button onClick={() => setUrl('')} style={{
+                    position: 'absolute', top: '8px', right: '8px',
+                    background: 'rgba(12,11,10,0.8)', border: '1px solid rgba(237,232,223,0.15)',
+                    color: '#ede8df', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer',
+                  }}>× Tukar</button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    border: '2px dashed rgba(237,232,223,0.11)', borderRadius: '4px', padding: '32px',
+                    textAlign: 'center', cursor: 'pointer', marginBottom: '12px', background: '#0e0d0c',
+                  }}>
+                  {uploading ? (
+                    <div style={{ color: '#8c857c', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <Spinner size={13} /> Memuat naik…
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: '24px', marginBottom: '6px', opacity: 0.4 }}>↑</div>
+                      <div style={{ fontSize: '13px', color: '#8c857c' }}>Klik untuk pilih imej</div>
+                      <div style={{ fontSize: '11.5px', color: '#3a3530', marginTop: '3px' }}>JPG, PNG, WebP · Maks 8 MB</div>
+                    </>
+                  )}
+                </div>
+              )}
+              {uploadErr && <div style={{ fontSize: '12px', color: '#ef4444', marginBottom: '10px' }}>{uploadErr}</div>}
+              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = '' }} />
+            </div>
+          )}
+
+          {tab === 'url' && (
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>URL Imej</div>
+              <input
+                type="url" value={url} onChange={e => setUrl(e.target.value)}
+                placeholder="https://..."
+                style={{ ...inputStyle, marginBottom: url ? '10px' : 0 }}
+              />
+              {url && (
+                <img src={url} alt="preview"
+                  style={{ width: '100%', maxHeight: '150px', objectFit: 'cover', borderRadius: '4px', marginTop: '8px', display: 'block' }}
+                  onError={e => { e.currentTarget.style.display = 'none' }}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Shared fields */}
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Teks Alt (untuk aksesibiliti)</div>
+            <input type="text" value={alt} onChange={e => setAlt(e.target.value)}
+              placeholder="Huraikan imej ini…" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Kapsyen (pilihan)</div>
+            <input type="text" value={caption} onChange={e => setCaption(e.target.value)}
+              placeholder="Kapsyen di bawah imej…" style={inputStyle} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <button onClick={onClose} style={{
+              padding: '8px 18px', borderRadius: '6px', border: '1px solid rgba(237,232,223,0.11)',
+              background: 'transparent', color: '#8c857c', fontSize: '13px', cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}>Batal</button>
+            <button onClick={handleInsert} disabled={!url.trim()} style={{
+              padding: '8px 20px', borderRadius: '6px', border: 'none',
+              background: url.trim() ? '#d4a853' : '#2a2520',
+              color: url.trim() ? '#0c0b0a' : '#56514d', fontSize: '13px', fontWeight: 700,
+              cursor: url.trim() ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans', sans-serif",
+            }}>Sisip Imej</button>
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   )
 }
@@ -446,6 +614,9 @@ export default function EditorClient({ article }) {
   // Crop state
   const [cropSrc, setCropSrc] = useState(null)
 
+  // Inline image modal state
+  const [showInlineImageModal, setShowInlineImageModal] = useState(false)
+
   const [saveStatus, setSaveStatus] = useState('idle')
   const [isDirty,    setIsDirty]    = useState(false)
   const savedStateRef = useRef({ slug, metaDescription, tags, featuredImage })
@@ -458,7 +629,10 @@ export default function EditorClient({ article }) {
   const [activeTab, setActiveTab] = useState('kandungan')
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      Image.configure({ inline: false, allowBase64: false }),
+    ],
     content: article.body ?? '',
     onUpdate: () => setIsDirty(true),
   })
@@ -506,7 +680,7 @@ export default function EditorClient({ article }) {
     }
   }
 
-  const uploadImage = async (file) => {
+  const uploadFeaturedImage = async (file) => {
     setUploadStatus('uploading')
     const tid = toast.loading('Memuat naik gambar…')
     try {
@@ -525,7 +699,6 @@ export default function EditorClient({ article }) {
     }
   }
 
-  // Opens crop modal instead of uploading directly
   const handleFileSelect = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -533,15 +706,23 @@ export default function EditorClient({ article }) {
     reader.readAsDataURL(file)
   }
 
+  // Insert inline image at cursor
+  const insertInlineImage = ({ src, alt, caption }) => {
+    if (!editor) return
+    editor.chain().focus()
+      .setImage({ src, alt: alt || undefined, title: caption || undefined })
+      .run()
+    setIsDirty(true)
+  }
+
   const handleBackClick = (e) => {
     if (isDirty) { e.preventDefault(); setPendingNav('/admin'); setModal('unsaved') }
   }
 
-  const qf      = article.quality_flags ?? {}
+  const qf         = article.quality_flags ?? {}
   const originalQf = article.original_quality_flags ?? {}
-  const sources = article.sources ?? []
+  const sources    = article.sources ?? []
 
-  // CSS class helpers — only take effect inside the @media (max-width: 768px) block
   const mob = (tab) => activeTab === tab ? 'mob-tab-show' : 'mob-tab-hide'
 
   return (
@@ -556,6 +737,9 @@ export default function EditorClient({ article }) {
         .tiptap-editor ul, .tiptap-editor ol { padding-left: 20px; margin: 0 0 14px; }
         .tiptap-editor strong { color: #f0ebe2; }
         .tiptap-editor em { color: #c0b8ae; }
+        .tiptap-editor img { max-width: 100%; border-radius: 4px; display: block; margin: 16px 0 4px; cursor: default; }
+        .tiptap-editor img.ProseMirror-selectednode { outline: 2px solid #d4a853; border-radius: 4px; }
+        .tiptap-editor img[title]::after { content: attr(title); }
 
         /* ── Header ── */
         .editor-header {
@@ -569,7 +753,7 @@ export default function EditorClient({ article }) {
         .editor-header-sep   { color: #2a2520; }
         .editor-save-btns    { display: flex; gap: 10px; flex-shrink: 0; }
 
-        /* ── Mobile tab bar — sticky below header ── */
+        /* ── Mobile tab bar ── */
         .editor-tab-bar {
           display: none;
           position: sticky; top: 52px; z-index: 15;
@@ -629,14 +813,22 @@ export default function EditorClient({ article }) {
 
       <AnimatePresence>
         {showBrief && article.image_brief && (
-          <AIBriefModal brief={article.image_brief} onClose={() => setShowBrief(false)} />
+          <AIBriefModal key="brief" brief={article.image_brief} onClose={() => setShowBrief(false)} />
         )}
         {cropSrc && (
           <CropModal
             key="crop"
             src={cropSrc}
-            onConfirm={async (file) => { setCropSrc(null); await uploadImage(file) }}
+            onConfirm={async (file) => { setCropSrc(null); await uploadFeaturedImage(file) }}
             onCancel={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+          />
+        )}
+        {showInlineImageModal && (
+          <InlineImageModal
+            key="inline-img"
+            articleId={article.id}
+            onInsert={insertInlineImage}
+            onClose={() => setShowInlineImageModal(false)}
           />
         )}
       </AnimatePresence>
@@ -653,7 +845,6 @@ export default function EditorClient({ article }) {
           <span className="editor-header-label">Penyunting Artikel</span>
         </div>
 
-        {/* Desktop save buttons */}
         <div className="editor-save-btns">
           <button onClick={() => save('draft')} disabled={saveStatus === 'saving'} style={{
             padding: '7px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
@@ -691,7 +882,7 @@ export default function EditorClient({ article }) {
         ))}
       </div>
 
-      {/* ── Two-column layout (desktop) / tab-controlled blocks (mobile) ── */}
+      {/* ── Two-column layout ── */}
       <div className="editor-layout">
 
         <main className={`editor-main ${mob('kandungan')}`}>
@@ -732,7 +923,7 @@ export default function EditorClient({ article }) {
             </div>
           </section>
 
-          {/* 2. Image section */}
+          {/* 2. Featured image section */}
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Imej Hero</SectionLabel>
 
@@ -795,11 +986,11 @@ export default function EditorClient({ article }) {
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }} />
           </section>
 
-          {/* 3. TipTap body editor — always mounted */}
+          {/* 3. TipTap body editor */}
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Kandungan Artikel</SectionLabel>
             <div style={{ border: '1px solid rgba(237,232,223,0.11)', borderRadius: '4px', background: '#0e0d0c', padding: '16px' }}>
-              <Toolbar editor={editor} />
+              <Toolbar editor={editor} onInsertImage={() => setShowInlineImageModal(true)} />
               <div style={{ borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px' }}>
                 <EditorContent editor={editor} className="tiptap-editor" />
               </div>
@@ -823,14 +1014,11 @@ export default function EditorClient({ article }) {
         </main>
 
         <aside className="editor-aside">
-
-          {/* SEO — desktop: always visible; mobile: 'seo' tab */}
           <div className={`aside-section ${mob('seo')}`}>
             <SEOFields slug={slug} setSlug={setSlug} metaDescription={metaDescription}
               setMetaDescription={setMetaDescription} tags={tags} setTags={setTags} />
           </div>
 
-          {/* Quality + Save — desktop: always visible; mobile: 'semakan' tab */}
           <div className={`aside-section ${mob('semakan')}`}>
             <QualityPanel qf={qf} originalQf={originalQf} />
             <SaveButtons saveStatus={saveStatus}
