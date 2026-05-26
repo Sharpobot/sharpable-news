@@ -378,17 +378,21 @@ export default function AdminSidebar({ children, logoutAction }) {
           </nav>
 
           <div style={{ padding: '12px 8px', borderTop: `1px solid ${C.border}` }}>
-            <form action={logoutAction}>
-              <button type="submit" style={{
-                width: '100%', padding: '8px 12px', background: 'none',
-                border: `1px solid ${C.logoutBorder}`, borderRadius: '6px',
-                color: C.logoutText, fontSize: '12.5px', cursor: 'pointer',
-                textAlign: 'left', transition: 'color 0.15s, border-color 0.15s',
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                Log Keluar
-              </button>
-            </form>
+            <button onClick={() => setShowLogoutModal(true)} style={{
+              width: '100%', padding: '8px 12px', background: 'none',
+              border: `1px solid ${C.logoutBorder}`, borderRadius: '6px',
+              color: C.logoutText, fontSize: '12.5px', cursor: 'pointer',
+              textAlign: 'left', fontFamily: "'DM Sans', sans-serif",
+              display: 'flex', alignItems: 'center', gap: '7px',
+              transition: 'color 0.12s, border-color 0.12s',
+            }}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Log Keluar
+            </button>
           </div>
         </aside>
 

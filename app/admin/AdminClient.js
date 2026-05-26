@@ -160,16 +160,25 @@ export default function AdminClient({ analytics }) {
           background: transparent;
         }
 
-        /* Mobile: 2-col strip */
+        /* Mobile: 2-col strip
+           MetricCell uses inline style flex:1 — !important required to override */
         @media (max-width: 900px) {
           .metrics-strip { flex-wrap: wrap; }
           .metrics-strip > div {
-            min-width: 50%; flex: 0 0 50%;
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
             border-right: none !important;
             border-bottom: 1px solid var(--divider);
           }
           .metrics-strip > div:nth-last-child(-n+2) { border-bottom: none; }
           .analytics-bottom { grid-template-columns: 1fr !important; }
+        }
+        /* Very small screens: tighten padding + shrink the big number */
+        @media (max-width: 420px) {
+          .metrics-strip > div { padding: 14px 16px !important; }
+          .metrics-strip > div > div:last-child { font-size: 28px !important; }
         }
 
         /* Analytics bottom */
