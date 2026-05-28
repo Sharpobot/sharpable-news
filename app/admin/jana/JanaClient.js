@@ -13,6 +13,7 @@ const AGENTS = [
   { key: 'image-brief',     label: 'Brief Imej',       optional: false },
   { key: 'quality-checker', label: 'Penyemak Kualiti', optional: false },
   { key: 'revision-agent',  label: 'Ejen Semakan',     optional: true  },
+  { key: 'save-article',    label: 'Simpan Artikel',   optional: false },
 ]
 
 function Spinner({ size = 12 }) {

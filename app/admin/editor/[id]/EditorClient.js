@@ -450,14 +450,24 @@ function CropModal({ src, onConfirm, onCancel }) {
 }
 
 /* ── Inline Image Modal ────────────────────────────────────── */
-function InlineImageModal({ articleId, onInsert, onClose }) {
-  const [tab,       setTab]       = useState('upload') // 'upload' | 'url'
-  const [url,       setUrl]       = useState('')
-  const [alt,       setAlt]       = useState('')
-  const [caption,   setCaption]   = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [uploadErr, setUploadErr] = useState('')
+function InlineImageModal({
+  articleId, onInsert, onClose,
+  initialSrc = '', initialAlt = '', initialCaption = '', mode = 'insert',
+}) {
+  const [tab,          setTab]          = useState('upload')
+  const [url,          setUrl]          = useState(mode === 'edit' ? initialSrc : '')
+  const [alt,          setAlt]          = useState(initialAlt)
+  const [caption,      setCaption]      = useState(initialCaption)
+  const [uploading,    setUploading]    = useState(false)
+  const [uploadErr,    setUploadErr]    = useState('')
   const fileRef = useRef(null)
+
+  // Crop state — previewDataUrl is either a local data: URL (new file) or existing src (edit mode)
+  const [previewDataUrl, setPreviewDataUrl] = useState(mode === 'edit' ? initialSrc : '')
+  const [rawFile,       setRawFile]       = useState(null)
+  const [crop,          setCrop]          = useState()
+  const [completedCrop, setCompletedCrop] = useState()
+  const imgRef = useRef(null)
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose() }
@@ -465,17 +475,63 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
 
-  const handleFileUpload = async (file) => {
+  // File selected — read as dataURL for preview/crop; actual upload happens on insert
+  const handleFileSelect = (file) => {
     if (!file) return
-    setUploading(true); setUploadErr('')
+    setUploadErr('')
+    setCrop(undefined)
+    setCompletedCrop(undefined)
+    setRawFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => { setPreviewDataUrl(e.target.result); setUrl('') }
+    reader.readAsDataURL(file)
+  }
+
+  const uploadFile = async (file) => {
     const fd = new FormData()
     fd.append('file', file)
     fd.append('articleId', articleId)
+    const res = await fetch('/api/upload-inline-image', { method: 'POST', body: fd })
+    const data = await res.json()
+    if (!res.ok || data.error) throw new Error(data.error || 'Muat naik gagal')
+    return data.url
+  }
+
+  // Returns a cropped File if a crop was drawn, otherwise null
+  const getCroppedFile = () => new Promise((resolve) => {
+    if (!completedCrop?.width || !imgRef.current) { resolve(null); return }
+    const canvas = document.createElement('canvas')
+    const img = imgRef.current
+    const scaleX = img.naturalWidth  / img.width
+    const scaleY = img.naturalHeight / img.height
+    canvas.width  = Math.round(completedCrop.width  * scaleX)
+    canvas.height = Math.round(completedCrop.height * scaleY)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(img,
+      completedCrop.x * scaleX, completedCrop.y * scaleY,
+      completedCrop.width * scaleX, completedCrop.height * scaleY,
+      0, 0, canvas.width, canvas.height,
+    )
+    canvas.toBlob(
+      (blob) => resolve(blob ? new File([blob], 'inline-image.jpg', { type: 'image/jpeg' }) : null),
+      'image/jpeg', 0.92,
+    )
+  })
+
+  const handleInsert = async () => {
+    setUploadErr('')
+    setUploading(true)
     try {
-      const res = await fetch('/api/upload-inline-image', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (!res.ok || data.error) throw new Error(data.error || 'Muat naik gagal')
-      setUrl(data.url)
+      // Determine final URL to use
+      let finalUrl = url.trim() || previewDataUrl  // url tab OR existing preview (edit mode)
+      if (rawFile) {
+        // New file was selected — apply optional crop then upload
+        const croppedFile = await getCroppedFile()
+        finalUrl = await uploadFile(croppedFile ?? rawFile)
+      }
+      if (!finalUrl) return
+      onInsert({ src: finalUrl, alt: alt.trim(), caption: caption.trim() })
+      onClose()
     } catch (err) {
       setUploadErr(err.message)
     } finally {
@@ -483,12 +539,14 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
     }
   }
 
-  const handleInsert = () => {
-    const src = url.trim()
-    if (!src) return
-    onInsert({ src, alt: alt.trim(), caption: caption.trim() })
-    onClose()
+  const clearPreview = () => {
+    setPreviewDataUrl('')
+    setRawFile(null); setUrl(''); setCrop(undefined); setCompletedCrop(undefined)
   }
+
+  const hasPreview  = !!(previewDataUrl || url.trim())
+  const previewSrc  = previewDataUrl || url.trim()
+  const canInsert   = hasPreview && !uploading
 
   const tabBtn = (id, label) => (
     <button onClick={() => setTab(id)} style={{
@@ -527,16 +585,21 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
           borderTop: '3px solid #d4a853',
           borderRadius: '10px', width: '100%', maxWidth: '460px',
           overflow: 'hidden', boxShadow: '0 32px 96px rgba(0,0,0,0.7)',
+          maxHeight: '90vh', display: 'flex', flexDirection: 'column',
         }}>
 
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '18px 22px 14px',
+          padding: '18px 22px 14px', flexShrink: 0,
         }}>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#ede8df', marginBottom: '1px' }}>Sisip Imej</div>
-            <div style={{ fontSize: '11.5px', color: '#56514d' }}>Muat naik fail atau masukkan URL</div>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: '#ede8df', marginBottom: '1px' }}>
+              {mode === 'edit' ? 'Edit Imej' : 'Sisip Imej'}
+            </div>
+            <div style={{ fontSize: '11.5px', color: '#56514d' }}>
+              {mode === 'edit' ? 'Kemas kini imej, alt text atau kapsyen' : 'Muat naik fail atau masukkan URL'}
+            </div>
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
@@ -550,24 +613,56 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(237,232,223,0.07)', paddingLeft: '12px' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(237,232,223,0.07)', paddingLeft: '12px', flexShrink: 0 }}>
           {tabBtn('upload', 'Muat Naik')}
           {tabBtn('url', 'URL')}
         </div>
 
-        <div style={{ padding: '20px 22px' }}>
+        <div style={{ padding: '20px 22px', overflowY: 'auto' }}>
 
           {tab === 'upload' && (
             <div style={{ marginBottom: '14px' }}>
-              {url ? (
-                <div style={{ position: 'relative', marginBottom: '4px' }}>
-                  <img src={url} alt="preview" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />
-                  <button onClick={() => setUrl('')} style={{
-                    position: 'absolute', top: '8px', right: '8px',
-                    background: 'rgba(12,11,10,0.85)', border: '1px solid rgba(237,232,223,0.18)',
-                    color: '#ede8df', borderRadius: '5px', padding: '4px 10px',
-                    fontSize: '11.5px', cursor: 'pointer', fontWeight: 600,
-                  }}>Tukar</button>
+              {hasPreview && tab === 'upload' ? (
+                <div style={{ marginBottom: '8px' }}>
+                  {/* Square image viewer — ReactCrop enabled when a new file is selected */}
+                  <div style={{
+                    width: '100%', aspectRatio: '1',
+                    background: '#0c0b0a', borderRadius: '7px',
+                    border: '1px solid rgba(237,232,223,0.07)',
+                    overflow: 'hidden', position: 'relative',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: '6px',
+                  }}>
+                    {rawFile ? (
+                      <ReactCrop
+                        crop={crop}
+                        onChange={c => setCrop(c)}
+                        onComplete={c => setCompletedCrop(c)}
+                        style={{ maxWidth: '100%', maxHeight: '100%', display: 'flex' }}
+                      >
+                        <img ref={imgRef} src={previewDataUrl}
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+                          alt="preview" />
+                      </ReactCrop>
+                    ) : (
+                      <img src={previewSrc}
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+                        alt="preview"
+                        onError={e => { e.currentTarget.style.display = 'none' }}
+                      />
+                    )}
+                    <button onClick={clearPreview} style={{
+                      position: 'absolute', top: '8px', right: '8px',
+                      background: 'rgba(12,11,10,0.85)', border: '1px solid rgba(237,232,223,0.18)',
+                      color: '#ede8df', borderRadius: '5px', padding: '4px 10px',
+                      fontSize: '11.5px', cursor: 'pointer', fontWeight: 600,
+                    }}>Tukar</button>
+                  </div>
+                  {rawFile && (
+                    <div style={{ fontSize: '11px', color: '#3d3830', textAlign: 'center', marginBottom: '2px' }}>
+                      Seret untuk memilih kawasan potong (pilihan)
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div
@@ -582,23 +677,17 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
                   onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = 'rgba(237,232,223,0.2)' }}
                   onMouseLeave={e => { if (!uploading) e.currentTarget.style.borderColor = 'rgba(237,232,223,0.1)' }}
                 >
-                  {uploading ? (
-                    <div style={{ color: '#8c857c', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <Spinner size={13} /> Memuat naik…
+                  <>
+                    <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+                      <svg width="28" height="28" fill="none" stroke="rgba(237,232,223,0.2)" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
                     </div>
-                  ) : (
-                    <>
-                      <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-                        <svg width="28" height="28" fill="none" stroke="rgba(237,232,223,0.2)" strokeWidth="1.5" viewBox="0 0 24 24">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#8c857c', marginBottom: '3px' }}>Klik untuk pilih imej</div>
-                      <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Maks 8 MB</div>
-                    </>
-                  )}
+                    <div style={{ fontSize: '13px', color: '#8c857c', marginBottom: '3px' }}>Klik untuk pilih imej</div>
+                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Maks 8 MB</div>
+                  </>
                 </div>
               )}
               {uploadErr && (
@@ -607,7 +696,7 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
                 </div>
               )}
               <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = '' }} />
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }} />
             </div>
           )}
 
@@ -615,15 +704,23 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
             <div style={{ marginBottom: '14px' }}>
               <div style={fieldLabel}>URL Imej</div>
               <input
-                type="url" value={url} onChange={e => setUrl(e.target.value)}
+                type="url" value={url} onChange={e => { setUrl(e.target.value); setPreviewDataUrl(''); setRawFile(null) }}
                 placeholder="https://…"
                 style={{ ...inputStyle, marginBottom: url ? '10px' : 0 }}
               />
               {url && (
-                <img src={url} alt="preview"
-                  style={{ width: '100%', maxHeight: '140px', objectFit: 'cover', borderRadius: '6px', marginTop: '8px', display: 'block' }}
-                  onError={e => { e.currentTarget.style.display = 'none' }}
-                />
+                <div style={{
+                  width: '100%', aspectRatio: '1',
+                  background: '#0c0b0a', borderRadius: '6px',
+                  border: '1px solid rgba(237,232,223,0.07)',
+                  overflow: 'hidden', marginTop: '8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <img src={url} alt="preview"
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+                    onError={e => { e.currentTarget.style.display = 'none' }}
+                  />
+                </div>
               )}
             </div>
           )}
@@ -654,18 +751,22 @@ function InlineImageModal({ articleId, onInsert, onClose }) {
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = '#ede8df' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.11)'; e.currentTarget.style.color = '#8c857c' }}
             >Batal</button>
-            <button onClick={handleInsert} disabled={!url.trim()} style={{
+            <button onClick={handleInsert} disabled={!canInsert} style={{
               padding: '9px 20px', borderRadius: '6px', border: 'none',
-              background: url.trim() ? '#d4a853' : '#1e1c1a',
-              color: url.trim() ? '#0c0b0a' : '#3a3530',
+              background: canInsert ? '#d4a853' : '#1e1c1a',
+              color: canInsert ? '#0c0b0a' : '#3a3530',
               fontSize: '13px', fontWeight: 700,
-              cursor: url.trim() ? 'pointer' : 'not-allowed',
+              cursor: canInsert ? 'pointer' : 'not-allowed',
               fontFamily: "'DM Sans', sans-serif",
               transition: 'background 0.12s',
+              display: 'flex', alignItems: 'center', gap: '7px',
             }}
-            onMouseEnter={e => { if (url.trim()) e.currentTarget.style.background = '#c49640' }}
-            onMouseLeave={e => { if (url.trim()) e.currentTarget.style.background = '#d4a853' }}
-            >Sisip Imej</button>
+            onMouseEnter={e => { if (canInsert) e.currentTarget.style.background = '#c49640' }}
+            onMouseLeave={e => { if (canInsert) e.currentTarget.style.background = canInsert ? '#d4a853' : '#1e1c1a' }}
+            >
+              {uploading && <Spinner size={12} />}
+              {mode === 'edit' ? 'Kemas Kini' : 'Sisip Imej'}
+            </button>
           </div>
         </div>
       </motion.div>
@@ -752,7 +853,8 @@ export default function EditorClient({ article }) {
   const [cropSrc, setCropSrc] = useState(null)
 
   // Inline image modal state
-  const [showInlineImageModal, setShowInlineImageModal] = useState(false)
+  const [showInlineImageModal,    setShowInlineImageModal]    = useState(false)
+  const [editingInlineImageData,  setEditingInlineImageData]  = useState(null) // {src,alt,caption} when editing
 
   const [saveStatus, setSaveStatus] = useState('idle')
   const [isDirty,    setIsDirty]    = useState(false)
@@ -843,12 +945,33 @@ export default function EditorClient({ article }) {
     reader.readAsDataURL(file)
   }
 
-  // Insert inline image at cursor
+  // Insert or update inline image
   const insertInlineImage = ({ src, alt, caption }) => {
     if (!editor) return
-    editor.chain().focus()
-      .setImage({ src, alt: alt || undefined, title: caption || undefined })
-      .run()
+    if (editingInlineImageData !== null) {
+      // Edit mode: update attributes of the currently selected image node
+      editor.chain().focus().updateAttributes('image', {
+        src, alt: alt || undefined, title: caption || undefined,
+      }).run()
+      setEditingInlineImageData(null)
+    } else {
+      editor.chain().focus()
+        .setImage({ src, alt: alt || undefined, title: caption || undefined })
+        .run()
+    }
+    setIsDirty(true)
+  }
+
+  const openEditImage = () => {
+    if (!imgMove) return
+    setEditingInlineImageData({ src: imgMove.src, alt: imgMove.alt, caption: imgMove.caption })
+    setShowInlineImageModal(true)
+  }
+
+  const removeSelectedImage = () => {
+    if (!editor) return
+    editor.chain().focus().deleteSelection().run()
+    setImgMove(null)
     setIsDirty(true)
   }
 
@@ -868,7 +991,11 @@ export default function EditorClient({ article }) {
       const $pos = doc.resolve(selection.from)
       const index = $pos.index($pos.depth - 1)
       const parent = $pos.node($pos.depth - 1)
-      setImgMove({ top, canUp: index > 0, canDown: index < parent.childCount - 1 })
+      const imgAttrs = selection.node?.type?.name === 'image' ? selection.node.attrs : {}
+      setImgMove({
+        top, canUp: index > 0, canDown: index < parent.childCount - 1,
+        src: imgAttrs.src ?? '', alt: imgAttrs.alt ?? '', caption: imgAttrs.title ?? '',
+      })
     }
     editor.on('selectionUpdate', update)
     editor.on('transaction', update)
@@ -985,6 +1112,9 @@ export default function EditorClient({ article }) {
       <ConfirmationModal open={modal === 'removeImage'} title="Buang Gambar Utama?" message="Gambar semasa akan dibuang secara kekal."
         confirmLabel="Ya, Buang" cancelLabel="Batal" confirmColor="red"
         onConfirm={() => { setFeaturedImage(null); setModal(null) }} onCancel={() => setModal(null)} />
+      <ConfirmationModal open={modal === 'removeInlineImage'} title="Buang Imej?" message="Imej dalam artikel ini akan dibuang."
+        confirmLabel="Ya, Buang" cancelLabel="Batal" confirmColor="red"
+        onConfirm={() => { removeSelectedImage(); setModal(null) }} onCancel={() => setModal(null)} />
       <ConfirmationModal open={modal === 'publish'} title="Terbitkan Artikel?" message="Artikel akan diterbitkan dan dapat dilihat oleh orang awam."
         confirmLabel="Ya, Terbitkan" cancelLabel="Semak Semula" confirmColor="amber"
         onConfirm={() => { setModal(null); save('published') }} onCancel={() => setModal(null)} />
@@ -1007,10 +1137,14 @@ export default function EditorClient({ article }) {
         )}
         {showInlineImageModal && (
           <InlineImageModal
-            key="inline-img"
+            key={editingInlineImageData ? 'inline-img-edit' : 'inline-img-insert'}
             articleId={article.id}
             onInsert={insertInlineImage}
-            onClose={() => setShowInlineImageModal(false)}
+            onClose={() => { setShowInlineImageModal(false); setEditingInlineImageData(null) }}
+            initialSrc={editingInlineImageData?.src ?? ''}
+            initialAlt={editingInlineImageData?.alt ?? ''}
+            initialCaption={editingInlineImageData?.caption ?? ''}
+            mode={editingInlineImageData ? 'edit' : 'insert'}
           />
         )}
       </AnimatePresence>
@@ -1175,7 +1309,7 @@ export default function EditorClient({ article }) {
               <Toolbar editor={editor} onInsertImage={() => setShowInlineImageModal(true)} />
               <div ref={editorContainerRef} style={{ borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px', position: 'relative' }}>
                 <EditorContent editor={editor} className="tiptap-editor" />
-                {/* ↑↓ move buttons — appear when an image is selected */}
+                {/* ↑↓ move + edit + remove buttons — appear when an image is selected */}
                 {imgMove && (
                   <div style={{
                     position: 'absolute', right: '-40px', top: `${imgMove.top}px`,
@@ -1185,6 +1319,12 @@ export default function EditorClient({ article }) {
                       onMouseDown={e => { e.preventDefault(); moveImage('up') }} title="Gerak imej ke atas">↑</button>
                     <button className="img-move-btn" disabled={!imgMove.canDown}
                       onMouseDown={e => { e.preventDefault(); moveImage('down') }} title="Gerak imej ke bawah">↓</button>
+                    <button className="img-move-btn"
+                      onMouseDown={e => { e.preventDefault(); openEditImage() }} title="Edit imej"
+                      style={{ fontSize: '11px' }}>✏</button>
+                    <button className="img-move-btn"
+                      onMouseDown={e => { e.preventDefault(); setModal('removeInlineImage') }} title="Buang imej"
+                      style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}>×</button>
                   </div>
                 )}
               </div>
@@ -1199,7 +1339,11 @@ export default function EditorClient({ article }) {
                 {sources.map((src, i) => (
                   <li key={i}>
                     <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#ede8df', marginBottom: '2px' }}>{src.title}</div>
-                    {src.description && <div style={{ fontSize: '12.5px', color: '#56514d', lineHeight: 1.5 }}>{src.description}</div>}
+                    {src.description && (
+                      <div style={{ fontSize: '12.5px', color: '#56514d', lineHeight: 1.5 }}>
+                        {src.description.replace(/<cite[^>]*>(.*?)<\/cite>/gi, '$1').trim()}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ol>
