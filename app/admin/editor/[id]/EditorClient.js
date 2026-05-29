@@ -992,8 +992,12 @@ export default function EditorClient({ article }) {
       const index = $pos.index($pos.depth - 1)
       const parent = $pos.node($pos.depth - 1)
       const imgAttrs = selection.node?.type?.name === 'image' ? selection.node.attrs : {}
+      // Position toolbar as horizontal overlay at bottom-left of the image (inside container)
+      const toolbarTop  = imgRect.bottom - containerRect.top - 42
+      const toolbarLeft = imgRect.left   - containerRect.left + 8
       setImgMove({
-        top, canUp: index > 0, canDown: index < parent.childCount - 1,
+        top: toolbarTop, left: toolbarLeft,
+        canUp: index > 0, canDown: index < parent.childCount - 1,
         src: imgAttrs.src ?? '', alt: imgAttrs.alt ?? '', caption: imgAttrs.title ?? '',
       })
     }
@@ -1309,22 +1313,32 @@ export default function EditorClient({ article }) {
               <Toolbar editor={editor} onInsertImage={() => setShowInlineImageModal(true)} />
               <div ref={editorContainerRef} style={{ borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px', position: 'relative' }}>
                 <EditorContent editor={editor} className="tiptap-editor" />
-                {/* ↑↓ move + edit + remove buttons — appear when an image is selected */}
+                {/* Image toolbar — horizontal overlay at bottom of selected image */}
                 {imgMove && (
                   <div style={{
-                    position: 'absolute', right: '-40px', top: `${imgMove.top}px`,
-                    display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 10,
+                    position: 'absolute',
+                    left: `${imgMove.left}px`,
+                    top: `${imgMove.top}px`,
+                    display: 'flex', flexDirection: 'row', gap: '3px', zIndex: 20,
+                    background: 'rgba(12,11,10,0.9)',
+                    border: '1px solid rgba(237,232,223,0.15)',
+                    borderRadius: '6px', padding: '4px',
+                    boxShadow: '0 3px 12px rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(4px)',
                   }}>
                     <button className="img-move-btn" disabled={!imgMove.canUp}
-                      onMouseDown={e => { e.preventDefault(); moveImage('up') }} title="Gerak imej ke atas">↑</button>
+                      onMouseDown={e => { e.preventDefault(); moveImage('up') }} title="Gerak ke atas">↑</button>
                     <button className="img-move-btn" disabled={!imgMove.canDown}
-                      onMouseDown={e => { e.preventDefault(); moveImage('down') }} title="Gerak imej ke bawah">↓</button>
+                      onMouseDown={e => { e.preventDefault(); moveImage('down') }} title="Gerak ke bawah">↓</button>
+                    <div style={{ width: '1px', background: 'rgba(237,232,223,0.1)', margin: '2px 1px' }} />
                     <button className="img-move-btn"
                       onMouseDown={e => { e.preventDefault(); openEditImage() }} title="Edit imej"
-                      style={{ fontSize: '11px' }}>✏</button>
+                      style={{ fontSize: '13px', gap: '4px', paddingLeft: '6px', paddingRight: '6px', width: 'auto' }}>
+                      ✏ <span style={{ fontSize: '11px', fontWeight: 600 }}>Edit</span>
+                    </button>
                     <button className="img-move-btn"
                       onMouseDown={e => { e.preventDefault(); setModal('removeInlineImage') }} title="Buang imej"
-                      style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}>×</button>
+                      style={{ color: '#ef4444', borderColor: 'transparent', fontSize: '16px', lineHeight: 1 }}>×</button>
                   </div>
                 )}
               </div>
