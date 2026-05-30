@@ -988,9 +988,13 @@ export default function EditorClient({ article }) {
       const imgRect = selectedImg.getBoundingClientRect()
       const top = imgRect.top - containerRect.top + imgRect.height / 2 - 28
       const { selection, doc } = editor.state
-      const $pos = doc.resolve(selection.from)
-      const index = $pos.index($pos.depth - 1)
-      const parent = $pos.node($pos.depth - 1)
+      const $pos  = doc.resolve(selection.from)
+      const depth = $pos.depth
+      // Guard: if depth < 1 we can't access parent node safely
+      if (depth < 1) { setImgMove(null); return }
+      const parent = $pos.node(depth - 1)
+      if (!parent) { setImgMove(null); return }
+      const index    = $pos.index(depth - 1)
       const imgAttrs = selection.node?.type?.name === 'image' ? selection.node.attrs : {}
       // Position toolbar as horizontal overlay at bottom-left of the image (inside container)
       const toolbarTop  = imgRect.bottom - containerRect.top - 42
