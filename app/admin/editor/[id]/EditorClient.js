@@ -259,6 +259,121 @@ function QualityPanel({ qf, originalQf }) {
   )
 }
 
+/* ── Author dropdown ───────────────────────────────────────── */
+function AuthorSelect({ authors, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  const selected = authors.find(a => a.id === value) ?? null
+
+  const Pip = ({ author, size = 22 }) => author?.photo_url ? (
+    <img src={author.photo_url} alt={author.name}
+      style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  ) : (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', background: '#2a2520', flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: '#d4a853', fontSize: Math.round(size * 0.42) + 'px', fontWeight: 700,
+    }}>
+      {author?.name?.[0] ?? 'S'}
+    </div>
+  )
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: '100%', padding: '9px 40px 9px 12px', borderRadius: '4px',
+          border: `1px solid ${open ? 'rgba(237,232,223,0.22)' : 'rgba(237,232,223,0.11)'}`,
+          background: '#0e0d0c', color: selected ? '#ede8df' : '#56514d',
+          fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
+          cursor: 'pointer', textAlign: 'left', position: 'relative', boxSizing: 'border-box',
+          display: 'flex', alignItems: 'center', gap: '9px',
+          transition: 'border-color 0.12s',
+        }}
+      >
+        {selected ? (
+          <>
+            <Pip author={selected} size={20} />
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected.name}</span>
+          </>
+        ) : (
+          <span>Sharpable News</span>
+        )}
+        {/* Chevron — pulled in from right edge */}
+        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"
+          style={{
+            position: 'absolute', right: '14px', top: '50%',
+            transform: `translateY(-50%) rotate(${open ? 180 : 0}deg)`,
+            transition: 'transform 0.15s', color: '#56514d', flexShrink: 0, pointerEvents: 'none',
+          }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 5px)', left: 0, right: 0, zIndex: 200,
+          background: '#161412',
+          border: '1px solid rgba(237,232,223,0.14)',
+          borderRadius: '6px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.65)',
+          overflow: 'hidden',
+        }}>
+          {/* Sharpable News (null) option */}
+          <button type="button" onClick={() => { onChange(null); setOpen(false) }} style={{
+            width: '100%', padding: '9px 14px', border: 'none',
+            borderBottom: '1px solid rgba(237,232,223,0.06)',
+            background: !value ? 'rgba(212,168,83,0.07)' : 'transparent',
+            color: !value ? '#d4a853' : '#8c857c',
+            fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
+            cursor: 'pointer', textAlign: 'left',
+            display: 'flex', alignItems: 'center', gap: '9px',
+            transition: 'background 0.1s',
+          }}
+          onMouseEnter={e => { if (value) e.currentTarget.style.background = 'rgba(237,232,223,0.04)' }}
+          onMouseLeave={e => { if (value) e.currentTarget.style.background = 'transparent' }}>
+            <div style={{
+              width: 20, height: 20, borderRadius: '50%', background: '#1e1c1a', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#56514d', fontSize: '8px', fontWeight: 700, letterSpacing: '0.02em',
+            }}>SN</div>
+            <span>Sharpable News</span>
+          </button>
+
+          {/* Author options */}
+          {authors.map(a => (
+            <button key={a.id} type="button" onClick={() => { onChange(a.id); setOpen(false) }} style={{
+              width: '100%', padding: '9px 14px', border: 'none',
+              background: value === a.id ? 'rgba(212,168,83,0.07)' : 'transparent',
+              color: value === a.id ? '#d4a853' : '#ede8df',
+              fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
+              cursor: 'pointer', textAlign: 'left',
+              display: 'flex', alignItems: 'center', gap: '9px',
+              transition: 'background 0.1s',
+            }}
+            onMouseEnter={e => { if (value !== a.id) e.currentTarget.style.background = 'rgba(237,232,223,0.04)' }}
+            onMouseLeave={e => { if (value !== a.id) e.currentTarget.style.background = 'transparent' }}>
+              <Pip author={a} size={20} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Section label ─────────────────────────────────────────── */
 function SectionLabel({ children }) {
   return (
@@ -1391,49 +1506,16 @@ export default function EditorClient({ article, authors = [] }) {
         <aside className="editor-aside">
           <div className={`aside-section ${mob('seo')}`}>
             {/* Author selector */}
-            {authors.length > 0 && (() => {
-              const selectedAuthor = authors.find(a => a.id === authorId) ?? null
-              return (
-                <section style={{ marginBottom: '32px' }}>
-                  <SectionLabel>Penulis</SectionLabel>
-                  <select
-                    value={authorId ?? ''}
-                    onChange={e => { setAuthorId(e.target.value || null); setIsDirty(true) }}
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                  >
-                    <option value="">Sharpable News</option>
-                    {authors.map(a => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </select>
-                  {selectedAuthor && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      marginTop: '10px', padding: '10px 12px',
-                      background: '#111010', borderRadius: '6px',
-                      border: '1px solid rgba(237,232,223,0.07)',
-                    }}>
-                      {selectedAuthor.photo_url ? (
-                        <img src={selectedAuthor.photo_url} alt={selectedAuthor.name}
-                          style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{
-                          width: '34px', height: '34px', borderRadius: '50%',
-                          background: '#2a2520', flexShrink: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#d4a853', fontSize: '13px', fontWeight: 700,
-                        }}>
-                          {selectedAuthor.name[0]}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#ede8df', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {selectedAuthor.name}
-                      </div>
-                    </div>
-                  )}
-                </section>
-              )
-            })()}
+            {authors.length > 0 && (
+              <section style={{ marginBottom: '32px' }}>
+                <SectionLabel>Penulis</SectionLabel>
+                <AuthorSelect
+                  authors={authors}
+                  value={authorId}
+                  onChange={(id) => { setAuthorId(id); setIsDirty(true) }}
+                />
+              </section>
+            )}
             <SEOFields slug={slug} setSlug={setSlug} metaDescription={metaDescription}
               setMetaDescription={setMetaDescription} tags={tags} setTags={setTags} />
           </div>

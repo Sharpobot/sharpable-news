@@ -182,7 +182,7 @@ export default async function ArticlePage({ params }) {
 
         {/* ── Author bio card ── */}
         {article.authors && (
-          <div style={{ maxWidth: '860px', margin: '48px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+          <div style={{ maxWidth: '860px', margin: '24px auto 40px', padding: '0 20px', boxSizing: 'border-box' }}>
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: '16px',
               padding: '20px 24px',

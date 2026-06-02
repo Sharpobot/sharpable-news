@@ -1,6 +1,8 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 import toast from 'react-hot-toast'
 import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
@@ -53,11 +55,16 @@ const fieldLabel = {
 /* ── Add / Edit Modal ── */
 function AuthorModal({ author, onClose, onSaved }) {
   const isEdit = !!author
-  const [name,         setName]         = useState(author?.name ?? '')
-  const [bio,          setBio]          = useState(author?.bio ?? '')
-  const [photoPreview, setPhotoPreview] = useState(author?.photo_url ?? null)
-  const [photoFile,    setPhotoFile]    = useState(null)
-  const [saving,       setSaving]       = useState(false)
+  const [name,          setName]          = useState(author?.name ?? '')
+  const [bio,           setBio]           = useState(author?.bio ?? '')
+  const [saving,        setSaving]        = useState(false)
+
+  // Crop state
+  const [rawFile,        setRawFile]        = useState(null)
+  const [previewDataUrl, setPreviewDataUrl] = useState(author?.photo_url ?? null)
+  const [crop,           setCrop]           = useState()
+  const [completedCrop,  setCompletedCrop]  = useState()
+  const imgRef  = useRef(null)
   const fileRef = useRef(null)
 
   useEffect(() => {
@@ -68,11 +75,40 @@ function AuthorModal({ author, onClose, onSaved }) {
 
   const handleFile = (file) => {
     if (!file) return
-    setPhotoFile(file)
+    setRawFile(file)
+    setCrop(undefined)
+    setCompletedCrop(undefined)
     const reader = new FileReader()
-    reader.onload = (e) => setPhotoPreview(e.target.result)
+    reader.onload = (e) => setPreviewDataUrl(e.target.result)
     reader.readAsDataURL(file)
   }
+
+  const onImageLoad = useCallback((e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+    const c = centerCrop(makeAspectCrop({ unit: '%', width: 90 }, 1, w, h), w, h)
+    setCrop(c)
+  }, [])
+
+  const getCroppedFile = () => new Promise((resolve) => {
+    if (!completedCrop?.width || !imgRef.current) { resolve(null); return }
+    const canvas = document.createElement('canvas')
+    const img    = imgRef.current
+    const scaleX = img.naturalWidth  / img.width
+    const scaleY = img.naturalHeight / img.height
+    const size   = Math.round(completedCrop.width * scaleX) // square
+    canvas.width  = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(img,
+      completedCrop.x * scaleX, completedCrop.y * scaleY,
+      completedCrop.width * scaleX, completedCrop.height * scaleY,
+      0, 0, size, size,
+    )
+    canvas.toBlob(
+      (blob) => resolve(blob ? new File([blob], 'author-photo.jpg', { type: 'image/jpeg' }) : null),
+      'image/jpeg', 0.92,
+    )
+  })
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Nama penulis diperlukan.'); return }
@@ -81,9 +117,10 @@ function AuthorModal({ author, onClose, onSaved }) {
       let photo_url = author?.photo_url ?? null
 
       // Upload photo if a new file was selected
-      if (photoFile) {
+      if (rawFile) {
+        const croppedFile = await getCroppedFile()
         const fd = new FormData()
-        fd.append('file', photoFile)
+        fd.append('file', croppedFile ?? rawFile)
         const res = await fetch('/api/upload-author-photo', { method: 'POST', body: fd })
         const data = await res.json()
         if (!res.ok || data.error) throw new Error(data.error || 'Muat naik gagal')
@@ -143,6 +180,7 @@ function AuthorModal({ author, onClose, onSaved }) {
           border: '1px solid rgba(237,232,223,0.1)',
           borderTop: '3px solid #d4a853',
           borderRadius: '10px', width: '100%', maxWidth: '440px',
+          maxHeight: '92vh', display: 'flex', flexDirection: 'column',
           boxShadow: '0 32px 96px rgba(0,0,0,0.7)',
         }}>
 
@@ -161,28 +199,82 @@ function AuthorModal({ author, onClose, onSaved }) {
           </button>
         </div>
 
-        <div style={{ padding: '0 22px 22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ padding: '0 22px 22px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
 
-          {/* Photo upload */}
+          {/* Photo upload + crop */}
           <div>
             <div style={fieldLabel}>Foto Profil</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <Avatar src={photoPreview} name={name || '?'} size={64} />
-              <div style={{ flex: 1 }}>
+
+            {previewDataUrl ? (
+              <div style={{ marginBottom: '8px' }}>
+                {/* Crop area — only shown when a new file is selected */}
+                <div style={{
+                  background: '#0c0b0a', borderRadius: '7px',
+                  border: '1px solid rgba(237,232,223,0.07)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '6px', position: 'relative',
+                }}>
+                  {rawFile ? (
+                    <ReactCrop
+                      crop={crop}
+                      onChange={c => setCrop(c)}
+                      onComplete={c => setCompletedCrop(c)}
+                      aspect={1}
+                      circularCrop
+                      style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }}
+                    >
+                      <img
+                        ref={imgRef}
+                        src={previewDataUrl}
+                        onLoad={onImageLoad}
+                        style={{ maxWidth: '100%', maxHeight: '280px', display: 'block', margin: '0 auto' }}
+                        alt="preview"
+                      />
+                    </ReactCrop>
+                  ) : (
+                    /* Edit mode — existing photo, no crop needed unless re-uploaded */
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px' }}>
+                      <Avatar src={previewDataUrl} name={name || '?'} size={64} />
+                      <div style={{ fontSize: '12.5px', color: '#56514d' }}>Foto semasa. Pilih foto baharu untuk menukar.</div>
+                    </div>
+                  )}
+                </div>
+                {rawFile && (
+                  <div style={{ fontSize: '11px', color: '#3d3830', textAlign: 'center', marginBottom: '4px' }}>
+                    Laraskan kawasan potong bulatan
+                  </div>
+                )}
                 <button
                   onClick={() => fileRef.current?.click()}
                   style={{
-                    padding: '7px 14px', borderRadius: '5px', fontSize: '12.5px', fontWeight: 600,
+                    padding: '6px 14px', borderRadius: '5px', fontSize: '12px', fontWeight: 600,
                     border: '1px solid rgba(237,232,223,0.15)', background: 'transparent',
                     color: '#8c857c', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
                   }}>
-                  {photoPreview ? 'Tukar Foto' : 'Pilih Foto'}
+                  Tukar Foto
                 </button>
-                <div style={{ fontSize: '11px', color: '#3a3530', marginTop: '5px' }}>JPG, PNG, WebP · Maks 4 MB</div>
               </div>
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
-            </div>
+            ) : (
+              /* No photo yet — dropzone */
+              <div
+                onClick={() => fileRef.current?.click()}
+                style={{
+                  border: '2px dashed rgba(237,232,223,0.1)', borderRadius: '7px',
+                  padding: '22px 16px', textAlign: 'center', cursor: 'pointer',
+                  background: '#0e0d0c', marginBottom: '8px',
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.22)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.1)' }}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '6px', opacity: 0.3 }}>👤</div>
+                <div style={{ fontSize: '12.5px', color: '#8c857c', marginBottom: '2px' }}>Klik untuk pilih foto</div>
+                <div style={{ fontSize: '11px', color: '#3a3530' }}>JPG, PNG, WebP · Maks 4 MB</div>
+              </div>
+            )}
+
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
           </div>
 
           {/* Name */}
