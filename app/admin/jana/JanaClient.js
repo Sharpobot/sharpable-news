@@ -256,7 +256,16 @@ export default function JanaClient({ initialGenerating }) {
         .map(r => r.id)
 
       if (finished.length > 0) {
-        toast.success('Artikel berjaya dijana! Semak di bahagian Artikel.')
+        finished.forEach(id => {
+          const prog = progressMap[id] ?? []
+          const m = {}
+          prog.forEach(r => { if (!m[r.agent_name]) m[r.agent_name] = r })
+          if (m['save-article']?.status === 'done') {
+            toast.success('Artikel berjaya dijana! Semak di bahagian Artikel.')
+          } else {
+            toast.error('Penjanaan artikel gagal. Cuba jana semula.')
+          }
+        })
         setGeneratingIds(prev => prev.filter(id => !finished.includes(id)))
         setArticles(prev => prev.filter(a => !finished.includes(a.id)))
       }
