@@ -5,6 +5,7 @@ import Image from '@tiptap/extension-image'
 import { notFound } from 'next/navigation'
 import PublicNavbar from '@/app/components/PublicNavbar'
 import RelatedArticles from '@/app/components/RelatedArticles'
+import Footer from '@/app/components/Footer'
 
 export const revalidate = 60
 
@@ -161,7 +162,7 @@ export default async function ArticlePage({ params }) {
                       {article.authors.name}
                     </span>
                     <span style={{ opacity: 0.3, fontSize: '13px', lineHeight: 1 }}>·</span>
-                    <time dateTime={article.created_at} style={{ fontSize: '13px', opacity: 0.5, lineHeight: 1 }}>
+                    <time dateTime={article.created_at} style={{ fontSize: '13px', lineHeight: 1 }}>
                       {publishedDate}
                     </time>
                   </div>
@@ -170,7 +171,7 @@ export default async function ArticlePage({ params }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '13.5px', fontWeight: 600 }}>Sharpable News</span>
                   <span style={{ opacity: 0.3, fontSize: '13px' }}>·</span>
-                  <time dateTime={article.created_at} style={{ fontSize: '13px', opacity: 0.5 }}>{publishedDate}</time>
+                  <time dateTime={article.created_at} style={{ fontSize: '13px' }}>{publishedDate}</time>
                 </div>
               )}
             </div>
@@ -242,10 +243,15 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* ── Related articles carousel ── */}
-        <RelatedArticles articles={related} />
+        {/* ── Related articles ── */}
+        <div style={{ marginBottom: '56px' }}>
+          <RelatedArticles articles={related} />
+        </div>
 
       </div>
+
+      {/* ── Footer ── */}
+      <Footer />
     </>
   )
 }

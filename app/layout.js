@@ -1,4 +1,5 @@
 import './globals.css'
+import PageLoader from './components/PageLoader'
 
 export const metadata = {
   title: 'Sharpable News — Kecerdasan Buatan',
@@ -22,7 +23,10 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <PageLoader />
+        {children}
+      </body>
     </html>
   )
 }
