@@ -1109,7 +1109,7 @@ button { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s
   max-width: 860px;
   margin-left: auto;
   margin-right: auto;
-  padding: 40px 0 80px;
+  padding: 40px 0 40px;
   font-size: 17px;
   line-height: 1.78;
   color: var(--text-2);
@@ -1236,5 +1236,44 @@ button { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s
 
 @media (max-width: 768px) {
   .article-header { padding: 32px 0 28px; }
-  .article-body { font-size: 16px; padding: 32px 0 56px; }
+  .article-body { font-size: 16px; padding: 32px 0 32px; }
 }
+
+/* ════════════════════════════════
+   SEARCH ICON BUTTON (navbar)
+════════════════════════════════ */
+.btn-search-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border-mid);
+  color: var(--text-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  padding: 0;
+}
+.btn-search-icon:hover { background: var(--hover-tint-md); color: var(--text-1); }
+
+/* ════════════════════════════════
+   NAVBAR — always dark regardless of page theme
+════════════════════════════════ */
+[data-theme="light"] .navbar {
+  background: rgba(12,11,10,0.93);
+  border-bottom-color: rgba(237,232,223,0.07);
+}
+[data-theme="light"] .navbar.scrolled {
+  border-bottom-color: rgba(237,232,223,0.13);
+}
+[data-theme="light"] .navbar .logo-word { color: #ede8df; }
+[data-theme="light"] .navbar .nav-pipe  { background: rgba(237,232,223,0.11); }
+[data-theme="light"] .navbar .nav-link  { color: #8c857c; }
+[data-theme="light"] .navbar .nav-link:hover  { color: #ede8df; background: rgba(237,232,223,0.05); }
+[data-theme="light"] .navbar .nav-link.active { color: #ede8df; }
+[data-theme="light"] .navbar .btn-subscribe   { background: #d4a853; color: #0c0b0a; }
+[data-theme="light"] .navbar .btn-search-icon { border-color: rgba(237,232,223,0.11); color: #8c857c; }
+[data-theme="light"] .navbar .theme-icon-btn  { border-color: rgba(237,232,223,0.11); color: #8c857c; }

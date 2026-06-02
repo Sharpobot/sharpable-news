@@ -2,8 +2,9 @@ import { createServerSupabaseClient } from '@/lib/db/supabase-server'
 import { generateHTML } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import PublicNavbar from '@/app/components/PublicNavbar'
+import RelatedArticles from '@/app/components/RelatedArticles'
 
 export const revalidate = 60
 
@@ -43,22 +44,14 @@ function tagClass(tag) {
 /* ── Body renderer ────────────────────────────────────────── */
 function renderBody(body) {
   if (!body) return ''
-  // Plain HTML string (saved by TipTap's getHTML())
   if (typeof body === 'string') return body
-  // ProseMirror/Tiptap JSON
   if (body.type === 'doc' && body.content) {
-    try {
-      return generateHTML(body, [StarterKit, Image])
-    } catch {
-      return ''
-    }
+    try { return generateHTML(body, [StarterKit, Image]) } catch { return '' }
   }
-  // Fallback: plain html string stored under body.html
   if (typeof body.html === 'string') return body.html
   return ''
 }
 
-/** Wrap <img title="caption"> in <figure><figcaption> for rendered articles */
 function addCaptions(html) {
   if (!html) return html
   return html.replace(
@@ -82,6 +75,32 @@ export default async function ArticlePage({ params }) {
 
   if (!article || error) notFound()
 
+  /* ── Related articles: tag-matched first, fill with recent ── */
+  let related = []
+  if (article.tags?.length > 0) {
+    const { data: tagMatched } = await supabase
+      .from('articles')
+      .select('id, title, slug, tags, meta_description, featured_image, created_at, authors(name)')
+      .eq('status', 'published')
+      .neq('id', article.id)
+      .overlaps('tags', article.tags)
+      .order('created_at', { ascending: false })
+      .limit(3)
+    related = tagMatched ?? []
+  }
+  if (related.length < 3) {
+    const excludeIds = [article.id, ...related.map(a => a.id)]
+    let q = supabase
+      .from('articles')
+      .select('id, title, slug, tags, meta_description, featured_image, created_at, authors(name)')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(3 - related.length)
+    for (const id of excludeIds) q = q.neq('id', id)
+    const { data: recent } = await q
+    related = [...related, ...(recent ?? [])]
+  }
+
   const bodyHTML = addCaptions(renderBody(article.body))
   const publishedDate = new Date(article.created_at).toLocaleDateString('ms-MY', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -89,20 +108,16 @@ export default async function ArticlePage({ params }) {
 
   return (
     <>
+      <PublicNavbar />
+
       <div className="article-page">
 
-        {/* ── Nav bar spacer ── */}
+        {/* Spacer for fixed navbar */}
         <div style={{ height: '62px' }} />
 
         {/* ── Article header ── */}
         <header className="article-header">
           <div className="container" style={{ maxWidth: '860px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '20px', paddingRight: '20px', boxSizing: 'border-box' }}>
-            <Link href="/" className="article-back">
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M19 12H5M12 5l-7 7 7 7"/>
-              </svg>
-              Kembali ke laman utama
-            </Link>
 
             {article.tags?.length > 0 && (
               <div className="article-tags">
@@ -121,7 +136,6 @@ export default async function ArticlePage({ params }) {
             <div className="article-byline">
               {article.authors ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                  {/* Avatar */}
                   {article.authors.photo_url ? (
                     <img
                       src={article.authors.photo_url}
@@ -138,7 +152,6 @@ export default async function ArticlePage({ params }) {
                       {article.authors.name[0]}
                     </div>
                   )}
-                  {/* Name · Date inline */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{
                       fontSize: '13.5px', fontWeight: 600, lineHeight: 1,
@@ -181,10 +194,7 @@ export default async function ArticlePage({ params }) {
         {/* ── Article body ── */}
         <article className="container" style={{ maxWidth: '860px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '20px', paddingRight: '20px', boxSizing: 'border-box' }}>
           {bodyHTML ? (
-            <div
-              className="article-body"
-              dangerouslySetInnerHTML={{ __html: bodyHTML }}
-            />
+            <div className="article-body" dangerouslySetInnerHTML={{ __html: bodyHTML }} />
           ) : (
             <div className="article-body article-body--empty">
               <p>Kandungan artikel belum tersedia.</p>
@@ -232,17 +242,8 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* ── Footer nav ── */}
-        <div className="article-footer-nav">
-          <div className="container" style={{ maxWidth: '860px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '20px', paddingRight: '20px', boxSizing: 'border-box' }}>
-            <Link href="/" className="article-back">
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M19 12H5M12 5l-7 7 7 7"/>
-              </svg>
-              Kembali ke laman utama
-            </Link>
-          </div>
-        </div>
+        {/* ── Related articles carousel ── */}
+        <RelatedArticles articles={related} />
 
       </div>
     </>

@@ -8,7 +8,7 @@ export default async function Page() {
 
   const { data: articles } = await supabase
     .from('articles')
-    .select('id, title, slug, tags, meta_description, featured_image, created_at')
+    .select('id, title, slug, tags, meta_description, featured_image, created_at, authors(name)')
     .eq('status', 'published')
     .order('created_at', { ascending: false })
     .limit(6)
