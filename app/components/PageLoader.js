@@ -37,9 +37,9 @@ export default function PageLoader() {
 
       clearInterval(timerRef.current)
       timerRef.current = setInterval(() => {
-        progRef.current = Math.min(progRef.current + 9, 80)
+        progRef.current = Math.min(progRef.current + 5, 78)
         setProgress(progRef.current)
-      }, 320)
+      }, 450)
     }
 
     document.addEventListener('click', onLinkClick)
@@ -60,7 +60,7 @@ export default function PageLoader() {
       setVisible(false)
       setProgress(0)
       setLeaving(false)
-    }, 480)
+    }, 720)
     return () => clearTimeout(t)
   }, [pathname])
 
@@ -73,14 +73,14 @@ export default function PageLoader() {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       opacity: leaving ? 0 : 1,
-      transition: leaving ? 'opacity 0.38s ease' : 'opacity 0.14s ease',
+      transition: leaving ? 'opacity 0.62s cubic-bezier(0.4,0,0.2,1)' : 'opacity 0.28s ease',
       pointerEvents: leaving ? 'none' : 'all',
     }}>
       {/* Logo */}
-      <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 0, marginBottom: '28px' }}>
+      <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 0, marginBottom: '28px', marginTop: '10vh' }}>
         <span style={{
           fontFamily: "'Fraunces', serif",
-          fontSize: '26px', fontWeight: 700,
+          fontSize: '30px', fontWeight: 700,
           color: '#ede8df', letterSpacing: '-0.025em',
         }}>Sharpable</span>
         <span style={{
@@ -99,7 +99,7 @@ export default function PageLoader() {
         <div style={{
           height: '100%', width: `${progress}%`,
           background: '#d4a853', borderRadius: '1px',
-          transition: `width ${progress === 100 ? '0.18s' : '0.28s'} ease`,
+          transition: `width ${progress === 100 ? '0.3s ease' : '0.55s cubic-bezier(0.25,0.46,0.45,0.94)'}`,
         }} />
       </div>
     </div>

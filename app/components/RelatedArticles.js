@@ -58,7 +58,7 @@ function ArticleCard({ article }) {
             letterSpacing: '-0.025em',
             lineHeight: 1.22,
             color: 'var(--text-1)',
-            marginBottom: '10px',
+            marginBottom: '8px',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
@@ -67,6 +67,21 @@ function ArticleCard({ article }) {
           }}>
             {article.title}
           </h3>
+          {article.meta_description && (
+            <p style={{
+              fontSize: '13px',
+              lineHeight: 1.55,
+              color: 'var(--text-2)',
+              marginBottom: '12px',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              fontFamily: 'var(--font-sans)',
+            }}>
+              {article.meta_description}
+            </p>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }}>
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" style={{ flexShrink: 0, opacity: 0.7 }}>
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
