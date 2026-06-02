@@ -60,7 +60,7 @@ export default function PageLoader() {
       setVisible(false)
       setProgress(0)
       setLeaving(false)
-    }, 720)
+    }, 1000)
     return () => clearTimeout(t)
   }, [pathname])
 
@@ -73,7 +73,7 @@ export default function PageLoader() {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       opacity: leaving ? 0 : 1,
-      transition: leaving ? 'opacity 0.62s cubic-bezier(0.4,0,0.2,1)' : 'opacity 0.28s ease',
+      transition: leaving ? 'opacity 0.9s cubic-bezier(0.4,0,0.2,1)' : 'opacity 0.5s ease',
       pointerEvents: leaving ? 'none' : 'all',
     }}>
       {/* Logo */}
@@ -92,7 +92,7 @@ export default function PageLoader() {
 
       {/* Progress bar */}
       <div style={{
-        width: '180px', height: '2px',
+        width: '180px', height: '3px',
         background: 'rgba(237,232,223,0.07)',
         borderRadius: '1px', overflow: 'hidden',
       }}>
