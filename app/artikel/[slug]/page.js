@@ -120,33 +120,45 @@ export default async function ArticlePage({ params }) {
 
             <div className="article-byline">
               {article.authors ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                  {/* Avatar */}
                   {article.authors.photo_url ? (
                     <img
                       src={article.authors.photo_url}
                       alt={article.authors.name}
-                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                     />
                   ) : (
                     <div style={{
-                      width: '36px', height: '36px', borderRadius: '50%',
+                      width: '28px', height: '28px', borderRadius: '50%',
                       background: 'rgba(212,168,83,0.15)', flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#d4a853', fontSize: '14px', fontWeight: 700,
+                      color: '#d4a853', fontSize: '11px', fontWeight: 700,
                     }}>
                       {article.authors.name[0]}
                     </div>
                   )}
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{article.authors.name}</div>
-                    <time dateTime={article.created_at} style={{ fontSize: '12.5px', opacity: 0.55 }}>{publishedDate}</time>
+                  {/* Name · Date inline */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontSize: '13.5px', fontWeight: 600, lineHeight: 1,
+                      textDecoration: 'underline', textUnderlineOffset: '3px',
+                      textDecorationColor: 'rgba(237,232,223,0.18)',
+                    }}>
+                      {article.authors.name}
+                    </span>
+                    <span style={{ opacity: 0.3, fontSize: '13px', lineHeight: 1 }}>·</span>
+                    <time dateTime={article.created_at} style={{ fontSize: '13px', opacity: 0.5, lineHeight: 1 }}>
+                      {publishedDate}
+                    </time>
                   </div>
                 </div>
               ) : (
-                <>
-                  <span>Sharpable News</span>
-                  <time dateTime={article.created_at}>{publishedDate}</time>
-                </>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 600 }}>Sharpable News</span>
+                  <span style={{ opacity: 0.3, fontSize: '13px' }}>·</span>
+                  <time dateTime={article.created_at} style={{ fontSize: '13px', opacity: 0.5 }}>{publishedDate}</time>
+                </div>
               )}
             </div>
           </div>
@@ -182,14 +194,14 @@ export default async function ArticlePage({ params }) {
 
         {/* ── Author bio card ── */}
         {article.authors && (
-          <div style={{ maxWidth: '860px', margin: '24px auto 40px', padding: '0 20px', boxSizing: 'border-box' }}>
+          <div style={{ maxWidth: '860px', margin: '0 auto 40px', padding: '0 20px', boxSizing: 'border-box' }}>
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: '16px',
               padding: '20px 24px',
-              border: '1px solid rgba(237,232,223,0.09)',
-              borderLeft: '3px solid rgba(212,168,83,0.4)',
+              border: '1px solid rgba(237,232,223,0.13)',
+              borderLeft: '3px solid #d4a853',
               borderRadius: '6px',
-              background: 'rgba(255,255,255,0.02)',
+              background: 'rgba(212,168,83,0.06)',
             }}>
               {article.authors.photo_url ? (
                 <img
