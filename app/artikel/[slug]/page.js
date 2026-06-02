@@ -75,7 +75,7 @@ export default async function ArticlePage({ params }) {
 
   const { data: article, error } = await supabase
     .from('articles')
-    .select('id, title, slug, body, tags, meta_description, featured_image, created_at')
+    .select('id, title, slug, body, tags, meta_description, featured_image, created_at, author_id, authors(id, name, bio, photo_url)')
     .eq('slug', slug)
     .eq('status', 'published')
     .single()
@@ -119,7 +119,35 @@ export default async function ArticlePage({ params }) {
             )}
 
             <div className="article-byline">
-              <time dateTime={article.created_at}>{publishedDate}</time>
+              {article.authors ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {article.authors.photo_url ? (
+                    <img
+                      src={article.authors.photo_url}
+                      alt={article.authors.name}
+                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '50%',
+                      background: 'rgba(212,168,83,0.15)', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#d4a853', fontSize: '14px', fontWeight: 700,
+                    }}>
+                      {article.authors.name[0]}
+                    </div>
+                  )}
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{article.authors.name}</div>
+                    <time dateTime={article.created_at} style={{ fontSize: '12.5px', opacity: 0.55 }}>{publishedDate}</time>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span>Sharpable News</span>
+                  <time dateTime={article.created_at}>{publishedDate}</time>
+                </>
+              )}
             </div>
           </div>
         </header>
@@ -151,6 +179,46 @@ export default async function ArticlePage({ params }) {
             </div>
           )}
         </article>
+
+        {/* ── Author bio card ── */}
+        {article.authors && (
+          <div style={{ maxWidth: '860px', margin: '48px auto 0', padding: '0 20px', boxSizing: 'border-box' }}>
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: '16px',
+              padding: '20px 24px',
+              border: '1px solid rgba(237,232,223,0.09)',
+              borderLeft: '3px solid rgba(212,168,83,0.4)',
+              borderRadius: '6px',
+              background: 'rgba(255,255,255,0.02)',
+            }}>
+              {article.authors.photo_url ? (
+                <img
+                  src={article.authors.photo_url}
+                  alt={article.authors.name}
+                  style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: '2px' }}
+                />
+              ) : (
+                <div style={{
+                  width: '52px', height: '52px', borderRadius: '50%', flexShrink: 0, marginTop: '2px',
+                  background: 'rgba(212,168,83,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#d4a853', fontSize: '18px', fontWeight: 700,
+                }}>
+                  {article.authors.name[0]}
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(212,168,83,0.7)', marginBottom: '4px' }}>
+                  Tentang Penulis
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '6px' }}>{article.authors.name}</div>
+                {article.authors.bio && (
+                  <div style={{ fontSize: '13.5px', lineHeight: 1.6, opacity: 0.65 }}>{article.authors.bio}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Footer nav ── */}
         <div className="article-footer-nav">

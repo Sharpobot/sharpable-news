@@ -624,12 +624,12 @@ function InlineImageModal({
             <div style={{ marginBottom: '14px' }}>
               {hasPreview && tab === 'upload' ? (
                 <div style={{ marginBottom: '8px' }}>
-                  {/* Square image viewer — ReactCrop enabled when a new file is selected */}
+                  {/* Adaptive image viewer — no forced aspect ratio, shows full image */}
                   <div style={{
-                    width: '100%', aspectRatio: '1',
+                    width: '100%',
                     background: '#0c0b0a', borderRadius: '7px',
                     border: '1px solid rgba(237,232,223,0.07)',
-                    overflow: 'hidden', position: 'relative',
+                    position: 'relative',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     marginBottom: '6px',
                   }}>
@@ -638,15 +638,21 @@ function InlineImageModal({
                         crop={crop}
                         onChange={c => setCrop(c)}
                         onComplete={c => setCompletedCrop(c)}
-                        style={{ maxWidth: '100%', maxHeight: '100%', display: 'block', margin: '0 auto' }}
+                        style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }}
                       >
                         <img ref={imgRef} src={previewDataUrl}
-                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+                          onLoad={e => {
+                            const { width, height } = e.currentTarget
+                            const full = { unit: 'px', x: 0, y: 0, width, height }
+                            setCrop(full)
+                            setCompletedCrop(full)
+                          }}
+                          style={{ maxWidth: '100%', maxHeight: '60vh', display: 'block', margin: '0 auto' }}
                           alt="preview" />
                       </ReactCrop>
                     ) : (
                       <img src={previewSrc}
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+                        style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                         alt="preview"
                         onError={e => { e.currentTarget.style.display = 'none' }}
                       />
@@ -710,14 +716,14 @@ function InlineImageModal({
               />
               {url && (
                 <div style={{
-                  width: '100%', aspectRatio: '1',
+                  width: '100%',
                   background: '#0c0b0a', borderRadius: '6px',
                   border: '1px solid rgba(237,232,223,0.07)',
-                  overflow: 'hidden', marginTop: '8px',
+                  marginTop: '8px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <img src={url} alt="preview"
-                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+                    style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                     onError={e => { e.currentTarget.style.display = 'none' }}
                   />
                 </div>
@@ -832,7 +838,7 @@ function SaveButtons({ saveStatus, onDraft, onPublish }) {
 /* ══════════════════════════════════════════════════════════════
    Main EditorClient
 ══════════════════════════════════════════════════════════════ */
-export default function EditorClient({ article }) {
+export default function EditorClient({ article, authors = [] }) {
   const router    = useRouter()
   const headlines = article.headline_options ?? []
 
@@ -855,6 +861,8 @@ export default function EditorClient({ article }) {
   // Inline image modal state
   const [showInlineImageModal,    setShowInlineImageModal]    = useState(false)
   const [editingInlineImageData,  setEditingInlineImageData]  = useState(null) // {src,alt,caption} when editing
+
+  const [authorId, setAuthorId] = useState(article.author_id ?? null)
 
   const [saveStatus, setSaveStatus] = useState('idle')
   const [isDirty,    setIsDirty]    = useState(false)
@@ -906,6 +914,7 @@ export default function EditorClient({ article }) {
           title: getTitle(), body: editor?.getHTML() ?? article.body ?? '',
           slug, meta_description: metaDescription, tags,
           featured_image: featuredImage, status: newStatus,
+          author_id: authorId ?? null,
         }),
       })
       if (!res.ok) throw new Error()
@@ -1381,6 +1390,50 @@ export default function EditorClient({ article }) {
 
         <aside className="editor-aside">
           <div className={`aside-section ${mob('seo')}`}>
+            {/* Author selector */}
+            {authors.length > 0 && (() => {
+              const selectedAuthor = authors.find(a => a.id === authorId) ?? null
+              return (
+                <section style={{ marginBottom: '32px' }}>
+                  <SectionLabel>Penulis</SectionLabel>
+                  <select
+                    value={authorId ?? ''}
+                    onChange={e => { setAuthorId(e.target.value || null); setIsDirty(true) }}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="">Sharpable News</option>
+                    {authors.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  {selectedAuthor && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      marginTop: '10px', padding: '10px 12px',
+                      background: '#111010', borderRadius: '6px',
+                      border: '1px solid rgba(237,232,223,0.07)',
+                    }}>
+                      {selectedAuthor.photo_url ? (
+                        <img src={selectedAuthor.photo_url} alt={selectedAuthor.name}
+                          style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{
+                          width: '34px', height: '34px', borderRadius: '50%',
+                          background: '#2a2520', flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#d4a853', fontSize: '13px', fontWeight: 700,
+                        }}>
+                          {selectedAuthor.name[0]}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#ede8df', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedAuthor.name}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )
+            })()}
             <SEOFields slug={slug} setSlug={setSlug} metaDescription={metaDescription}
               setMetaDescription={setMetaDescription} tags={tags} setTags={setTags} />
           </div>

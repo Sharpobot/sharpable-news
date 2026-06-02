@@ -39,6 +39,17 @@ const NAV = [
     ),
   },
   {
+    href: '/admin/penulis',
+    label: 'Penulis',
+    exact: false,
+    icon: (
+      <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+  },
+  {
     href: '/admin/tetapan',
     label: 'Tetapan',
     exact: false,
