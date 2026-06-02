@@ -99,28 +99,37 @@ function ArticleCard({ article }) {
 export default function RelatedArticles({ articles = [] }) {
   const [current, setCurrent] = useState(0)
   const [paused,  setPaused]  = useState(false)
-  const [animKey, setAnimKey] = useState(0)   // bumping restarts CSS animation
+  const [animKey, setAnimKey] = useState(0)
   const scrollRef    = useRef(null)
   const scrollDebRef = useRef(null)
 
-  /* Sync mobile scroll when current changes */
+  /* Single source of truth: bump animKey whenever current changes.
+     This remounts the active progress fill element, restarting the CSS animation.
+     No other code should call setAnimKey. */
+  useEffect(() => {
+    setAnimKey(k => k + 1)
+  }, [current])
+
+  /* Sync mobile scroll position when current changes */
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     el.scrollTo({ left: el.clientWidth * current, behavior: 'smooth' })
   }, [current])
 
-  /* Auto-advance every 5 s — pauses when hovered */
+  /* Auto-advance every 5 s.
+     Depends only on current/paused/length — animKey is intentionally excluded
+     to avoid double-firing when the animation-key effect also triggers. */
   useEffect(() => {
     if (paused || articles.length <= 1) return
     const t = setTimeout(() => {
       setCurrent(prev => (prev + 1) % articles.length)
-      setAnimKey(k => k + 1)
     }, 5000)
     return () => clearTimeout(t)
-  }, [current, paused, articles.length, animKey])
+  }, [current, paused, articles.length])
 
-  /* Detect manual swipe by listening to scroll end */
+  /* Detect manual swipe via debounced scroll — just update current,
+     animKey will follow via its own effect. */
   const handleScroll = useCallback(() => {
     clearTimeout(scrollDebRef.current)
     scrollDebRef.current = setTimeout(() => {
@@ -128,18 +137,11 @@ export default function RelatedArticles({ articles = [] }) {
       if (!el || !el.clientWidth) return
       const idx = Math.round(el.scrollLeft / el.clientWidth)
       const c   = Math.max(0, Math.min(articles.length - 1, idx))
-      setCurrent(prev => {
-        if (prev !== c) setAnimKey(k => k + 1)
-        return c
-      })
+      setCurrent(c)
     }, 80)
   }, [articles.length])
 
-  const goTo = (idx) => {
-    if (idx === current) return
-    setCurrent(idx)
-    setAnimKey(k => k + 1)
-  }
+  const goTo = (idx) => { if (idx !== current) setCurrent(idx) }
 
   if (!articles.length) return null
 
