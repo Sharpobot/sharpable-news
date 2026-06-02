@@ -169,7 +169,7 @@ sharpable-news/
 | 1 | `trend-scout` | 65s | Web search for trending AI/tech topics (last 48h) |
 | 2 | `topic-selector` | 65s | Picks best topic; checks last 30 published for duplicates; retries up to 3x if all topics are duplicates |
 | 3 | `deep-researcher` | 65s | Web search for facts, key players, timeline, Malaysian context |
-| 4 | `article-writer` | 65s | Writes 600–800 word BM article in TipTap JSON format; uses STYLE_GUIDE |
+| 4 | `article-writer` | 65s | Writes 700–900 word BM article in TipTap JSON format; uses STYLE_GUIDE |
 | 5 | `seo-metadata` | 65s | Slug, meta description, tags |
 | 6 | `image-brief` | 65s | Midjourney-style image prompt + Unsplash fallback query |
 | 7 | `quality-checker` | — (or 65s if revision needed) | Fact-checks via web search, scores 1–100, verdict: publish/review/reject |
@@ -332,6 +332,8 @@ All admin pages support **light and dark mode** via `admin-theme-change` custom 
 5. **TipTap body format** — article body is stored as TipTap JSON (not HTML). `editor.getHTML()` returns HTML for save; the DB stores JSON. Both are used in different contexts.
 6. **`!important` in media queries for admin** — MetricCell and other components use inline styles that CSS media queries can't override without `!important`.
 7. **65s sleeps between agents** — intentional rate-limit protection. Do not remove.
+9. **`STYLE_GUIDE` in `lib/agents/style-guide.js`** — imported by both `article-writer` and `revision`. Contains mandatory writing rules: 5-section structure (Hook → Fakta & Konteks → Impak Tempatan → Soalan Kritikal → Penutup), named-person hook (MUST open with a real named individual + direct quote), bookending (return to same person mid/end), 3–5 subheaders, 700–900 words. Also contains a **reference article** — this is for tone/voice calibration ONLY. Do not copy its content or structure literally.
+10. **Article-writer word count** — 700–900 words (raised from 600–800 in recent commit).
 8. **Image uploads** — go to Supabase Storage bucket `article-images`. Two separate endpoints: `/api/upload-image` (hero, 16:9 crop) and `/api/upload-inline-image` (inline, free crop).
 
 ---
@@ -354,7 +356,9 @@ All admin pages support **light and dark mode** via `admin-theme-change` custom 
 - [x] Confirmation modals (logout, publish, remove image, remove inline image)
 - [x] Dirty state tracking + unsaved changes warning
 - [x] Topic deduplication with retry logic
-- [x] Style guide injected into article writer
+- [x] Style guide injected into article writer and revision agent
+- [x] Named-person hook + bookending enforced in article-writer (most recent update)
+- [x] Reference article added to `style-guide.js` (for tone/voice only — NOT a copy template)
 
 ## What Could Be Next (not started)
 
