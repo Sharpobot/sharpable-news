@@ -638,15 +638,15 @@ function InlineImageModal({
                         crop={crop}
                         onChange={c => setCrop(c)}
                         onComplete={c => setCompletedCrop(c)}
-                        style={{ maxWidth: '100%', maxHeight: '100%', display: 'flex' }}
+                        style={{ maxWidth: '100%', maxHeight: '100%', display: 'block', margin: '0 auto' }}
                       >
                         <img ref={imgRef} src={previewDataUrl}
-                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                           alt="preview" />
                       </ReactCrop>
                     ) : (
                       <img src={previewSrc}
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                         alt="preview"
                         onError={e => { e.currentTarget.style.display = 'none' }}
                       />
@@ -1356,7 +1356,17 @@ export default function EditorClient({ article }) {
               <ol style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {sources.map((src, i) => (
                   <li key={i}>
-                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#ede8df', marginBottom: '2px' }}>{src.title}</div>
+                    {src.url ? (
+                      <a href={src.url} target="_blank" rel="noopener noreferrer" style={{
+                        fontSize: '13.5px', fontWeight: 600, color: '#ede8df', marginBottom: '2px',
+                        display: 'block', textDecoration: 'underline', textUnderlineOffset: '3px',
+                        textDecorationColor: 'rgba(237,232,223,0.3)',
+                      }}>
+                        {src.title}
+                      </a>
+                    ) : (
+                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#ede8df', marginBottom: '2px' }}>{src.title}</div>
+                    )}
                     {src.description && (
                       <div style={{ fontSize: '12.5px', color: '#56514d', lineHeight: 1.5 }}>
                         {src.description.replace(/<cite[^>]*>(.*?)<\/cite>/gi, '$1').trim()}
