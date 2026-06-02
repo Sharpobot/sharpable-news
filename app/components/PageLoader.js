@@ -64,17 +64,19 @@ export default function PageLoader() {
     return () => clearTimeout(t)
   }, [pathname])
 
-  if (!visible) return null
-
+  // Always stay in the DOM at opacity:0 so CSS transition has a starting value for fade-in.
+  // If we mount fresh at opacity:1 (via return null guard), there is nothing to interpolate from.
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
       background: '#0c0b0a',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      opacity: leaving ? 0 : 1,
-      transition: leaving ? 'opacity 0.9s cubic-bezier(0.4,0,0.2,1)' : 'opacity 0.5s ease',
-      pointerEvents: leaving ? 'none' : 'all',
+      opacity: !visible ? 0 : leaving ? 0 : 1,
+      transition: leaving
+        ? 'opacity 0.9s cubic-bezier(0.4,0,0.2,1)'
+        : 'opacity 0.5s ease',
+      pointerEvents: visible && !leaving ? 'all' : 'none',
     }}>
       {/* Logo */}
       <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 0, marginBottom: '28px', marginTop: '10vh' }}>
