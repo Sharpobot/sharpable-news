@@ -109,6 +109,8 @@ export default function AdminSidebar({ children, logoutAction }) {
   }, [])
 
   const toggleTheme = () => {
+    document.documentElement.classList.add('theme-transitioning')
+    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 380)
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
     localStorage.setItem('admin-theme', next)
@@ -119,21 +121,21 @@ export default function AdminSidebar({ children, logoutAction }) {
 
   /* ── Theme colour tokens ── */
   const C = lm ? {
-    pageBg:     '#f2efe9',
-    sidebarBg:  '#e8e4dc',
-    topbarBg:   '#e8e4dc',
-    border:     'rgba(24,21,15,0.1)',
-    borderMid:  'rgba(24,21,15,0.14)',
-    text1:      '#18150f',
-    text2:      '#6b6560',
-    text3:      '#a8a29c',
-    activeBg:   '#ded9d0',
-    activeText: '#b8892e',
-    iconInact:  '#b8b2aa',
-    logoutText: '#a8a29c',
-    logoutBorder:'rgba(24,21,15,0.12)',
-    drawerBg:   '#e8e4dc',
-    hamColor:   '#6b6560',
+    pageBg:      '#f8f8f8',
+    sidebarBg:   '#f1f1f1',
+    topbarBg:    '#f1f1f1',
+    border:      '#e5e7eb',
+    borderMid:   '#d1d5db',
+    text1:       '#1a1a1a',
+    text2:       '#6b7280',
+    text3:       '#9ca3af',
+    activeBg:    '#e8e8e8',
+    activeText:  '#d4a853',
+    iconInact:   '#9ca3af',
+    logoutText:  '#6b7280',
+    logoutBorder:'#e5e7eb',
+    drawerBg:    '#f1f1f1',
+    hamColor:    '#1a1a1a',
   } : {
     pageBg:     '#0a0a0a',
     sidebarBg:  '#0a0a0a',

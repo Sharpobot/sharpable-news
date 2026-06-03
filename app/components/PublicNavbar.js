@@ -67,6 +67,8 @@ export default function PublicNavbar() {
 
   const toggleTheme = () => {
     const html = document.documentElement
+    html.classList.add('theme-transitioning')
+    setTimeout(() => html.classList.remove('theme-transitioning'), 380)
     const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
     html.setAttribute('data-theme', next)
     localStorage.setItem('sn-theme', next)
@@ -131,7 +133,7 @@ export default function PublicNavbar() {
           {/* Search input */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <svg width="22" height="22" fill="none" stroke="rgba(237,232,223,0.3)" strokeWidth="1.8" viewBox="0 0 24 24"
-              style={{ position: 'absolute', left: 0, flexShrink: 0, pointerEvents: 'none' }}>
+              style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', flexShrink: 0, pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
@@ -159,11 +161,12 @@ export default function PublicNavbar() {
                   Tiada artikel dijumpai untuk &ldquo;<strong style={{ color: '#ede8df' }}>{query}</strong>&rdquo;
                 </div>
               )}
-              {!loading && results.length > 0 && results.map(r => (
+              {!loading && results.length > 0 && results.map((r, idx) => (
                 <Link
                   key={r.id}
                   href={`/artikel/${r.slug}`}
                   className="s-result-link"
+                  style={{ animation: 'resultFadeUp 0.28s ease both', animationDelay: `${idx * 0.06}s` }}
                   onClick={closeSearch}
                 >
                   <div className="s-result-thumb-lg">

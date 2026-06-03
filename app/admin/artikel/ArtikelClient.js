@@ -6,12 +6,13 @@ import { motion } from 'framer-motion'
 import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 /* ── Status badge ─────────────────────────────────────────── */
+// Colors chosen to be readable on both dark and light backgrounds
 const STATUS_CFG = {
-  generating:      { label: 'Menjana',  color: '#92400e', bg: 'rgba(245,158,11,0.13)',  dot: '#f59e0b' },
-  ready_to_review: { label: 'Semak',    color: '#93c5fd', bg: 'rgba(59,130,246,0.12)',  dot: '#3b82f6' },
+  generating:      { label: 'Menjana',  color: '#d97706', bg: 'rgba(245,158,11,0.10)',  dot: '#f59e0b' },
+  ready_to_review: { label: 'Semak',    color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
   draft:           { label: 'Draf',     color: null,      bg: null,                     dot: null      },
-  published:       { label: 'Diterbit', color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)', dot: '#10b981' },
-  failed:          { label: 'Gagal',    color: '#fca5a5', bg: 'rgba(239,68,68,0.12)',   dot: '#ef4444' },
+  published:       { label: 'Diterbit', color: '#059669', bg: 'rgba(16,185,129,0.10)',  dot: '#10b981' },
+  failed:          { label: 'Gagal',    color: '#dc2626', bg: 'rgba(239,68,68,0.10)',   dot: '#ef4444' },
 }
 function StatusBadge({ status }) {
   const cfg = STATUS_CFG[status] ?? { label: status, color: null, bg: null, dot: null }
@@ -85,13 +86,13 @@ export default function ArtikelClient({ initialArticles }) {
   }
 
   const vars = lm ? `
-    --bg: #f5f3f0; --surface: #ffffff; --surface2: #f0ede9;
-    --border: rgba(24,21,15,0.09); --divider: rgba(24,21,15,0.06);
-    --t1: #18150f; --t2: #6b6560; --t3: #a8a29e;
-    --surface-shadow: 0 1px 3px rgba(24,21,15,0.07); --surface-inset: none;
-    --row-hover: rgba(24,21,15,0.025);
-    --del-idle: rgba(24,21,15,0.22); --del-hover: #ef4444;
-    --badge-bg: rgba(24,21,15,0.07);
+    --bg: #f8f8f8; --surface: #ffffff; --surface2: #f1f1f1;
+    --border: #e5e7eb; --divider: #f0f0f0;
+    --t1: #1a1a1a; --t2: #6b7280; --t3: #9ca3af;
+    --surface-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px #e5e7eb; --surface-inset: none;
+    --row-hover: rgba(0,0,0,0.02);
+    --del-idle: #9ca3af; --del-hover: #ef4444;
+    --badge-bg: rgba(0,0,0,0.05);
     --jana-bg: rgba(212,168,83,0.1); --jana-border: rgba(212,168,83,0.28);
   ` : `
     --bg: #0c0b0a; --surface: #0f0e0d; --surface2: #131110;

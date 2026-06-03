@@ -1534,3 +1534,28 @@ button { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s
   .s-result-thumb-lg { width: 64px; height: 42px; }
   .s-result-title-lg { font-size: 14.5px; }
 }
+
+/* ════════════════════════════════
+   SEARCH RESULT ENTER ANIMATION
+════════════════════════════════ */
+@keyframes resultFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════
+   SMOOTH THEME TRANSITION
+   Applied momentarily during toggle — not on page load
+════════════════════════════════ */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 300ms ease-in-out,
+    color            300ms ease-in-out,
+    border-color     300ms ease-in-out,
+    fill             300ms ease-in-out,
+    stroke           300ms ease-in-out !important;
+  /* Exclude transforms/opacity so existing animations aren't disrupted */
+}
