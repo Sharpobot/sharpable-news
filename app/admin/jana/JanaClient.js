@@ -315,13 +315,13 @@ export default function JanaClient({ initialGenerating }) {
   }
 
   const vars = lm ? `
-    --bg: #f5f3f0; --surface: #ffffff; --surface2: #f0ede9;
-    --border: rgba(24,21,15,0.09); --divider: rgba(24,21,15,0.06);
-    --t1: #18150f; --t2: #6b6560; --t3: #a8a29e;
-    --surface-shadow: 0 1px 3px rgba(24,21,15,0.07); --surface-inset: none;
+    --bg: #f8f8f8; --surface: #ffffff; --surface2: #f1f1f1;
+    --border: #e5e7eb; --divider: #f0f0f0;
+    --t1: #1a1a1a; --t2: #6b7280; --t3: #9ca3af;
+    --surface-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px #e5e7eb; --surface-inset: none;
     --agent-active-bg: rgba(245,158,11,0.06);
-    --agent-idle: rgba(24,21,15,0.2);
-    --chip-bg: rgba(24,21,15,0.06); --chip-border: rgba(24,21,15,0.1);
+    --agent-idle: #9ca3af;
+    --chip-bg: rgba(0,0,0,0.04); --chip-border: #e5e7eb;
   ` : `
     --bg: #0c0b0a; --surface: #0f0e0d; --surface2: #131110;
     --border: rgba(237,232,223,0.07); --divider: rgba(237,232,223,0.05);
