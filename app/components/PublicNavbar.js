@@ -133,7 +133,7 @@ export default function PublicNavbar() {
           {/* Search input */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <svg width="22" height="22" fill="none" stroke="rgba(237,232,223,0.3)" strokeWidth="1.8" viewBox="0 0 24 24"
-              style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', flexShrink: 0, pointerEvents: 'none' }}>
+              style={{ position: 'absolute', left: 0, top: '4px', flexShrink: 0, pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input

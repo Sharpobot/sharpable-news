@@ -1111,11 +1111,10 @@ export default function EditorClient({ article, authors = [] }) {
   const editorContainerRef = useRef(null)
   const [imgMove, setImgMove] = useState(null) // {top, canUp, canDown}
 
-  // Hover controls (edit / delete) shown when mouse is over an image
+  // Hover controls (edit / delete / move) shown when mouse is over an image
   const imgHoverTimer = useRef(null)
   const hoverEditPosRef = useRef(null)
-  const [imgHover, setImgHover] = useState(null) // {top,left,width,height,src,alt,caption,pos}
-  const [imgHoverDeleteConfirm, setImgHoverDeleteConfirm] = useState(false)
+  const [imgHover, setImgHover] = useState(null) // {top,left,width,height,src,alt,caption,pos,canUp,canDown}
 
   useEffect(() => {
     if (!editor) return
@@ -1148,44 +1147,90 @@ export default function EditorClient({ article, authors = [] }) {
     return () => { editor.off('selectionUpdate', update); editor.off('transaction', update) }
   }, [editor])
 
-  /* ── Hover detection for inline images ── */
+  /* ── Hover detection for inline images (desktop + mobile) ── */
   useEffect(() => {
     const container = editorContainerRef.current
     if (!container || !editor) return
 
-    const showHover = (img) => {
-      clearTimeout(imgHoverTimer.current)
+    const buildHoverData = (img) => {
       const cRect = container.getBoundingClientRect()
       const iRect = img.getBoundingClientRect()
-      let imgPos = null
+      let imgPos = null, canUp = false, canDown = false
       editor.state.doc.descendants((node, pos) => {
         if (imgPos !== null) return false
-        if (node.type.name === 'image' && node.attrs.src === img.getAttribute('src')) {
-          imgPos = pos
-        }
+        if (node.type.name === 'image' && node.attrs.src === img.getAttribute('src')) imgPos = pos
       })
-      setImgHoverDeleteConfirm(false)
-      setImgHover({
+      if (imgPos !== null) {
+        try {
+          const $p = editor.state.doc.resolve(imgPos)
+          const d  = $p.depth
+          if (d >= 1) {
+            const parent = $p.node(d - 1)
+            const idx    = $p.index(d - 1)
+            canUp   = idx > 0
+            canDown = idx < parent.childCount - 1
+          }
+        } catch {}
+      }
+      return {
         top: iRect.top - cRect.top, left: iRect.left - cRect.left,
         width: iRect.width, height: iRect.height,
         src: img.getAttribute('src') ?? '', alt: img.getAttribute('alt') ?? '',
-        caption: img.getAttribute('title') ?? '', pos: imgPos,
-      })
+        caption: img.getAttribute('title') ?? '', pos: imgPos, canUp, canDown,
+      }
     }
-    const startHide = () => {
-      imgHoverTimer.current = setTimeout(() => {
-        setImgHover(null); setImgHoverDeleteConfirm(false)
-      }, 180)
-    }
-    const onOver = (e) => { if (e.target.tagName === 'IMG') showHover(e.target) }
-    const onOut  = (e) => { if (e.target.tagName === 'IMG') startHide() }
+
+    const showHover = (img) => { clearTimeout(imgHoverTimer.current); setImgHover(buildHoverData(img)) }
+    const startHide = () => { imgHoverTimer.current = setTimeout(() => setImgHover(null), 180) }
+
+    // Desktop
+    const onOver  = (e) => { if (e.target.tagName === 'IMG') showHover(e.target) }
+    const onOut   = (e) => { if (e.target.tagName === 'IMG') startHide() }
+    // Mobile tap: show overlay; tap elsewhere = hide
+    const onTouch = (e) => { if (e.target.tagName === 'IMG' && container.contains(e.target)) showHover(e.target) }
+    const onDocTouch = (e) => { if (!e.target.closest('[data-img-hover-overlay]')) setImgHover(null) }
 
     container.addEventListener('mouseover', onOver)
     container.addEventListener('mouseout',  onOut)
+    container.addEventListener('touchstart', onTouch, { passive: true })
+    document.addEventListener('touchstart', onDocTouch, { passive: true })
     return () => {
       container.removeEventListener('mouseover', onOver)
       container.removeEventListener('mouseout',  onOut)
+      container.removeEventListener('touchstart', onTouch)
+      document.removeEventListener('touchstart', onDocTouch)
       clearTimeout(imgHoverTimer.current)
+    }
+  }, [editor])
+
+  /* ── Auto-scroll while dragging an image (desktop) ── */
+  useEffect(() => {
+    const container = editorContainerRef.current
+    if (!container || !editor) return
+    let dragging = false, rafId = null
+
+    const scrollStep = (dir, speed) => {
+      window.scrollBy(0, dir * speed)
+      rafId = requestAnimationFrame(() => scrollStep(dir, speed))
+    }
+    const onDrag = (e) => {
+      if (!dragging || e.clientY === 0) return // clientY=0 = drag left window
+      cancelAnimationFrame(rafId)
+      const threshold = 80, h = window.innerHeight, y = e.clientY
+      if (y < threshold)          scrollStep(-1, Math.ceil(((threshold - y) / threshold) * 14))
+      else if (y > h - threshold) scrollStep(+1, Math.ceil(((y - (h - threshold)) / threshold) * 14))
+    }
+    const onDragStart = () => { dragging = true }
+    const onDragEnd   = () => { dragging = false; cancelAnimationFrame(rafId) }
+
+    container.addEventListener('dragstart', onDragStart)
+    document.addEventListener('dragend',   onDragEnd)
+    container.addEventListener('drag',     onDrag)
+    return () => {
+      container.removeEventListener('dragstart', onDragStart)
+      document.removeEventListener('dragend',   onDragEnd)
+      container.removeEventListener('drag',     onDrag)
+      cancelAnimationFrame(rafId)
     }
   }, [editor])
 
@@ -1205,7 +1250,27 @@ export default function EditorClient({ article, authors = [] }) {
     if (node?.type.name === 'image') {
       editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize))
     }
-    setImgHover(null); setImgHoverDeleteConfirm(false); setIsDirty(true)
+    setImgHover(null); setIsDirty(true)
+  }
+
+  /* Move image by position (used by hover ↑↓ on mobile/tap) */
+  const moveImageAtPos = (direction) => {
+    if (!editor || imgHover?.pos == null) return
+    const { doc, tr } = editor.state
+    const $pos  = doc.resolve(imgHover.pos)
+    const depth = $pos.depth
+    if (depth < 1) return
+    const parent = $pos.node(depth - 1)
+    if (!parent) return
+    const index = $pos.index(depth - 1)
+    const target = direction === 'up' ? index - 1 : index + 1
+    if (target < 0 || target >= parent.childCount) return
+    const minIdx = Math.min(index, target), maxIdx = Math.max(index, target)
+    let startPos = $pos.start(depth - 1)
+    for (let i = 0; i < minIdx; i++) startPos += parent.child(i).nodeSize
+    const nodeA = parent.child(minIdx), nodeB = parent.child(maxIdx)
+    editor.view.dispatch(tr.replaceWith(startPos, startPos + nodeA.nodeSize + nodeB.nodeSize, [nodeB, nodeA]))
+    setImgHover(null); setIsDirty(true)
   }
 
   const moveImage = (direction) => {
@@ -1321,6 +1386,9 @@ export default function EditorClient({ article, authors = [] }) {
       <ConfirmationModal open={modal === 'removeInlineImage'} title="Buang Imej?" message="Imej dalam artikel ini akan dibuang."
         confirmLabel="Ya, Buang" cancelLabel="Batal" confirmColor="red"
         onConfirm={() => { removeSelectedImage(); setModal(null) }} onCancel={() => setModal(null)} />
+      <ConfirmationModal open={modal === 'removeHoverImage'} title="Buang Imej?" message="Imej dalam artikel ini akan dibuang secara kekal."
+        confirmLabel="Ya, Buang" cancelLabel="Batal" confirmColor="red"
+        onConfirm={() => { deleteHoverImage(); setModal(null) }} onCancel={() => { setModal(null); setImgHover(null) }} />
       <ConfirmationModal open={modal === 'publish'} title="Terbitkan Artikel?" message="Artikel akan diterbitkan dan dapat dilihat oleh orang awam."
         confirmLabel="Ya, Terbitkan" cancelLabel="Semak Semula" confirmColor="amber"
         onConfirm={() => { setModal(null); save('published') }} onCancel={() => setModal(null)} />
@@ -1544,9 +1612,10 @@ export default function EditorClient({ article, authors = [] }) {
                   </div>
                 )}
 
-                {/* ── Hover controls: edit + delete at top-right of image ── */}
+                {/* ── Hover controls: ↑↓ (mobile) + edit + delete ── */}
                 {imgHover && (
                   <div
+                    data-img-hover-overlay="true"
                     style={{
                       position: 'absolute',
                       top: `${imgHover.top + 7}px`,
@@ -1556,49 +1625,40 @@ export default function EditorClient({ article, authors = [] }) {
                       display: 'flex', flexDirection: 'row', gap: '4px', padding: '3px',
                     }}
                     onMouseEnter={() => clearTimeout(imgHoverTimer.current)}
-                    onMouseLeave={() => {
-                      imgHoverTimer.current = setTimeout(() => {
-                        setImgHover(null); setImgHoverDeleteConfirm(false)
-                      }, 180)
-                    }}
+                    onMouseLeave={() => { imgHoverTimer.current = setTimeout(() => setImgHover(null), 180) }}
                   >
-                    {imgHoverDeleteConfirm ? (
-                      // Inline confirm
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                        background: 'rgba(12,11,10,0.94)',
-                        border: '1px solid rgba(239,68,68,0.35)',
-                        borderRadius: '7px', padding: '4px 8px',
-                        backdropFilter: 'blur(6px)',
-                      }}>
-                        <span style={{ fontSize: '11px', color: '#fca5a5', fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>Padam?</span>
-                        <button onMouseDown={e => { e.preventDefault(); deleteHoverImage() }}
-                          style={{ width: '20px', height: '20px', borderRadius: '4px', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>✓</button>
-                        <button onMouseDown={e => { e.preventDefault(); setImgHoverDeleteConfirm(false) }}
-                          style={{ width: '20px', height: '20px', borderRadius: '4px', border: 'none', background: 'rgba(237,232,223,0.1)', color: '#8c857c', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px' }}>✕</button>
-                      </div>
-                    ) : (
-                      <>
-                        <button onMouseDown={e => { e.preventDefault(); openHoverEditImage() }} title="Edit imej"
-                          style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>
-                          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                        </button>
-                        <button onMouseDown={e => { e.preventDefault(); setImgHoverDeleteConfirm(true) }} title="Padam imej"
-                          style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>
-                          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                            <path d="M10 11v6"/><path d="M14 11v6"/>
-                          </svg>
-                        </button>
-                      </>
+                    {/* ↑↓ move buttons — always visible (essential on mobile, convenient on desktop) */}
+                    {imgHover.canUp && (
+                      <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('up') }} title="Pindah ke atas"
+                        style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↑</button>
                     )}
+                    {imgHover.canDown && (
+                      <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('down') }} title="Pindah ke bawah"
+                        style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↓</button>
+                    )}
+                    {(imgHover.canUp || imgHover.canDown) && (
+                      <div style={{ width: '1px', background: 'rgba(237,232,223,0.15)', margin: '4px 1px' }} />
+                    )}
+                    {/* Edit */}
+                    <button onMouseDown={e => { e.preventDefault(); openHoverEditImage() }} title="Edit imej"
+                      style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>
+                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                    {/* Delete — opens ConfirmationModal */}
+                    <button onMouseDown={e => { e.preventDefault(); setModal('removeHoverImage') }} title="Padam imej"
+                      style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>
+                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6"/><path d="M14 11v6"/>
+                      </svg>
+                    </button>
                   </div>
                 )}
               </div>

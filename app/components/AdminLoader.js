@@ -7,10 +7,10 @@ export default function AdminLoader() {
   const [visible, setVisible] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const prevPath  = useRef(pathname)
-  const delayRef  = useRef(null)
   const hideRef   = useRef(null)
+  const showTime  = useRef(null)
 
-  /* Show with 300 ms delay on admin link clicks (so fast transitions don't flash) */
+  /* Show IMMEDIATELY on admin link clicks — covers the Next.js blank-page gap */
   useEffect(() => {
     const onClick = (e) => {
       const a = e.target.closest('a')
@@ -20,25 +20,32 @@ export default function AdminLoader() {
       const dest = href.split('?')[0].split('#')[0]
       if (dest === window.location.pathname) return
 
-      clearTimeout(delayRef.current)
+      // Cancel any pending hide from a previous navigation
       clearTimeout(hideRef.current)
-      delayRef.current = setTimeout(() => {
-        setLeaving(false)
-        setVisible(true)
-      }, 300)
+      setLeaving(false)
+      setVisible(true)
+      showTime.current = Date.now()
     }
 
     document.addEventListener('click', onClick)
-    return () => { document.removeEventListener('click', onClick); clearTimeout(delayRef.current) }
+    return () => document.removeEventListener('click', onClick)
   }, [])
 
-  /* Dismiss when pathname changes (navigation complete) */
+  /* Dismiss when pathname changes — but respect a 350ms minimum display time */
   useEffect(() => {
     if (pathname === prevPath.current) return
     prevPath.current = pathname
-    clearTimeout(delayRef.current) // cancel pending show if navigation was fast
-    setLeaving(true)
-    hideRef.current = setTimeout(() => { setVisible(false); setLeaving(false) }, 320)
+
+    const elapsed   = Date.now() - (showTime.current ?? 0)
+    const MIN_SHOW  = 350
+    const remaining = Math.max(0, MIN_SHOW - elapsed)
+
+    hideRef.current = setTimeout(() => {
+      setLeaving(true)
+      setTimeout(() => { setVisible(false); setLeaving(false) }, 280)
+    }, remaining)
+
+    return () => clearTimeout(hideRef.current)
   }, [pathname])
 
   return (
@@ -48,22 +55,18 @@ export default function AdminLoader() {
       backdropFilter: 'blur(2px)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      /* Always in DOM at opacity:0 so fade-in works (same trick as PageLoader) */
+      /* Always in DOM at opacity:0 — same trick as PageLoader so fade-in works */
       opacity: !visible ? 0 : leaving ? 0 : 1,
-      transition: leaving ? 'opacity 0.28s ease' : 'opacity 0.18s ease',
+      transition: leaving ? 'opacity 0.28s ease' : 'opacity 0.16s ease',
       pointerEvents: visible && !leaving ? 'all' : 'none',
     }}>
-      {/* Thin amber-arc spinner */}
       <div style={{
-        width: '38px', height: '38px',
-        borderRadius: '50%',
+        width: '38px', height: '38px', borderRadius: '50%',
         border: '2px solid rgba(212,168,83,0.12)',
         borderTop: '2px solid #d4a853',
         animation: 'al-spin 0.72s linear infinite',
         marginBottom: '14px',
       }} />
-
-      {/* Wordmark */}
       <span style={{
         fontFamily: "'DM Sans', sans-serif",
         fontSize: '10px', fontWeight: 700,
@@ -72,7 +75,6 @@ export default function AdminLoader() {
       }}>
         Sharpable News
       </span>
-
       <style>{`@keyframes al-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
