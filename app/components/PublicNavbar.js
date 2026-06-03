@@ -130,10 +130,10 @@ export default function PublicNavbar() {
         </button>
 
         <div className="s-wrap">
-          {/* Search input */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          {/* Search input — icon is a flex sibling for proper vertical centering */}
+          <div className="s-input-row">
             <svg width="22" height="22" fill="none" stroke="rgba(237,232,223,0.3)" strokeWidth="1.8" viewBox="0 0 24 24"
-              style={{ position: 'absolute', left: 0, top: '4px', flexShrink: 0, pointerEvents: 'none' }}>
+              style={{ flexShrink: 0, pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
@@ -146,7 +146,6 @@ export default function PublicNavbar() {
               placeholder="Cari rencana…"
               autoComplete="off"
               spellCheck="false"
-              style={{ paddingLeft: '36px' }}
             />
           </div>
 

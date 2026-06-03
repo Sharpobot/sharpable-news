@@ -79,14 +79,23 @@ function ChartTooltip({ active, payload, label }) {
    Main dashboard
 ═══════════════════════════════════════════════════════════════ */
 export default function AdminClient({ analytics }) {
-  const [lm, setLm] = useState(false)
+  const [lm,       setLm]       = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-theme') || 'dark'
     setLm(saved === 'light')
     const handler = (e) => setLm(e.detail === 'light')
     window.addEventListener('admin-theme-change', handler)
-    return () => window.removeEventListener('admin-theme-change', handler)
+
+    const checkMobile = () => setIsMobile(window.innerWidth < 640)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => {
+      window.removeEventListener('admin-theme-change', handler)
+      window.removeEventListener('resize', checkMobile)
+    }
   }, [])
 
   if (!analytics) return null
@@ -287,7 +296,7 @@ export default function AdminClient({ analytics }) {
         </div>
 
         {/* 7-day bar chart */}
-        <div className="dash-panel">
+        <div className="dash-panel" style={{ overflow: 'hidden', minWidth: 0 }}>
           {/* Header: label left, weekly total right */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
             <div className="panel-label" style={{ margin: 0 }}>Artikel Diterbit — 7 Hari Lepas</div>
@@ -305,6 +314,7 @@ export default function AdminClient({ analytics }) {
                 dataKey="label"
                 tick={{ fill: 'var(--t3)', fontSize: 10 }}
                 axisLine={false} tickLine={false}
+                interval={isMobile ? 1 : 0}
               />
               <YAxis
                 allowDecimals={false}

@@ -45,6 +45,10 @@
   --border-scroll: rgba(24,21,15,0.16);
 }
 
+/* Prevent white/unstyled flash during page transitions */
+html, body { background-color: #0c0b0a; }
+html[data-theme="light"], html[data-theme="light"] body { background-color: #f8f8f8; }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
@@ -976,6 +980,23 @@ button { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s
   outline: none;
 }
 .s-input::placeholder { color: var(--text-3); }
+
+/* Search input row — flex layout so icon is a sibling (proper centering) */
+.s-input-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid rgba(237,232,223,0.18);
+  padding-bottom: 14px;
+}
+.s-input-row .s-input {
+  flex: 1;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+/* Always light text — search overlay is always dark */
+.s-input-row .s-input { color: #ede8df; }
+.s-input-row .s-input::placeholder { color: rgba(237,232,223,0.3); }
 .s-hint { margin-top: 16px; font-size: 12.5px; color: var(--text-3); line-height: 1.6; }
 .s-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .s-tag {

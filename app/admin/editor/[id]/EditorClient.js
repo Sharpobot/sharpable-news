@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
+import { createImagePlaceholderExtension } from './ImagePlaceholderExtension'
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import Link from 'next/link'
@@ -63,30 +64,38 @@ function TagInput({ tags, onChange }) {
 /* ── TipTap toolbar ────────────────────────────────────────── */
 function Toolbar({ editor, onInsertImage }) {
   if (!editor) return null
+  const btnStyle = (isActive) => ({
+    padding: '5px 10px', height: '28px', borderRadius: '3px',
+    fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
+    border: '1px solid rgba(237,232,223,0.11)',
+    background: isActive ? '#2a2520' : 'transparent',
+    color: isActive ? '#d4a853' : '#8c857c',
+    fontFamily: "'DM Sans', sans-serif",
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    whiteSpace: 'nowrap', flexShrink: 0,
+  })
   const btn = (label, action, isActive) => (
-    <button key={label} onMouseDown={e => { e.preventDefault(); action() }} style={{
-      padding: '4px 10px', borderRadius: '3px', fontSize: '12.5px', fontWeight: 600,
-      cursor: 'pointer', border: '1px solid rgba(237,232,223,0.11)',
-      background: isActive ? '#2a2520' : 'transparent',
-      color: isActive ? '#d4a853' : '#8c857c',
-      fontFamily: "'DM Sans', sans-serif",
-    }}>{label}</button>
+    <button key={label} onMouseDown={e => { e.preventDefault(); action() }} style={btnStyle(isActive)}>{label}</button>
   )
   return (
-    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px', alignItems: 'center' }}>
-      {btn('B', () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'))}
-      {btn('I', () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic'))}
-      {btn('H2', () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }))}
-      {btn('H3', () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive('heading', { level: 3 }))}
-      {btn('• Senarai', () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'))}
-      {btn('1. Senarai', () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'))}
-      {/* Image insert button */}
-      <button onMouseDown={e => { e.preventDefault(); onInsertImage() }} title="Sisip Imej" style={{
-        padding: '4px 8px', borderRadius: '3px', cursor: 'pointer',
-        border: '1px solid rgba(237,232,223,0.11)', background: 'transparent', color: '#8c857c',
-        display: 'flex', alignItems: 'center', lineHeight: 1,
-      }}>
-        <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    /* sticky: sticks below the editor-header (60px) on desktop, below header+tabbar (~94px) on mobile */
+    <div className="toolbar-sticky" style={{
+      display: 'flex', gap: '4px', flexWrap: 'nowrap', overflowX: 'auto',
+      marginBottom: '8px', alignItems: 'center',
+      position: 'sticky', top: '60px', zIndex: 18,
+      background: '#0e0d0c', paddingTop: '4px', paddingBottom: '4px',
+      scrollbarWidth: 'none',
+    }}>
+      {btn('B',        () => editor.chain().focus().toggleBold().run(),                  editor.isActive('bold'))}
+      {btn('I',        () => editor.chain().focus().toggleItalic().run(),                editor.isActive('italic'))}
+      {btn('H2',       () => editor.chain().focus().toggleHeading({ level: 2 }).run(),   editor.isActive('heading', { level: 2 }))}
+      {btn('H3',       () => editor.chain().focus().toggleHeading({ level: 3 }).run(),   editor.isActive('heading', { level: 3 }))}
+      {btn('• Senarai', () => editor.chain().focus().toggleBulletList().run(),           editor.isActive('bulletList'))}
+      {btn('1. Senarai',() => editor.chain().focus().toggleOrderedList().run(),          editor.isActive('orderedList'))}
+      {/* Image button — identical height/border/padding as text buttons */}
+      <button onMouseDown={e => { e.preventDefault(); onInsertImage() }} title="Sisip Imej"
+        style={btnStyle(false)}>
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
@@ -994,6 +1003,7 @@ export default function EditorClient({ article, authors = [] }) {
     extensions: [
       StarterKit,
       Image.configure({ inline: false, allowBase64: false }),
+      createImagePlaceholderExtension(article.id),
     ],
     content: article.body ?? '',
     onUpdate: () => setIsDirty(true),
@@ -1019,14 +1029,25 @@ export default function EditorClient({ article, authors = [] }) {
     return headlines[selectedIdx] ?? article.title ?? ''
   }, [customHeadline, selectedIdx, headlines, article.title])
 
+  /** Strip imagePlaceholder nodes from HTML body — used when publishing */
+  const stripPlaceholders = (html) => {
+    if (!html) return html
+    return html.replace(/<div[^>]*data-type="image-placeholder"[^>]*>\s*<\/div>/g, '')
+               .replace(/<div[^>]*data-type="image-placeholder"[^>]*\/>/g, '')
+  }
+
   const save = async (newStatus) => {
     setSaveStatus('saving')
     try {
+      const rawHtml = editor?.getHTML() ?? article.body ?? ''
+      // Strip placeholder nodes when publishing — they must never appear on public page
+      const body = newStatus === 'published' ? stripPlaceholders(rawHtml) : rawHtml
+
       const res = await fetch(`/api/articles/${article.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: getTitle(), body: editor?.getHTML() ?? article.body ?? '',
+          title: getTitle(), body,
           slug, meta_description: metaDescription, tags,
           featured_image: featuredImage, status: newStatus,
           author_id: authorId ?? null,
@@ -1376,6 +1397,9 @@ export default function EditorClient({ article, authors = [] }) {
           .mob-tab-show { display: block; }
 
           .aside-section { padding: 20px 16px; }
+
+          /* On mobile, toolbar sticks below header (~52px) + tab bar (~42px) */
+          .toolbar-sticky { top: 94px !important; }
         }
       `}</style>
 
@@ -1517,23 +1541,7 @@ export default function EditorClient({ article, authors = [] }) {
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Imej Hero</SectionLabel>
 
-            {article.image_brief && (
-              <>
-                <div style={{ padding: '14px 16px', borderRadius: '4px', marginBottom: '12px', background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderLeft: '3px solid #d4a853' }}
-                  className="hide-on-mobile">
-                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '6px' }}>Cadangan AI</div>
-                  <p style={{ margin: 0, fontSize: '13.5px', color: '#8c857c', lineHeight: 1.6 }}>{article.image_brief}</p>
-                </div>
-                <button className="show-on-mobile" onClick={() => setShowBrief(true)} style={{
-                  display: 'none', marginBottom: '12px', padding: '8px 14px', borderRadius: '6px',
-                  border: '1px solid rgba(212,168,83,0.3)', background: 'rgba(212,168,83,0.06)',
-                  color: '#d4a853', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}>
-                  Lihat Cadangan AI
-                </button>
-              </>
-            )}
+            {/* Cadangan AI panel removed — image suggestions now appear inline as ImagePlaceholder nodes */}
 
             {featuredImage ? (
               <div style={{ position: 'relative', marginBottom: '10px' }}>

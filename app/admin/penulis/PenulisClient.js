@@ -338,9 +338,9 @@ export default function PenulisClient({ initialAuthors }) {
   }, [])
 
   const C = lm ? {
-    pageBg: '#f2efe9', cardBg: '#ffffff', border: 'rgba(24,21,15,0.08)',
-    text1: '#18150f', text2: '#6b6560', text3: '#a8a29c',
-    btnBorder: 'rgba(24,21,15,0.14)', btnText: '#6b6560',
+    pageBg: '#f8f8f8', cardBg: '#ffffff', border: '#e5e7eb',
+    text1: '#1a1a1a', text2: '#6b7280', text3: '#9ca3af',
+    btnBorder: '#e5e7eb', btnText: '#6b7280',
   } : {
     pageBg: '#0c0b0a', cardBg: '#111010', border: 'rgba(237,232,223,0.07)',
     text1: '#ede8df', text2: '#8c857c', text3: '#56514d',

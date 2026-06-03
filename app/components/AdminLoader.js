@@ -57,7 +57,7 @@ export default function AdminLoader() {
       alignItems: 'center', justifyContent: 'center',
       /* Always in DOM at opacity:0 — same trick as PageLoader so fade-in works */
       opacity: !visible ? 0 : leaving ? 0 : 1,
-      transition: leaving ? 'opacity 0.28s ease' : 'opacity 0.16s ease',
+      transition: leaving ? 'opacity 0.28s ease' : 'none', /* instant show to eliminate white flash */
       pointerEvents: visible && !leaving ? 'all' : 'none',
     }}>
       <div style={{
