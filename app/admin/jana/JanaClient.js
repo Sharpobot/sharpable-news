@@ -233,7 +233,11 @@ export default function JanaClient({ initialArticles = [] }) {
     setIsSearching(true)
     const tid = toast.loading('Mencari topik trending…')
     try {
-      const res = await fetch('/api/generate', { method: 'POST' })
+      const res = await fetch('/api/generate-topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topicDirection: null }),
+      })
       const { articleId, error } = await res.json()
       if (error) { toast.error(`Ralat: ${error}`, { id: tid }); return }
       toast.success('Mencari topik trending… (~2 minit)', { id: tid })

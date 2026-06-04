@@ -9,11 +9,12 @@ export async function POST(request) {
 
   const db = createAdminSupabaseClient()
 
-  // Create article row with awaiting status
-  const tempSlug = `awaiting-${Date.now()}`
+  // Create article as 'generating' — the pipeline transitions it to
+  // 'awaiting_topic_selection' once agents 1+2 complete and options are ready
+  const tempSlug = `draft-${Date.now()}`
   const { data, error } = await db
     .from('articles')
-    .insert({ status: 'awaiting_topic_selection', slug: tempSlug })
+    .insert({ status: 'generating', slug: tempSlug })
     .select('id')
     .single()
 
