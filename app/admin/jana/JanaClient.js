@@ -147,6 +147,7 @@ export default function JanaClient({ initialArticles = [] }) {
   const [topicDirection, setTopicDirection] = useState('')
   const [selectingId,    setSelectingId]    = useState(null) // which article is having topic picked
   const [lm,             setLm]            = useState(false)
+  const [showPanel,      setShowPanel]     = useState(true)
   const [modal,          setModal]          = useState(false)
   const [cancelTarget,   setCancelTarget]   = useState(null)
 
@@ -366,8 +367,22 @@ export default function JanaClient({ initialArticles = [] }) {
       </div>
 
       {/* ── Search Topics input ── */}
+      {showPanel ? (
       <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="section-label">Langkah 1 — Cari Topik</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div className="section-label" style={{ marginBottom: 0 }}>Langkah 1 — Cari Topik</div>
+          <button
+            onClick={() => setShowPanel(false)}
+            title="Tutup"
+            style={{
+              background: 'none', border: 'none', color: 'var(--t3)', cursor: 'pointer',
+              padding: '2px', display: 'flex', alignItems: 'center', lineHeight: 1,
+              fontSize: '18px', transition: 'color 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--t1)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--t3)' }}
+          >×</button>
+        </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '200px' }}>
             <label style={{ fontSize: '12px', color: 'var(--t3)', display: 'block', marginBottom: '6px' }}>
@@ -395,6 +410,27 @@ export default function JanaClient({ initialArticles = [] }) {
           </button>
         </div>
       </div>
+      ) : (
+        /* Collapsed state — compact button to reopen */
+        <button
+          onClick={() => setShowPanel(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px',
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: '8px', padding: '11px 16px', cursor: 'pointer',
+            color: 'var(--t3)', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
+            transition: 'border-color 0.15s, color 0.15s', width: '100%',
+            boxShadow: 'var(--surface-shadow)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,168,83,0.3)'; e.currentTarget.style.color = '#d4a853' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--t3)' }}
+        >
+          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          Jana artikel baharu…
+        </button>
+      )}
 
       {/* ── Awaiting topic selection ── */}
       <AnimatePresence>
