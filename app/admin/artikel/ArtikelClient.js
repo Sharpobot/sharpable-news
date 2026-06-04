@@ -88,7 +88,7 @@ export default function ArtikelClient({ initialArticles }) {
   const vars = lm ? `
     --bg: #f8f8f8; --surface: #ffffff; --surface2: #f1f1f1;
     --border: #e5e7eb; --divider: #f0f0f0;
-    --t1: #1a1a1a; --t2: #6b7280; --t3: #9ca3af;
+    --t1: #111827; --t2: #374151; --t3: #6b7280;
     --surface-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px #e5e7eb; --surface-inset: none;
     --row-hover: rgba(0,0,0,0.02);
     --del-idle: #9ca3af; --del-hover: #ef4444;
@@ -121,7 +121,9 @@ export default function ArtikelClient({ initialArticles }) {
           border: 1px solid var(--border);
           border-radius: 8px; overflow: hidden;
           box-shadow: var(--surface-shadow), var(--surface-inset);
+          width: 100%; min-width: 0;
         }
+        .at-title-cell { min-width: 0; overflow: hidden; }
         .at-header {
           display: grid; grid-template-columns: 1fr 140px 120px 36px;
           padding: 9px 20px;
@@ -155,6 +157,12 @@ export default function ArtikelClient({ initialArticles }) {
         .at-title-plain {
           font-size: 13.5px; font-weight: 500;
           color: var(--t1); line-height: 1.4;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          max-width: 100%;
+        }
+        .article-title-link {
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          display: block; max-width: 100%;
         }
         .delete-btn {
           background: none; border: none; cursor: pointer;

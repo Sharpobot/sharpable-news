@@ -81,9 +81,11 @@ function Toolbar({ editor, onInsertImage }) {
     /* sticky: sticks below the editor-header (60px) on desktop, below header+tabbar (~94px) on mobile */
     <div className="toolbar-sticky" style={{
       display: 'flex', gap: '4px', flexWrap: 'nowrap', overflowX: 'auto',
-      marginBottom: '8px', alignItems: 'center',
+      marginBottom: '12px', alignItems: 'center',
       position: 'sticky', top: '60px', zIndex: 18,
-      background: '#0e0d0c', paddingTop: '4px', paddingBottom: '4px',
+      background: '#0e0d0c',
+      paddingTop: '8px', paddingBottom: '8px',
+      borderBottom: '1px solid rgba(237,232,223,0.07)',
       scrollbarWidth: 'none',
     }}>
       {btn('B',        () => editor.chain().focus().toggleBold().run(),                  editor.isActive('bold'))}
@@ -1338,9 +1340,15 @@ export default function EditorClient({ article, authors = [] }) {
         .tiptap-editor img { max-width: 100%; width: auto; height: auto; max-height: 500px; border-radius: 4px; display: block; margin: 16px auto 4px; cursor: default; }
         .tiptap-editor img.ProseMirror-selectednode { outline: 2px solid #d4a853; border-radius: 4px; }
         .tiptap-editor img[title]::after { content: attr(title); }
-        .img-move-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:4px; border:1px solid rgba(237,232,223,0.18); background:#1e1c1a; color:#ede8df; cursor:pointer; font-size:14px; line-height:1; transition:background 0.1s; }
+        .img-move-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:4px; border:1px solid rgba(237,232,223,0.18); background:#1e1c1a; color:#ede8df; cursor:pointer; font-size:14px; line-height:1; transition:background 0.1s, transform 0.1s; }
         .img-move-btn:hover { background:#2a2824; }
+        .img-move-btn:active { transform:scale(0.91); }
         .img-move-btn:disabled { opacity:0.25; cursor:default; }
+        /* Toolbar button press animation */
+        .toolbar-sticky button:active { transform: scale(0.90); transition: transform 0.08s; }
+        /* Section labels animate in */
+        .editor-section-fade { animation: editorFadeUp 0.22s ease both; }
+        @keyframes editorFadeUp { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
 
         /* ── Header ── */
         .editor-header {
@@ -1365,9 +1373,10 @@ export default function EditorClient({ article, authors = [] }) {
           flex: 1; padding: 12px 8px; border: none; background: none;
           color: #56514d; font-size: 13px; font-weight: 600;
           border-bottom: 2px solid transparent; cursor: pointer;
-          transition: color 0.1s, border-color 0.1s;
-          font-family: "'DM Sans', sans-serif"; white-space: nowrap;
+          transition: color 0.15s, border-color 0.15s, background 0.12s;
+          font-family: var(--font-sans); white-space: nowrap;
         }
+        .editor-tab-btn:hover { color: #8c857c; background: rgba(237,232,223,0.03); }
         .editor-tab-btn.tab-active { color: #d4a853; border-bottom-color: #d4a853; }
 
         /* ── Desktop two-column layout ── */
@@ -1541,7 +1550,23 @@ export default function EditorClient({ article, authors = [] }) {
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Imej Hero</SectionLabel>
 
-            {/* Cadangan AI panel removed — image suggestions now appear inline as ImagePlaceholder nodes */}
+            {article.image_brief && (
+              <>
+                <div style={{ padding: '14px 16px', borderRadius: '4px', marginBottom: '12px', background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderLeft: '3px solid #d4a853' }}
+                  className="hide-on-mobile">
+                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '6px' }}>Cadangan AI — Imej Hero</div>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: '#8c857c', lineHeight: 1.6 }}>{article.image_brief}</p>
+                </div>
+                <button className="show-on-mobile" onClick={() => setShowBrief(true)} style={{
+                  display: 'none', marginBottom: '12px', padding: '8px 14px', borderRadius: '6px',
+                  border: '1px solid rgba(212,168,83,0.3)', background: 'rgba(212,168,83,0.06)',
+                  color: '#d4a853', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  Lihat Cadangan AI
+                </button>
+              </>
+            )}
 
             {featuredImage ? (
               <div style={{ position: 'relative', marginBottom: '10px' }}>

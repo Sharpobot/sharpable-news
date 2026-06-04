@@ -113,9 +113,9 @@ export default function AdminClient({ analytics }) {
     --surface2: #f1f1f1;
     --border: #e5e7eb;
     --divider: #f0f0f0;
-    --t1: #1a1a1a;
-    --t2: #6b7280;
-    --t3: #9ca3af;
+    --t1: #111827;
+    --t2: #374151;
+    --t3: #6b7280;
     --bar-empty: #e5e7eb;
     --surface-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px #e5e7eb;
     --surface-inset: none;
@@ -193,7 +193,9 @@ export default function AdminClient({ analytics }) {
         /* Analytics bottom */
         .analytics-bottom {
           display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+          min-width: 0; overflow: hidden;
         }
+        .analytics-bottom > * { min-width: 0; overflow: hidden; }
 
         /* Panel shared style */
         .dash-panel {
