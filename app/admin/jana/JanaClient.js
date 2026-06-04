@@ -233,18 +233,14 @@ export default function JanaClient({ initialArticles = [] }) {
     setIsSearching(true)
     const tid = toast.loading('Mencari topik trending…')
     try {
-      const res = await fetch('/api/generate-topics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topicDirection: null }),
-      })
+      const res = await fetch('/api/generate', { method: 'POST' })
       const { articleId, error } = await res.json()
       if (error) { toast.error(`Ralat: ${error}`, { id: tid }); return }
-      toast.success('Mencari topik… (~2 minit)', { id: tid })
-      const newArticle = { id: articleId, status: 'awaiting_topic_selection', title: null, created_at: new Date().toISOString() }
+      toast.success('Mencari topik trending… (~2 minit)', { id: tid })
+      const newArticle = { id: articleId, status: 'generating', title: null, created_at: new Date().toISOString() }
       setArticles(prev => [newArticle, ...prev])
       setGeneratingIds(prev => [...prev, articleId])
-      setStatusMap(prev => ({ ...prev, [articleId]: 'awaiting_topic_selection' }))
+      setStatusMap(prev => ({ ...prev, [articleId]: 'generating' }))
     } catch {
       toast.error('Ralat semasa mencari topik.', { id: tid })
     } finally {
