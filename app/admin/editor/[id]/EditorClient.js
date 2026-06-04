@@ -1423,9 +1423,13 @@ export default function EditorClient({ article, authors = [] }) {
 
           .aside-section { padding: 20px 16px; }
 
-          /* On mobile: header ~52px + tab bar ~44px + 6px breathing gap */
-          .toolbar-sticky { top: 102px !important; }
-          /* Toolbar scrollbar hidden on webkit */
+          /* On mobile: sit flush below tab bar, remove double border */
+          .toolbar-sticky {
+            top: 96px !important;
+            border-top: none !important;
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+          }
           .toolbar-sticky::-webkit-scrollbar { display: none; }
         }
       `}</style>

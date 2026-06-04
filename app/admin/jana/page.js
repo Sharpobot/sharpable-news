@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic'
 
 export default async function JanaPage() {
   const supabase = createAdminSupabaseClient()
-  const { data: generating } = await supabase
+  const { data: active } = await supabase
     .from('articles')
-    .select('id, title, slug, status, created_at')
-    .eq('status', 'generating')
+    .select('id, title, slug, status, created_at, topic_options')
+    .in('status', ['generating', 'awaiting_topic_selection'])
     .order('created_at', { ascending: false })
 
-  return <JanaClient initialGenerating={generating ?? []} />
+  return <JanaClient initialArticles={active ?? []} />
 }

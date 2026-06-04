@@ -9,13 +9,23 @@ export async function GET(request) {
   if (!articleId) return Response.json({ error: 'articleId required' }, { status: 400 })
 
   const db = createAdminSupabaseClient()
-  const { data, error } = await db
-    .from('article_generation_progress')
-    .select('agent_name, status, message, updated_at')
-    .eq('article_id', articleId)
-    .order('updated_at', { ascending: false })
 
-  if (error) return Response.json({ progress: [] })
+  const [{ data: progress, error }, { data: article }] = await Promise.all([
+    db.from('article_generation_progress')
+      .select('agent_name, status, message, updated_at')
+      .eq('article_id', articleId)
+      .order('updated_at', { ascending: false }),
+    db.from('articles')
+      .select('status, topic_options')
+      .eq('id', articleId)
+      .single(),
+  ])
 
-  return Response.json({ progress: data ?? [] })
+  if (error) return Response.json({ progress: [], articleStatus: null, topicOptions: null })
+
+  return Response.json({
+    progress:      progress ?? [],
+    articleStatus: article?.status ?? null,
+    topicOptions:  article?.topic_options ?? null,
+  })
 }

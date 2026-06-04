@@ -8,6 +8,7 @@ import ConfirmationModal from '@/components/admin/ConfirmationModal'
 /* ── Status badge ─────────────────────────────────────────── */
 // Colors chosen to be readable on both dark and light backgrounds
 const STATUS_CFG = {
+  awaiting_topic_selection: { label: 'Pilih Topik', color: '#2563eb', bg: 'rgba(59,130,246,0.10)', dot: '#3b82f6' },
   generating:      { label: 'Menjana',  color: '#d97706', bg: 'rgba(245,158,11,0.10)',  dot: '#f59e0b' },
   ready_to_review: { label: 'Semak',    color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
   draft:           { label: 'Draf',     color: null,      bg: null,                     dot: null      },
