@@ -422,14 +422,35 @@ export default function JanaClient({ initialArticles = [] }) {
                         Pilih satu topik untuk diteruskan
                       </div>
                     </div>
-                    <button onClick={() => openCancel(article)} style={{
-                      background: 'none', border: '1px solid var(--border)', color: 'var(--t3)',
-                      borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', cursor: 'pointer',
-                      fontFamily: "'DM Sans', sans-serif",
-                    }}>
-                      Batal
-                    </button>
-                  </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      {/* Auto-select the top-ranked option */}
+                      <button
+                        onClick={() => handleSelectTopic(article.id, opts[0])}
+                        disabled={selectingId === article.id}
+                        style={{
+                          background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.25)',
+                          color: '#d4a853', borderRadius: '4px', padding: '4px 12px',
+                          fontSize: '11.5px', fontWeight: 600, cursor: selectingId === article.id ? 'not-allowed' : 'pointer',
+                          fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: '5px',
+                          opacity: selectingId === article.id ? 0.5 : 1,
+                          transition: 'background 0.12s',
+                        }}
+                        title="Jana artikel menggunakan topik pertama secara automatik"
+                      >
+                        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                        Jana Automatik
+                      </button>
+                      <button onClick={() => openCancel(article)} style={{
+                        background: 'none', border: '1px solid var(--border)', color: 'var(--t3)',
+                        borderRadius: '4px', padding: '4px 10px', fontSize: '11.5px', cursor: 'pointer',
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}>
+                        Batal
+                      </button>
+                    </div>{/* end button group */}
+                  </div>{/* end header row */}
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {opts.map((opt, i) => (
                       <TopicCard key={i} option={opt}
