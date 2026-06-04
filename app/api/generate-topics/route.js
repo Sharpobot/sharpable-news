@@ -24,7 +24,7 @@ export async function POST(request) {
 
   const articleId = data.id
 
-  // Fire the topic search pipeline
+  // Fire the full pipeline — it will pause at waitForEvent after agents 1+2
   const inngestUrl = process.env.INNGEST_DEV === '1'
     ? 'http://localhost:8288/e/test'
     : `https://inn.gs/e/${process.env.INNGEST_EVENT_KEY ?? ''}`
@@ -33,7 +33,7 @@ export async function POST(request) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      name: 'article/search-topics',
+      name: 'article/generate',
       data: { articleId, topicDirection },
     }),
   }).catch(err => console.error('[generate-topics] Inngest send error:', err))

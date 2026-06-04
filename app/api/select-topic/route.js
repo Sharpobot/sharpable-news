@@ -1,38 +1,38 @@
-import { createAdminSupabaseClient } from '@/lib/db/supabase-admin'
 import { isAuthed } from '@/lib/api/isAuthed'
 
+/**
+ * POST /api/select-topic
+ * Fires a 'topic/selected' Inngest event to resume the paused pipeline.
+ * The pipeline itself handles DB updates (status, selected_topic).
+ */
 export async function POST(request) {
   if (!await isAuthed()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { articleId, option } = await request.json()
   if (!articleId || !option) return Response.json({ error: 'articleId and option required' }, { status: 400 })
 
-  const db = createAdminSupabaseClient()
-
-  // Mark article as generating + store selected topic
-  const { error } = await db.from('articles').update({
-    status: 'generating',
-    selected_topic: option,
-  }).eq('id', articleId)
-
-  if (error) {
-    console.error('[select-topic] DB update error:', error.message)
-    return Response.json({ error: 'Gagal mengemaskini artikel' }, { status: 500 })
-  }
-
-  // Fire the full generation pipeline with the pre-selected topic
   const inngestUrl = process.env.INNGEST_DEV === '1'
     ? 'http://localhost:8288/e/test'
     : `https://inn.gs/e/${process.env.INNGEST_EVENT_KEY ?? ''}`
 
-  fetch(inngestUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: 'article/generate',
-      data: { articleId, preSelectedTopic: option },
-    }),
-  }).catch(err => console.error('[select-topic] Inngest send error:', err))
+  try {
+    const res = await fetch(inngestUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'topic/selected',
+        data: { articleId, selectedTopic: option },
+      }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      console.error('[select-topic] Inngest error:', res.status, text)
+      return Response.json({ error: 'Gagal menghantar pilihan topik' }, { status: 500 })
+    }
+  } catch (err) {
+    console.error('[select-topic] fetch error:', err.message)
+    return Response.json({ error: 'Gagal menghubungi Inngest' }, { status: 500 })
+  }
 
   return Response.json({ ok: true, articleId })
 }
