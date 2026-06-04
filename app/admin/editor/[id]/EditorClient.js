@@ -73,29 +73,37 @@ function Toolbar({ editor, onInsertImage }) {
     fontFamily: "'DM Sans', sans-serif",
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     whiteSpace: 'nowrap', flexShrink: 0,
+    transition: 'background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.08s ease',
   })
   const btn = (label, action, isActive) => (
-    <button key={label} onMouseDown={e => { e.preventDefault(); action() }} style={btnStyle(isActive)}>{label}</button>
+    <button key={label}
+      className="editor-tb-btn"
+      onMouseDown={e => { e.preventDefault(); action() }}
+      style={btnStyle(isActive)}>
+      {label}
+    </button>
   )
   return (
-    /* sticky: sticks below the editor-header (60px) on desktop, below header+tabbar (~94px) on mobile */
     <div className="toolbar-sticky" style={{
       display: 'flex', gap: '4px', flexWrap: 'nowrap', overflowX: 'auto',
-      marginBottom: '12px', alignItems: 'center',
+      marginBottom: '14px', alignItems: 'center',
       position: 'sticky', top: '60px', zIndex: 18,
-      background: '#0e0d0c',
-      paddingTop: '8px', paddingBottom: '8px',
+      background: '#0c0b0a',
+      paddingTop: '10px', paddingBottom: '10px',
+      borderTop: '1px solid rgba(237,232,223,0.1)',
       borderBottom: '1px solid rgba(237,232,223,0.07)',
       scrollbarWidth: 'none',
     }}>
-      {btn('B',        () => editor.chain().focus().toggleBold().run(),                  editor.isActive('bold'))}
-      {btn('I',        () => editor.chain().focus().toggleItalic().run(),                editor.isActive('italic'))}
-      {btn('H2',       () => editor.chain().focus().toggleHeading({ level: 2 }).run(),   editor.isActive('heading', { level: 2 }))}
-      {btn('H3',       () => editor.chain().focus().toggleHeading({ level: 3 }).run(),   editor.isActive('heading', { level: 3 }))}
-      {btn('• Senarai', () => editor.chain().focus().toggleBulletList().run(),           editor.isActive('bulletList'))}
-      {btn('1. Senarai',() => editor.chain().focus().toggleOrderedList().run(),          editor.isActive('orderedList'))}
-      {/* Image button — identical height/border/padding as text buttons */}
-      <button onMouseDown={e => { e.preventDefault(); onInsertImage() }} title="Sisip Imej"
+      {btn('B',         () => editor.chain().focus().toggleBold().run(),                  editor.isActive('bold'))}
+      {btn('I',         () => editor.chain().focus().toggleItalic().run(),                editor.isActive('italic'))}
+      {btn('H2',        () => editor.chain().focus().toggleHeading({ level: 2 }).run(),   editor.isActive('heading', { level: 2 }))}
+      {btn('H3',        () => editor.chain().focus().toggleHeading({ level: 3 }).run(),   editor.isActive('heading', { level: 3 }))}
+      {btn('• Senarai', () => editor.chain().focus().toggleBulletList().run(),            editor.isActive('bulletList'))}
+      {btn('1. Senarai',() => editor.chain().focus().toggleOrderedList().run(),           editor.isActive('orderedList'))}
+      <button
+        className="editor-tb-btn"
+        onMouseDown={e => { e.preventDefault(); onInsertImage() }}
+        title="Sisip Imej"
         style={btnStyle(false)}>
         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -1344,8 +1352,16 @@ export default function EditorClient({ article, authors = [] }) {
         .img-move-btn:hover { background:#2a2824; }
         .img-move-btn:active { transform:scale(0.91); }
         .img-move-btn:disabled { opacity:0.25; cursor:default; }
-        /* Toolbar button press animation */
-        .toolbar-sticky button:active { transform: scale(0.90); transition: transform 0.08s; }
+        /* Toolbar button hover + press */
+        .editor-tb-btn:hover {
+          background: rgba(237,232,223,0.08) !important;
+          color: #c0b8ae !important;
+          border-color: rgba(237,232,223,0.22) !important;
+        }
+        .editor-tb-btn:active {
+          transform: scale(0.88) !important;
+          background: rgba(237,232,223,0.13) !important;
+        }
         /* Section labels animate in */
         .editor-section-fade { animation: editorFadeUp 0.22s ease both; }
         @keyframes editorFadeUp { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
@@ -1407,8 +1423,10 @@ export default function EditorClient({ article, authors = [] }) {
 
           .aside-section { padding: 20px 16px; }
 
-          /* On mobile, toolbar sticks below header (~52px) + tab bar (~42px) */
-          .toolbar-sticky { top: 94px !important; }
+          /* On mobile: header ~52px + tab bar ~44px + 6px breathing gap */
+          .toolbar-sticky { top: 102px !important; }
+          /* Toolbar scrollbar hidden on webkit */
+          .toolbar-sticky::-webkit-scrollbar { display: none; }
         }
       `}</style>
 

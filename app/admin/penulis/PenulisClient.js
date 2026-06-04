@@ -339,7 +339,7 @@ export default function PenulisClient({ initialAuthors }) {
 
   const C = lm ? {
     pageBg: '#f8f8f8', cardBg: '#ffffff', border: '#e5e7eb',
-    text1: '#1a1a1a', text2: '#6b7280', text3: '#9ca3af',
+    text1: '#0d1117', text2: '#1f2937', text3: '#4b5563',
     btnBorder: '#e5e7eb', btnText: '#6b7280',
   } : {
     pageBg: '#0c0b0a', cardBg: '#111010', border: 'rgba(237,232,223,0.07)',
