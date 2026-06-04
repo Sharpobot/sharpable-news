@@ -144,10 +144,8 @@ export default function JanaClient({ initialArticles = [] }) {
     Object.fromEntries(initialArticles.map(a => [a.id, a.status]))
   )
   const [isSearching,    setIsSearching]    = useState(false)
-  const [topicDirection, setTopicDirection] = useState('')
   const [selectingId,    setSelectingId]    = useState(null) // which article is having topic picked
   const [lm,             setLm]            = useState(false)
-  const [showPanel,      setShowPanel]     = useState(true)
   const [modal,          setModal]          = useState(false)
   const [cancelTarget,   setCancelTarget]   = useState(null)
 
@@ -238,7 +236,7 @@ export default function JanaClient({ initialArticles = [] }) {
       const res = await fetch('/api/generate-topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topicDirection: topicDirection.trim() || null }),
+        body: JSON.stringify({ topicDirection: null }),
       })
       const { articleId, error } = await res.json()
       if (error) { toast.error(`Ralat: ${error}`, { id: tid }); return }
@@ -247,7 +245,6 @@ export default function JanaClient({ initialArticles = [] }) {
       setArticles(prev => [newArticle, ...prev])
       setGeneratingIds(prev => [...prev, articleId])
       setStatusMap(prev => ({ ...prev, [articleId]: 'awaiting_topic_selection' }))
-      setTopicDirection('')
     } catch {
       toast.error('Ralat semasa mencari topik.', { id: tid })
     } finally {
@@ -366,71 +363,19 @@ export default function JanaClient({ initialArticles = [] }) {
         </p>
       </div>
 
-      {/* ── Search Topics input ── */}
-      {showPanel ? (
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <div className="section-label" style={{ marginBottom: 0 }}>Langkah 1 — Cari Topik</div>
-          <button
-            onClick={() => setShowPanel(false)}
-            title="Tutup"
-            style={{
-              background: 'none', border: 'none', color: 'var(--t3)', cursor: 'pointer',
-              padding: '2px', display: 'flex', alignItems: 'center', lineHeight: 1,
-              fontSize: '18px', transition: 'color 0.12s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'var(--t1)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'var(--t3)' }}
-          >×</button>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{ fontSize: '12px', color: 'var(--t3)', display: 'block', marginBottom: '6px' }}>
-              Arah Topik <span style={{ opacity: 0.6 }}>(pilihan)</span>
-            </label>
-            <input
-              type="text"
-              className="topic-dir-input"
-              value={topicDirection}
-              onChange={e => setTopicDirection(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !isSearching) handleSearchTopics() }}
-              placeholder="cth. dasar AI Malaysia, model bahasa baru, AI dalam penjagaan kesihatan…"
-              disabled={isSearching}
-            />
-          </div>
-          <button onClick={handleSearchTopics} disabled={isSearching} className="search-btn">
-            {isSearching ? <><Spinner size={13} /> Mencari…</> : (
-              <>
-                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                </svg>
-                Cari Topik
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-      ) : (
-        /* Collapsed state — compact button to reopen */
-        <button
-          onClick={() => setShowPanel(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px',
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: '8px', padding: '11px 16px', cursor: 'pointer',
-            color: 'var(--t3)', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
-            transition: 'border-color 0.15s, color 0.15s', width: '100%',
-            boxShadow: 'var(--surface-shadow)',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(212,168,83,0.3)'; e.currentTarget.style.color = '#d4a853' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--t3)' }}
-        >
-          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          Jana artikel baharu…
+      {/* ── Generate button ── */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
+        <button onClick={handleSearchTopics} disabled={isSearching} className="search-btn">
+          {isSearching ? <><Spinner size={13} /> Memulakan…</> : (
+            <>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              Jana Artikel Baru
+            </>
+          )}
         </button>
-      )}
+      </div>
 
       {/* ── Awaiting topic selection ── */}
       <AnimatePresence>
@@ -585,7 +530,7 @@ export default function JanaClient({ initialArticles = [] }) {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="panel" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--t3)', fontSize: '13.5px', lineHeight: 1.8 }}>
           Tiada artikel sedang diproses.<br/>
-          Klik <span style={{ color: '#d4a853' }}>"Cari Topik"</span> untuk bermula.
+          Klik <span style={{ color: '#d4a853' }}>"Jana Artikel Baru"</span> untuk bermula.
         </motion.div>
       )}
     </motion.div>

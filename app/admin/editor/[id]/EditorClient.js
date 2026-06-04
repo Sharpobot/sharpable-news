@@ -62,19 +62,25 @@ function TagInput({ tags, onChange }) {
 }
 
 /* ── TipTap toolbar ────────────────────────────────────────── */
+const TB_SEP = <span style={{ width: '1px', height: '14px', background: 'rgba(237,232,223,0.1)', margin: '0 2px', flexShrink: 0, alignSelf: 'center' }} />
+
 function Toolbar({ editor, onInsertImage }) {
   if (!editor) return null
+
   const btnStyle = (isActive) => ({
-    padding: '5px 10px', height: '28px', borderRadius: '3px',
-    fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
-    border: '1px solid rgba(237,232,223,0.11)',
-    background: isActive ? '#2a2520' : 'transparent',
-    color: isActive ? '#d4a853' : '#8c857c',
+    height: '28px', padding: '0 9px', borderRadius: '4px',
+    border: 'none',
+    background: isActive ? 'rgba(212,168,83,0.14)' : 'rgba(237,232,223,0.05)',
+    color: isActive ? '#d4a853' : '#9c948c',
+    boxShadow: isActive ? 'inset 0 0 0 1px rgba(212,168,83,0.28)' : 'none',
     fontFamily: "'DM Sans', sans-serif",
+    fontSize: '12px', fontWeight: 600, letterSpacing: '0.025em',
+    cursor: 'pointer',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     whiteSpace: 'nowrap', flexShrink: 0,
-    transition: 'background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.08s ease',
+    transition: 'background 0.1s ease, color 0.1s ease, box-shadow 0.1s ease, transform 0.08s ease',
   })
+
   const btn = (label, action, isActive) => (
     <button key={label}
       className="editor-tb-btn"
@@ -83,29 +89,35 @@ function Toolbar({ editor, onInsertImage }) {
       {label}
     </button>
   )
+
   return (
     <div className="toolbar-sticky" style={{
-      display: 'flex', gap: '4px', flexWrap: 'nowrap', overflowX: 'auto',
+      display: 'flex', gap: '2px', flexWrap: 'nowrap', overflowX: 'auto',
       marginBottom: '14px', alignItems: 'center',
       position: 'sticky', top: '60px', zIndex: 18,
-      background: '#0c0b0a',
-      paddingTop: '10px', paddingBottom: '10px',
-      borderTop: '1px solid rgba(237,232,223,0.1)',
-      borderBottom: '1px solid rgba(237,232,223,0.07)',
+      background: '#161310',
+      paddingTop: '5px', paddingBottom: '5px', paddingLeft: '2px', paddingRight: '2px',
+      borderTop: '1px solid rgba(212,168,83,0.18)',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
       scrollbarWidth: 'none',
     }}>
-      {btn('B',         () => editor.chain().focus().toggleBold().run(),                  editor.isActive('bold'))}
-      {btn('I',         () => editor.chain().focus().toggleItalic().run(),                editor.isActive('italic'))}
-      {btn('H2',        () => editor.chain().focus().toggleHeading({ level: 2 }).run(),   editor.isActive('heading', { level: 2 }))}
-      {btn('H3',        () => editor.chain().focus().toggleHeading({ level: 3 }).run(),   editor.isActive('heading', { level: 3 }))}
-      {btn('• Senarai', () => editor.chain().focus().toggleBulletList().run(),            editor.isActive('bulletList'))}
-      {btn('1. Senarai',() => editor.chain().focus().toggleOrderedList().run(),           editor.isActive('orderedList'))}
+      {/* Text formatting */}
+      {btn('B',  () => editor.chain().focus().toggleBold().run(),    editor.isActive('bold'))}
+      {btn('I',  () => editor.chain().focus().toggleItalic().run(),  editor.isActive('italic'))}
+      {btn('H2', () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }))}
+      {btn('H3', () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive('heading', { level: 3 }))}
+      {TB_SEP}
+      {/* Lists */}
+      {btn('• Senarai',  () => editor.chain().focus().toggleBulletList().run(),  editor.isActive('bulletList'))}
+      {btn('1. Senarai', () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'))}
+      {TB_SEP}
+      {/* Image */}
       <button
         className="editor-tb-btn"
         onMouseDown={e => { e.preventDefault(); onInsertImage() }}
         title="Sisip Imej"
         style={btnStyle(false)}>
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
@@ -1354,13 +1366,13 @@ export default function EditorClient({ article, authors = [] }) {
         .img-move-btn:disabled { opacity:0.25; cursor:default; }
         /* Toolbar button hover + press */
         .editor-tb-btn:hover {
-          background: rgba(237,232,223,0.08) !important;
-          color: #c0b8ae !important;
-          border-color: rgba(237,232,223,0.22) !important;
+          background: rgba(237,232,223,0.10) !important;
+          color: #ccc4ba !important;
+          box-shadow: none !important;
         }
         .editor-tb-btn:active {
           transform: scale(0.88) !important;
-          background: rgba(237,232,223,0.13) !important;
+          background: rgba(237,232,223,0.15) !important;
         }
         /* Section labels animate in */
         .editor-section-fade { animation: editorFadeUp 0.22s ease both; }
@@ -1423,12 +1435,11 @@ export default function EditorClient({ article, authors = [] }) {
 
           .aside-section { padding: 20px 16px; }
 
-          /* On mobile: sit flush below tab bar, remove double border */
+          /* On mobile: grey hairline instead of amber (avoids clash with tab underline) */
           .toolbar-sticky {
             top: 96px !important;
-            border-top: none !important;
-            padding-top: 6px !important;
-            padding-bottom: 6px !important;
+            border-top: 1px solid rgba(237,232,223,0.07) !important;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.5) !important;
           }
           .toolbar-sticky::-webkit-scrollbar { display: none; }
         }
