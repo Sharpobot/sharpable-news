@@ -151,6 +151,7 @@ export default function JanaClient({ initialArticles = [] }) {
   const [modal,          setModal]          = useState(false)
   const [cancelTarget,   setCancelTarget]   = useState(null)
   const [topicDirection, setTopicDirection] = useState('')
+  const [showStep1,      setShowStep1]      = useState(false)
 
   const intervalRef      = useRef(null)
   const generatingIdsRef = useRef(generatingIds)
@@ -248,6 +249,8 @@ export default function JanaClient({ initialArticles = [] }) {
       setArticles(prev => [newArticle, ...prev])
       setGeneratingIds(prev => [...prev, articleId])
       setStatusMap(prev => ({ ...prev, [articleId]: 'awaiting_topic_selection' }))
+      setShowStep1(false)
+      setTopicDirection('')
     } catch {
       toast.error('Ralat semasa mencari topik.', { id: tid })
     } finally {
@@ -376,38 +379,57 @@ export default function JanaClient({ initialArticles = [] }) {
         </p>
       </div>
 
-      {/* ── Step 1: Topic direction input + Search button ── */}
-      <div className="panel" style={{ marginBottom: '24px' }}>
-        <div className="section-label">Langkah 1 — Cari Topik</div>
-        <div style={{ marginBottom: '8px', fontSize: '12px', color: 'var(--t3)' }}>
-          Masukkan hala tuju topik (pilihan), kemudian klik Cari Topik.
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input
-            className="topic-dir-input"
-            style={{ flex: '1 1 200px' }}
-            type="text"
-            placeholder="e.g. Malaysian AI policy, new language models, AI in healthcare..."
-            value={topicDirection}
-            onChange={e => setTopicDirection(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !isSearching) handleSearchTopics() }}
-            disabled={isSearching}
-          />
-          <button onClick={handleSearchTopics} disabled={isSearching} className="search-btn" style={{ flexShrink: 0 }}>
-            {isSearching ? <><Spinner size={13} /> Memulakan…</> : (
-              <>
-                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                </svg>
-                Cari Topik
-              </>
-            )}
+      {/* ── Entry point: Jana Artikel Baru button OR Step 1 panel ── */}
+      {!showStep1 ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
+          <button onClick={() => setShowStep1(true)} className="search-btn">
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            Jana Artikel Baru
           </button>
         </div>
-        <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--t3)' }}>
-          Biarkan kosong untuk biarkan AI memilih topik trending terkini.
+      ) : (
+        <div className="panel" style={{ marginBottom: '24px' }}>
+          <div className="section-label">Langkah 1 — Cari Topik</div>
+          <div style={{ marginBottom: '8px', fontSize: '12px', color: 'var(--t3)' }}>
+            Masukkan hala tuju topik (pilihan), kemudian klik Cari Topik.
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              className="topic-dir-input"
+              style={{ flex: '1 1 200px' }}
+              type="text"
+              placeholder="e.g. Malaysian AI policy, new language models, AI in healthcare..."
+              value={topicDirection}
+              onChange={e => setTopicDirection(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !isSearching) handleSearchTopics() }}
+              disabled={isSearching}
+              autoFocus
+            />
+            <button onClick={handleSearchTopics} disabled={isSearching} className="search-btn" style={{ flexShrink: 0 }}>
+              {isSearching ? <><Spinner size={13} /> Memulakan…</> : (
+                <>
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  Cari Topik
+                </>
+              )}
+            </button>
+            <button onClick={() => setShowStep1(false)} disabled={isSearching} style={{
+              background: 'none', border: '1px solid var(--border)', color: 'var(--t3)',
+              borderRadius: '6px', padding: '10px 14px', fontSize: '13px', cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif", flexShrink: 0,
+            }}>
+              Batal
+            </button>
+          </div>
+          <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--t3)' }}>
+            Biarkan kosong untuk biarkan AI memilih topik trending terkini.
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Awaiting topic selection ── */}
       <AnimatePresence>
