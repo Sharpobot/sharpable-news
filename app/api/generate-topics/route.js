@@ -14,7 +14,7 @@ export async function POST(request) {
   const tempSlug = `draft-${Date.now()}`
   const { data, error } = await db
     .from('articles')
-    .insert({ status: 'generating', slug: tempSlug })
+    .insert({ status: 'awaiting_topic_selection', slug: tempSlug })
     .select('id')
     .single()
 

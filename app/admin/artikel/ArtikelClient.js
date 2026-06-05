@@ -277,10 +277,10 @@ export default function ArtikelClient({ initialArticles }) {
               <div className="at-action-cell" style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   className="delete-btn"
-                  onClick={() => article.status === 'generating' ? openCancel(article) : openDelete(article)}
-                  title={article.status === 'generating' ? 'Batalkan penjanaan' : 'Padam artikel'}
+                  onClick={() => ['generating', 'awaiting_topic_selection'].includes(article.status) ? openCancel(article) : openDelete(article)}
+                  title={['generating', 'awaiting_topic_selection'].includes(article.status) ? 'Batalkan penjanaan' : 'Padam artikel'}
                 >
-                  {article.status === 'generating' ? (
+                  {['generating', 'awaiting_topic_selection'].includes(article.status) ? (
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>
                     </svg>
