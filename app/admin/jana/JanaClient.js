@@ -139,7 +139,9 @@ export default function JanaClient({ initialArticles = [] }) {
   const [articles,       setArticles]       = useState(initialArticles)
   const [generatingIds,  setGeneratingIds]  = useState(initialArticles.map(a => a.id))
   const [progressMap,    setProgressMap]    = useState({})
-  const [topicOptionsMap,setTopicOptionsMap]= useState({})
+  const [topicOptionsMap,setTopicOptionsMap]= useState(
+    Object.fromEntries(initialArticles.filter(a => a.topic_options).map(a => [a.id, a.topic_options]))
+  )
   const [statusMap,      setStatusMap]      = useState(
     Object.fromEntries(initialArticles.map(a => [a.id, a.status]))
   )
