@@ -249,8 +249,6 @@ export default function JanaClient({ initialArticles = [] }) {
       setArticles(prev => [newArticle, ...prev])
       setGeneratingIds(prev => [...prev, articleId])
       setStatusMap(prev => ({ ...prev, [articleId]: 'awaiting_topic_selection' }))
-      setShowStep1(false)
-      setTopicDirection('')
     } catch {
       toast.error('Ralat semasa mencari topik.', { id: tid })
     } finally {
@@ -272,6 +270,8 @@ export default function JanaClient({ initialArticles = [] }) {
       toast.success('Topik dipilih! Menjana artikel… (~9 minit)', { id: tid })
       setStatusMap(prev => ({ ...prev, [articleId]: 'generating' }))
       setArticles(prev => prev.map(a => a.id === articleId ? { ...a, status: 'generating' } : a))
+      setShowStep1(false)
+      setTopicDirection('')
     } catch {
       toast.error('Ralat semasa memilih topik.', { id: tid })
     } finally {
@@ -300,6 +300,8 @@ export default function JanaClient({ initialArticles = [] }) {
       if (!res.ok) { toast.error('Gagal membatalkan.', { id: tid }); return }
       setArticles(prev => prev.filter(a => a.id !== cancelTarget.id))
       setGeneratingIds(prev => prev.filter(id => id !== cancelTarget.id))
+      setShowStep1(false)
+      setTopicDirection('')
       toast.success('Dibatalkan.', { id: tid })
     } catch { toast.error('Ralat semasa membatalkan.', { id: tid }) }
   }
@@ -380,7 +382,7 @@ export default function JanaClient({ initialArticles = [] }) {
       </div>
 
       {/* ── Entry point: Jana Artikel Baru button OR Step 1 panel ── */}
-      {!showStep1 ? (
+      {(!showStep1 && awaitingArticles.length === 0) ? (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
           <button onClick={() => setShowStep1(true)} className="search-btn">
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -398,16 +400,24 @@ export default function JanaClient({ initialArticles = [] }) {
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <input
               className="topic-dir-input"
-              style={{ flex: '1 1 200px' }}
+              style={{
+                flex: '1 1 200px',
+                opacity: (isSearching || awaitingArticles.length > 0) ? 0.6 : 1,
+                cursor: (isSearching || awaitingArticles.length > 0) ? 'not-allowed' : 'text',
+              }}
               type="text"
               placeholder="e.g. Malaysian AI policy, new language models, AI in healthcare..."
               value={topicDirection}
               onChange={e => setTopicDirection(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !isSearching) handleSearchTopics() }}
-              disabled={isSearching}
-              autoFocus
+              onKeyDown={e => { if (e.key === 'Enter' && !isSearching && awaitingArticles.length === 0) handleSearchTopics() }}
+              readOnly={isSearching || awaitingArticles.length > 0}
+              autoFocus={awaitingArticles.length === 0}
             />
-            <button onClick={handleSearchTopics} disabled={isSearching} className="search-btn" style={{ flexShrink: 0 }}>
+            <button
+              onClick={handleSearchTopics}
+              disabled={isSearching || awaitingArticles.length > 0}
+              className="search-btn" style={{ flexShrink: 0 }}
+            >
               {isSearching ? <><Spinner size={13} /> Memulakan…</> : (
                 <>
                   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -417,11 +427,19 @@ export default function JanaClient({ initialArticles = [] }) {
                 </>
               )}
             </button>
-            <button onClick={() => setShowStep1(false)} disabled={isSearching} style={{
-              background: 'none', border: '1px solid var(--border)', color: 'var(--t3)',
-              borderRadius: '6px', padding: '10px 14px', fontSize: '13px', cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif", flexShrink: 0,
-            }}>
+            <button
+              onClick={() => {
+                const pending = awaitingArticles[0]
+                if (pending) { openCancel(pending) } else { setShowStep1(false) }
+              }}
+              disabled={isSearching}
+              style={{
+                background: 'none', border: '1px solid var(--border)', color: 'var(--t3)',
+                borderRadius: '6px', padding: '10px 14px', fontSize: '13px',
+                cursor: isSearching ? 'not-allowed' : 'pointer',
+                fontFamily: "'DM Sans', sans-serif", flexShrink: 0, opacity: isSearching ? 0.4 : 1,
+              }}
+            >
               Batal
             </button>
           </div>
