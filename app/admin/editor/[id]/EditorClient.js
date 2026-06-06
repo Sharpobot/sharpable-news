@@ -995,10 +995,10 @@ export default function EditorClient({ article, authors = [] }) {
 
   // Inline image modal state
   const [showInlineImageModal,    setShowInlineImageModal]    = useState(false)
-  const [editingInlineImageData,  setEditingInlineImageData]  = useState(null) //
+  const [editingInlineImageData,  setEditingInlineImageData]  = useState(null) // {src,alt,caption} when editing
   const [placeholderInitialFile,  setPlaceholderInitialFile]  = useState(null)
   const [placeholderInitialAlt,   setPlaceholderInitialAlt]   = useState('')
-  const [briefCopied,             setBriefCopied]             = useState(false) {src,alt,caption} when editing
+  const [briefCopied,             setBriefCopied]             = useState(false)
 
   const [authorId, setAuthorId] = useState(article.author_id ?? null)
 
