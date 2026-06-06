@@ -38,7 +38,7 @@ npx inngest-cli@latest dev
 Admin panel: `http://localhost:3000/admin` — password: `sharpable2025`
 Inngest dashboard: `http://localhost:8288/runs`
 
-**Important:** After any code changes to `inngest-functions.js`, restart BOTH servers to ensure Inngest picks up the latest function definitions.
+**Important:** After any code changes to `inngest-functions.js` OR any agent file in `lib/agents/`, restart BOTH servers to ensure Inngest picks up the latest function definitions.
 
 ---
 
@@ -77,11 +77,11 @@ sharpable-news/
 │   │   ├── loading.js                   # Dashboard skeleton
 │   │   ├── artikel/
 │   │   │   ├── page.js                  # Article list server page
-│   │   │   ├── ArtikelClient.js         # Article table — status badges, edit links
+│   │   │   ├── ArtikelClient.js         # Article table — status badges (incl. awaiting_topic_selection), edit links, cancel button
 │   │   │   └── loading.js
 │   │   ├── jana/
-│   │   │   ├── page.js                  # Generate article server page
-│   │   │   ├── JanaClient.js            # Single "Jana Artikel Baru" button + live progress cards
+│   │   │   ├── page.js                  # Generate article server page — fetches generating + awaiting_topic_selection articles
+│   │   │   ├── JanaClient.js            # Two-step topic selection UI + live progress cards
 │   │   │   └── loading.js
 │   │   ├── editor/[id]/
 │   │   │   ├── page.js                  # Article editor server page (fetches article + authors list)
@@ -98,8 +98,11 @@ sharpable-news/
 │   │       └── LoginClient.js
 │   └── api/
 │       ├── inngest/route.js             # Inngest serve handler (GET/POST/PUT)
-│       ├── generate/route.js            # POST: creates article row + fires Inngest event
-│       ├── progress/route.js            # GET: returns progress rows + article status by articleId
+│       ├── generate/route.js            # POST: (legacy) creates article row + fires Inngest event
+│       ├── generate-topics/route.js     # POST: creates article (awaiting_topic_selection) + fires Inngest with topicDirection
+│       ├── select-topic/route.js        # POST: fires topic/selected Inngest event with chosen option
+│       ├── cancel-topic/route.js        # POST: deletes article + fires topic/selected with cancelled:true
+│       ├── progress/route.js            # GET: returns progress rows + article status + topic_options by articleId
 │       ├── search/route.js              # GET: public article search (?q=query) — max 5 results
 │       ├── articles/
 │       │   ├── route.js                 # GET: all articles for admin table
@@ -117,20 +120,23 @@ sharpable-news/
 │
 ├── lib/
 │   ├── agents/
-│   │   ├── _client.js                   # Shared Claude API helper: ask() + askWithSearch()
+│   │   ├── _client.js                   # Shared Claude API helper: ask() + askWithSearch() — MAX_RETRIES=2, 90s timeout
 │   │   ├── style-guide.js               # Editorial style rules + 10 BERNAMA reference articles
-│   │   ├── trend-scout.js               # Agent 1: finds trending topics via web search
-│   │   ├── topic-selector.js            # Agent 2: picks best topic, deduplicates vs last 30 articles
-│   │   ├── deep-researcher.js           # Agent 3: gathers facts + source URLs via web search
-│   │   ├── article-writer.js            # Agent 4: writes full BM article (injects STYLE_GUIDE)
-│   │   ├── seo-metadata.js              # Agent 5: generates slug, meta description, tags
-│   │   ├── image-brief.js               # Agent 6: hero image prompt + 3 inline image suggestions
-│   │   ├── quality-checker.js           # Agent 7: fact-checks via web search, scores 1–100 (publish threshold: 85)
-│   │   └── revision.js                  # Agent 7b: fixes issues, aims to reach 85+
+│   │   ├── trend-scout.js               # Agent 1: finds trending topics via web search (maxTokens: 2000)
+│   │   ├── topic-selector.js            # Agent 2: returns 3 distinct topic OPTIONS for human selection (maxTokens: 1000)
+│   │   ├── deep-researcher.js           # Agent 3: gathers facts + source URLs via web search (maxTokens: 3000)
+│   │   ├── article-writer.js            # Agent 4: writes full BM article (maxTokens: 4000, injects STYLE_GUIDE)
+│   │   ├── seo-metadata.js              # Agent 5: generates slug, meta description, tags (maxTokens: 1000)
+│   │   ├── image-brief.js               # Agent 6: hero image prompt + 3 inline image suggestions (maxTokens: 1000)
+│   │   ├── quality-checker.js           # Agent 7: fact-checks via web search, scores 1–100 (maxTokens: 2000)
+│   │   └── revision.js                  # Agent 7b: fixes issues, aims to reach 85+ (maxTokens: 4000)
 │   ├── db/
 │   │   └── supabase-admin.js            # Admin Supabase client (service role, server-only)
 │   ├── inngest.js                       # Inngest client init
-│   └── inngest-functions.js             # generateArticle — orchestrates all agents + quality loop
+│   └── inngest-functions.js             # generateArticle — orchestrates all agents + human topic selection + quality loop
+│
+├── scripts/
+│   └── test-trend-scout.mjs             # Isolated test harness for trend-scout agent (loads .env.local manually)
 │
 ├── supabase/migrations/
 │   ├── 001_initial_schema.sql
@@ -138,7 +144,9 @@ sharpable-news/
 │   ├── 003_original_quality_flags.sql
 │   ├── 004_similar_articles.sql
 │   ├── 005_authors.sql                  # authors table + author_id FK on articles
-│   └── 006_fts_index.sql               # Optional: GIN index for full-text search performance
+│   ├── 006_fts_index.sql               # Optional: GIN index for full-text search performance
+│   ├── 007_topic_selection.sql         # Adds topic_options (jsonb) + selected_topic (jsonb) columns to articles
+│   └── 008_status_constraint.sql       # Expands status CHECK to include 'failed' + 'awaiting_topic_selection'
 ├── netlify.toml                         # Netlify deployment config (not yet live)
 ├── .env.local                           # Local secrets (never commit)
 └── CLAUDE.md                            # This file
@@ -165,7 +173,9 @@ sharpable-news/
 | similar_articles | jsonb | Articles too similar during dedup (migration 004) |
 | sources | jsonb[] | `[{title, url, description}]` — url populated from web search |
 | author_id | uuid | FK → authors.id ON DELETE SET NULL (migration 005) |
-| status | text | `generating` → `ready_to_review` → `published` → `draft` → `failed` |
+| topic_options | jsonb | Array of 3 topic options from topic-selector (migration 007) |
+| selected_topic | jsonb | The topic option chosen by the admin (migration 007) |
+| status | text | `generating` → `awaiting_topic_selection` → `generating` → `ready_to_review` → `published` → `draft` → `failed` |
 | created_at | timestamptz | |
 
 ### `authors` table (migration 005)
@@ -193,22 +203,29 @@ sharpable-news/
 - `article-images` — hero images + inline article images
 - `authors` — author profile photos
 
-**Pending migration:** Run `supabase/migrations/005_authors.sql` in Supabase SQL Editor if authors feature shows errors.
+### Applied Migrations (all applied to production)
+- 001–006: initial schema, featured image, quality flags, similar articles, authors, FTS index
+- **007_topic_selection.sql** — adds `topic_options` + `selected_topic` jsonb columns
+- **008_status_constraint.sql** — drops old CHECK constraint, adds expanded one allowing `failed` + `awaiting_topic_selection`
 
 ---
 
-## AI Pipeline — Complete Flow
+## AI Pipeline — Complete Flow (with Human-in-the-Loop)
 
-**Trigger:** `POST /api/generate` → creates blank article row (`status: generating`) → fires Inngest event `article/generate`
+**Trigger:** `POST /api/generate-topics` → creates blank article row (`status: awaiting_topic_selection`) → fires Inngest event `article/generate` with `{ articleId, topicDirection }`
 
 **Pipeline steps in `inngest-functions.js`:**
 
-| Step | Agent | Sleep after | What it does |
+| Step | Agent/Action | Sleep after | What it does |
 |---|---|---|---|
-| 1 | `trend-scout` | 65s | Web search for trending AI/tech topics (last 48h); returns sourceName + sourceUrl per trend |
-| 2 | `topic-selector` | 65s | Picks best topic; checks last 30 published for duplicates; retries up to 3x |
-| 3 | `deep-researcher` | 65s | Web search for facts, key players, timeline, Malaysian context; captures source URLs |
-| 4 | `article-writer` | 65s | Writes 600–700 word BM article in TipTap JSON; injects full STYLE_GUIDE |
+| 1 | `trend-scout` | 65s | Web search for trending AI/tech topics (last 48h); accepts optional `topicDirection` hint |
+| 2 | `topic-selector` | — | Returns 3 distinct topic OPTIONS (different stories/angles) for human review |
+| — | fail-fast guard | — | If 0 options returned → mark article `failed` immediately, throw |
+| — | `save-topic-options` | — | Saves `topic_options` to DB; sets status → `awaiting_topic_selection` |
+| — | `waitForEvent` | up to 24h | Pauses pipeline. Waits for `topic/selected` event matching `data.articleId` |
+| — | `resume-pipeline` | — | Sets status → `generating`; saves `selected_topic` to DB |
+| 3 | `deep-researcher` | 65s | Web search for facts, key players, timeline, Malaysian context |
+| 4 | `article-writer` | 65s | Writes 700–900 word BM article in TipTap JSON; injects full STYLE_GUIDE |
 | 5 | `seo-metadata` | 65s | Slug, meta description, tags |
 | 6 | `image-brief` | 65s | Hero image prompt (Midjourney-style) + Unsplash query + 3 inline image suggestions |
 | 7 | `quality-checker` | — or 65s | Fact-checks via web search; scores 1–100; publish threshold is **85** |
@@ -217,17 +234,19 @@ sharpable-news/
 | 7d | `revision-agent-2` | — | Runs if score still < 85 after first revision |
 | 8 | `save-article` | — | Saves to Supabase, injects ImagePlaceholder nodes, status → `ready_to_review` |
 
+**Cancel flow:** `POST /api/cancel-topic` → deletes article from DB → fires `topic/selected` with `{ cancelled: true }` → Inngest pipeline detects cancellation → returns `{ cancelled: true }` cleanly without further processing.
+
 **Quality scoring thresholds:**
 - `publish` → score ≥ 85
 - `review` → score 60–84
 - `reject` → score < 60
 - Fallback floors: publish=87, review=70, reject=35 (never 0)
 
-**Permanent failure handler:** When all Inngest retries (2 total) are exhausted, the catch block marks article as `failed` and writes `failed` progress rows for all pending agents so JanaClient detects completion.
+**Pipeline failure abort:** `pipelineFailures` counter in `inngest-functions.js`. Each agent catch block calls `checkFailureLimit(err)` which increments the counter. If `pipelineFailures >= 3`, throws immediately to abort entire pipeline. Prevents runaway costs.
 
-**Total runtime:** ~10–13 minutes per article (up to 2 revision cycles).
+**Permanent failure handler:** When all Inngest retries (2 total) are exhausted, catch block marks article as `failed` and writes `failed` progress rows for all pending agents so JanaClient detects completion.
 
-**Topic dedup:** Topic-selector receives last 30 published articles. If all topics are duplicates, retries up to 3x before failing with "Tiada topik baharu dijumpai."
+**Total runtime:** ~10–13 minutes per article (after topic selection, up to 2 revision cycles).
 
 ---
 
@@ -235,40 +254,82 @@ sharpable-news/
 
 ```js
 ask(systemPrompt, userPrompt, maxTokens = 4096)
-// → calls Claude, extracts JSON from response, retries up to 4x on errors
+// → calls Claude, extracts JSON from response, retries up to 2x on errors
 
 askWithSearch(systemPrompt, userPrompt, maxTokens = 4096)
 // → same but with web_search_20250305 tool enabled (live internet)
 ```
 
-**Retry logic (`MAX_RETRIES = 4`):** Retries on 429, 529, 500, 503, 502, network errors (status 0), timeout, ECONNREFUSED, ENOTFOUND, "fetch failed". Delays: 5s, 10s, 20s, 40s.
+**Retry logic (`MAX_RETRIES = 2`):** Maximum 1 retry per call. Retries on 429, 529, 500, 503, 502, network errors (status 0), timeout, ECONNREFUSED, ENOTFOUND, "fetch failed", "timed out". Delays: 5s, 10s.
+
+**90-second hard timeout:** Every API call is wrapped in `withTimeout()` using `Promise.race`. If Claude hasn't responded in 90s, the call throws `'Agent call timed out after 90s'` — which is retryable once.
+
+```js
+const MAX_RETRIES = 2
+const AGENT_TIMEOUT_MS = 90_000
+function withTimeout(promise) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Agent call timed out after 90s')), AGENT_TIMEOUT_MS)
+    ),
+  ])
+}
+```
 
 Agents using `askWithSearch`: trend-scout, deep-researcher, quality-checker
 Agents using `ask`: topic-selector, article-writer, seo-metadata, image-brief, revision
 
-**maxTokens by agent:**
-- quality-checker: **2500** (web search synthesis needs headroom)
-- image-brief: **2000** (heroImage prompt + 3 suggestions)
-- all others: default 4096
+**maxTokens by agent (CRITICAL — do not change without good reason):**
+| Agent | maxTokens | Reason |
+|---|---|---|
+| trend-scout | **2000** | Web search synthesis ~1200-1400 tokens of JSON; 1500 caused truncation |
+| topic-selector | **1000** | Returns 3 short option objects |
+| deep-researcher | **3000** | Detailed research brief with multiple sources |
+| article-writer | **4000** | Full 700-900 word TipTap JSON article |
+| seo-metadata | **1000** | Short slug/meta/tags output |
+| image-brief | **1000** | Hero prompt + 3 suggestions |
+| quality-checker | **2000** | Web search synthesis + structured quality report |
+| revision | **4000** | Full revised article in TipTap JSON |
+
+**WARNING:** Lowering trend-scout below 2000 or quality-checker below 2000 will cause JSON truncation → `parseJSON` returns `{ raw: text }` → agent returns empty/null data → pipeline fails silently.
 
 ---
 
-## Style Guide (`lib/agents/style-guide.js`)
+## Human-in-the-Loop Topic Selection (JanaClient)
 
-Imported by `article-writer` and `revision`. Contains:
+The `/admin/jana` page implements a two-step flow:
 
-**Writing rules (PANDUAN GAYA):**
-- Word count: **600–700 patah perkataan**
-- 5 mandatory sections: Hook → Fakta & Konteks → Impak Tempatan → Soalan Kritikal → Penutup
-- **Named-person hook:** MUST open with a real named individual + direct quote in first 2 paragraphs
-- **Bookending:** Return to same person mid/end of article
-- 3–5 subheadings (H2), each descriptive and specific
-- 3 headline options (under 70 chars each)
-- Forbidden phrases: "Dalam era digital ini", "Tidak dapat dinafikan", "Hal ini demikian kerana"
+**Step 1 — Search Topics:**
+1. Page loads showing single "Jana Artikel Baru" button
+2. Admin clicks button → Step 1 panel slides in with optional topic direction input
+3. Admin types a direction (or leaves blank for fully automatic) → clicks "Cari Topik"
+4. `POST /api/generate-topics` fires with `{ topicDirection }` — creates article in DB
+5. Inngest runs trend-scout + topic-selector → saves 3 options to DB
+6. JanaClient polls `/api/progress` every 3s → detects `topic_options` → shows 3 topic cards
+7. Topic direction input stays visible as read-only during this waiting state
 
-**Reference articles:** 10 full BERNAMA/Astro AWANI articles for TONE and LANGUAGE reference only — NOT for structure copying. These cover: product launches, policy news, expert analysis, government statements, opinion/kolumnis.
+**Step 2 — Select Topic:**
+- Admin reviews 3 topic cards (each shows topic, summary, category, angle, source)
+- Click "Pilih" on one → `POST /api/select-topic` → fires `topic/selected` Inngest event
+- Pipeline resumes, full article generation begins
+- "Jana Automatik" button auto-selects option 1
+- On selection: panel collapses, topic direction clears, progress cards appear
 
-**Usage:** Reference articles calibrate authentic BM news register, attribution style ("katanya"/"berkata"), and sentence rhythm. The writing RULES above define structure.
+**Cancel:**
+- "Batal" button in panel: if article exists → opens confirmation modal → `POST /api/cancel-topic` → deletes article + sends cancel signal to Inngest
+- If no article yet (search hasn't started) → just collapses panel
+- After cancel: panel collapses, topic direction input clears
+
+**Key state variables in JanaClient:**
+- `showStep1` — controls panel visibility
+- `topicDirection` — the optional topic hint text
+- `topicOptionsMap` — `{ [articleId]: topicOptions[] }` — pre-populated from `initialArticles` on load
+- `isSearching` — true while waiting for topic options to appear
+- `selectingId` — article being selected (to show loading state on card)
+- `cancelTarget` — article pending cancellation (for modal)
+
+**Important:** `topicOptionsMap` is initialized from `initialArticles` in `useState()` so existing options show immediately on page load without waiting for first poll.
 
 ---
 
@@ -276,17 +337,32 @@ Imported by `article-writer` and `revision`. Contains:
 
 ```
 {}
-→ { trends, scoutedAt }
-→ { trends, scoutedAt, selectedTopic, articleAngle, isDuplicate, similarArticles }
-→ { ...above, researchBrief }
-→ { ...above, article }                          ← TipTap JSON body
-→ { ...above, seo }
-→ { ...above, images: { heroImage, suggestions } }
-→ { ...above, qualityReport, qualityPassed }
-→ { ...above, revisionCorrectionsMade }          ← only if revision ran
+→ { trends, scoutedAt }                                    ← trend-scout
+→ { trends, scoutedAt, topicOptions[] }                    ← topic-selector (3 options)
+→ [HUMAN SELECTS ONE OPTION]
+→ { selectedTopic, articleAngle, researchBrief }           ← deep-researcher
+→ { ...above, article }                                    ← article-writer (TipTap JSON body)
+→ { ...above, seo }                                        ← seo-metadata
+→ { ...above, images: { heroImage, suggestions } }         ← image-brief
+→ { ...above, qualityReport, qualityPassed }               ← quality-checker
+→ { ...above, revisionCorrectionsMade }                    ← revision (only if score < 85)
 ```
 
 The `save-article` step uses `ctxFinal` (final merged context). After save, `injectImagePlaceholders()` inserts ImagePlaceholder nodes at the paragraphIndex positions from `images.suggestions`.
+
+**`selectedTopicCtx` shape** (built from human-selected option):
+```js
+{
+  selectedTopic: {
+    topic: option.topic,
+    description: option.summary,
+    category: option.category,
+    urgency: 'high',
+    keywords: []
+  },
+  articleAngle: option.angle ?? option.summary ?? ''
+}
+```
 
 ---
 
@@ -322,11 +398,19 @@ The most complex file. Features:
 | Page | Route | What it does |
 |---|---|---|
 | Dashboard | `/admin` | Metrics strip (published/draft/generating/7-day), 7-day bar chart (responsive), 5 recent articles |
-| Articles | `/admin/artikel` | Article table — status badges (mobile-responsive), edit links |
-| Generate | `/admin/jana` | Single "Jana Artikel Baru" button + live progress cards |
+| Articles | `/admin/artikel` | Article table — status badges (mobile-responsive), edit links; Cancel button on generating/awaiting articles |
+| Generate | `/admin/jana` | Two-step topic selection: direction input → 3 topic cards → full generation progress |
 | Editor | `/admin/editor/[id]` | Full article editor (see above) |
 | Authors | `/admin/penulis` | Author card grid — add/edit (with 1:1 crop), delete |
 | Settings | `/admin/tetapan` | System info, pipeline overview |
+
+**Status badges** (`ArtikelClient.js` STATUS_CFG):
+- `generating` — amber "Menjana"
+- `awaiting_topic_selection` — blue "Pilih Topik"
+- `ready_to_review` — green "Siap Semak"
+- `published` — dark "Diterbitkan"
+- `draft` — grey "Draf"
+- `failed` — red "Gagal"
 
 **Light/dark mode:** `admin-theme-change` CustomEvent dispatched by AdminSidebar. All admin components listen and switch CSS vars via `lm` boolean.
 
@@ -390,6 +474,25 @@ The most complex file. Features:
 
 ---
 
+## Style Guide (`lib/agents/style-guide.js`)
+
+Imported by `article-writer` and `revision`. Contains:
+
+**Writing rules (PANDUAN GAYA):**
+- Word count: **700–900 patah perkataan** (article-writer prompt), **600–800** (revision prompt)
+- 5 mandatory sections: Hook → Fakta & Konteks → Impak Tempatan → Soalan Kritikal → Penutup
+- **Named-person hook:** MUST open with a real named individual + direct quote in first 2 paragraphs
+- **Bookending:** Return to same person mid/end of article
+- 3–5 subheadings (H2), each descriptive and specific
+- 3 headline options (under 70 chars each)
+- Forbidden phrases: "Dalam era digital ini", "Tidak dapat dinafikan", "Hal ini demikian kerana"
+
+**Reference articles:** 10 full BERNAMA/Astro AWANI articles for TONE and LANGUAGE reference only — NOT for structure copying. These cover: product launches, policy news, expert analysis, government statements, opinion/kolumnis.
+
+**Usage:** Reference articles calibrate authentic BM news register, attribution style ("katanya"/"berkata"), and sentence rhythm. The writing RULES above define structure.
+
+---
+
 ## ImagePlaceholder Extension (`app/admin/editor/[id]/ImagePlaceholderExtension.js`)
 
 Custom TipTap block node. Factory: `createImagePlaceholderExtension(articleId)`.
@@ -418,7 +521,7 @@ Custom TipTap block node. Factory: `createImagePlaceholderExtension(articleId)`.
 `save-article` progress row written; JanaClient requires all required agents done/failed before declaring completion.
 
 ### Quality score 0/100 (FIXED)
-Raised quality-checker maxTokens to 2500. Added score floors (never 0). Explicit scoring rules in system prompt.
+Raised quality-checker maxTokens to 2500 (now 2000 with cost controls). Added score floors (never 0). Explicit scoring rules in system prompt.
 
 ### `<cite>` tags in sources (FIXED)
 `.replace(/<cite[^>]*>(.*?)<\/cite>/gi, '$1')` in EditorClient sources display.
@@ -442,10 +545,25 @@ Two-phase save: core fields in one UPDATE (throws on failure), optional fields i
 Permanent-failure catch block in `inngest-functions.js` (on attempt ≥ 1): marks article `failed`, writes `failed` progress rows for all pending agents so JanaClient card resolves.
 
 ### Image brief not appearing (Cadangan AI missing) (FIXED)
-Raised `image-brief.js` maxTokens from 1000 to 2000. JSON truncation caused `heroImage` to be null.
+Raised `image-brief.js` maxTokens from 1000 to 2000. JSON truncation caused `heroImage` to be null. (Now back at 1000 — monitor if issue returns.)
 
 ### White flash on admin navigation (FIXED)
 `html, body { background-color: #0c0b0a }` in globals.css. `AdminLoader` shows instantly (no fade-in transition). Admin layout wrapper has dark background.
+
+### Trend scout returning 0 topics (FIXED — Jun 2026)
+**Root cause:** `maxTokens: 1500` was too low. Model generates ~1200-1400 tokens of JSON for 7 topics. Token truncation caused `parseJSON()` to fail → returned `{ raw: text }` → `result.trends` undefined → `[]`. Fixed by raising to 2000. **Warning:** Do NOT lower below 2000.
+
+### Pipeline hanging 24h when 0 topics returned (FIXED — Jun 2026)
+If `topicOptions.length === 0` after topic-selector, pipeline would reach `waitForEvent` and sit idle for 24h. Fixed with fail-fast guard immediately after topic-selector step.
+
+### Supabase CHECK constraint blocking new statuses (FIXED — Jun 2026)
+Original CHECK only allowed 4 statuses. `migration 008_status_constraint.sql` expands it to include `failed` and `awaiting_topic_selection`. Must be applied in Supabase SQL Editor.
+
+### topicOptionsMap not showing on page load (FIXED — Jun 2026)
+`topicOptionsMap` state was initialized as `{}`, causing 3s delay before options appeared after reload. Fixed by initializing from `initialArticles`: `useState(Object.fromEntries(initialArticles.filter(a => a.topic_options).map(a => [a.id, a.topic_options])))`.
+
+### Topic direction input disappearing during search (FIXED — Jun 2026)
+Input was cleared on search start. Fixed: input stays visible as read-only during `isSearching` + when awaiting articles exist. Only clears on `confirmCancel` success or `handleSelectTopic` success.
 
 ---
 
@@ -453,17 +571,20 @@ Raised `image-brief.js` maxTokens from 1000 to 2000. JSON truncation caused `her
 
 1. **Never use the anon Supabase client for server-side writes** — always `createAdminSupabaseClient()`.
 2. **Model ID is `claude-sonnet-4-5`** — not the dated format (returns 404).
-3. **Inngest MUST be running on port 8288** for generation to work. Restart after changing `inngest-functions.js`.
-4. **maxTokens:** quality-checker=2500, image-brief=2000, others=4096. Don't lower them.
+3. **Inngest MUST be running on port 8288** for generation to work. Restart after changing `inngest-functions.js` OR any agent file.
+4. **maxTokens are carefully tuned** — see table in Agent Helpers section. trend-scout MUST be ≥2000. Do not lower any of them without understanding the truncation risk.
 5. **TipTap body format:** Stored as TipTap JSON in DB. `editor.getHTML()` used for save; body column holds the JSON.
 6. **65s sleeps between agents** — intentional rate-limit protection. Do not remove.
-7. **STYLE_GUIDE** — imported by article-writer AND revision. 600–700 words target. Named-person hook mandatory. Reference articles for BM register only.
+7. **STYLE_GUIDE** — imported by article-writer AND revision. Named-person hook mandatory. Reference articles for BM register only.
 8. **Image uploads** — hero: `/api/upload-image` (16:9 crop, `article-images` bucket). Inline: `/api/upload-inline-image`. Author photo: `/api/upload-author-photo` (`authors` bucket).
 9. **`!important` in admin CSS** — MetricCell and some components use inline styles. Media query overrides need `!important`.
 10. **Theme transitions** — `toggleTheme` in both `PublicNavbar.js` and `AdminSidebar.js` add `.theme-transitioning` class for 380ms. Defined in `globals.css`. Only applies during toggle, not page load.
-11. **Author migration** — `supabase/migrations/005_authors.sql` must be applied for the authors feature and article page author joins to work without errors.
-12. **Sources have URLs** — `deep-researcher.js` prompt captures `sourceUrl` per source. Stored in `sources` jsonb array. Editor shows clickable titles when URL present.
-13. **Quality threshold is 85** — not 80. Revision agent explicitly aims for 85+. Up to 2 revision attempts before accepting whatever score was achieved.
+11. **Sources have URLs** — `deep-researcher.js` prompt captures `sourceUrl` per source. Stored in `sources` jsonb array. Editor shows clickable titles when URL present.
+12. **Quality threshold is 85** — not 80. Revision agent explicitly aims for 85+. Up to 2 revision attempts before accepting whatever score was achieved.
+13. **Inngest step memoization** — Completed step results are cached PER RUN. If a run's trend-scout returned 0 topics, cancelling and starting a NEW article creates a new run — no contamination. But a stuck article's run permanently memoizes the bad result; it must be cancelled.
+14. **Migration 008 must be applied** — if you see "invalid input value for enum" or CHECK constraint errors when creating articles, run `supabase/migrations/008_status_constraint.sql` in Supabase SQL Editor.
+15. **topic/selected event** — Inngest pipeline pauses on `waitForEvent('wait-for-topic-selection', { event: 'topic/selected', timeout: '24h', match: 'data.articleId' })`. Cancel sends this event with `cancelled: true`. If pipeline times out (24h), article auto-marks failed.
+16. **Pipeline failure counter resets per run** — `pipelineFailures` is a local variable in `generateArticle`. Each new article run starts at 0. Abort triggers on ≥3 failures within a single run only.
 
 ---
 
@@ -493,16 +614,18 @@ Raised `image-brief.js` maxTokens from 1000 to 2000. JSON truncation caused `her
 - [x] Loading skeletons for admin tabs
 - [x] Confirmation modals (logout, publish, remove image, remove inline image, remove author)
 - [x] Dirty state tracking + unsaved changes warning
-- [x] Topic deduplication with retry logic
 - [x] Style guide with 10 BERNAMA reference articles + writing rules
-- [x] Named-person hook + bookending + 600–700 word target enforced
+- [x] Named-person hook + bookending + 700–900 word target enforced
 - [x] Functional article search (full-screen overlay, Supabase ilike, results with thumbnail)
 - [x] Bar chart responsive (mobile X-axis label reduction)
 - [x] Netlify deployment config present
+- [x] **Human-in-the-loop topic selection** — two-step Jana flow, 3 topic cards, cancel support (Jun 2026)
+- [x] **Cost controls** — token caps, 90s timeout, 1 retry max, 3-failure pipeline abort (Jun 2026)
+- [x] **Migration 007** — topic_options + selected_topic columns (Jun 2026)
+- [x] **Migration 008** — expanded status CHECK constraint (Jun 2026)
 
 ## What Could Be Next
 
-- [ ] Apply migration 005 if authors feature not yet working
 - [ ] Apply migration 006 (optional FTS index) for faster search at scale
 - [ ] Scheduled article generation (cron via Inngest)
 - [ ] Unsplash API integration (auto-fetch hero image from image_brief query)
