@@ -56,7 +56,13 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
     e.target.value = ''
     if (!f) return
     if (onOpenModal) {
-      onOpenModal({ file: f, pos: getPos(), description: node.attrs.description || '' })
+      onOpenModal({
+        file:        f,
+        pos:         getPos(),
+        description: node.attrs.description || '',
+        altText:     node.attrs.altText      || node.attrs.description || '',
+        caption:     node.attrs.caption      || '',
+      })
     } else {
       handleDirectUpload(f)
     }
@@ -237,6 +243,8 @@ export function createImagePlaceholderExtension(articleId = '', onOpenModal = nu
       return {
         description: { default: '' },
         placement:   { default: '' },
+        altText:     { default: '' },
+        caption:     { default: '' },
       }
     },
 
@@ -249,6 +257,8 @@ export function createImagePlaceholderExtension(articleId = '', onOpenModal = nu
         'data-type':        'image-placeholder',
         'data-description': node.attrs.description,
         'data-placement':   node.attrs.placement,
+        'data-alt-text':    node.attrs.altText,
+        'data-caption':     node.attrs.caption,
         style:              'display:none',
       })]
     },

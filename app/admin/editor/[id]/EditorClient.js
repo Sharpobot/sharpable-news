@@ -970,6 +970,13 @@ function SaveButtons({ saveStatus, onDraft, onPublish }) {
   )
 }
 
+/* ── Parse image_brief — supports both new JSON format and legacy plain text ── */
+function parseImageBrief(raw) {
+  if (!raw) return null
+  try { const p = JSON.parse(raw); if (p && typeof p === 'object') return p } catch {}
+  return { prompt: raw, unsplashQuery: '', altText: '', caption: '' }
+}
+
 /* ══════════════════════════════════════════════════════════════
    Main EditorClient
 ══════════════════════════════════════════════════════════════ */
@@ -999,6 +1006,12 @@ export default function EditorClient({ article, authors = [] }) {
   const [placeholderInitialFile,  setPlaceholderInitialFile]  = useState(null)
   const [placeholderInitialAlt,   setPlaceholderInitialAlt]   = useState('')
   const [briefCopied,             setBriefCopied]             = useState(false)
+  const [featuredImageAlt,      setFeaturedImageAlt]      = useState(() => parseImageBrief(article.image_brief)?.altText  ?? '')
+  const [featuredImageCaption,  setFeaturedImageCaption]  = useState(() => parseImageBrief(article.image_brief)?.caption  ?? '')
+  const [placeholderInitialCaption, setPlaceholderInitialCaption] = useState('')
+
+  const briefData   = parseImageBrief(article.image_brief)
+  const briefPrompt = briefData?.prompt ?? article.image_brief ?? ''
 
   const [authorId, setAuthorId] = useState(article.author_id ?? null)
 
@@ -1017,10 +1030,11 @@ export default function EditorClient({ article, authors = [] }) {
     extensions: [
       StarterKit,
       Image.configure({ inline: false, allowBase64: false }),
-      createImagePlaceholderExtension(article.id, ({ file, pos, description }) => {
+      createImagePlaceholderExtension(article.id, ({ file, pos, description, altText, caption }) => {
         placeholderReplaceRef.current = pos
         setPlaceholderInitialFile(file)
-        setPlaceholderInitialAlt(description)
+        setPlaceholderInitialAlt(altText || description)
+        setPlaceholderInitialCaption(caption || '')
         setShowInlineImageModal(true)
       }),
     ],
@@ -1070,6 +1084,12 @@ export default function EditorClient({ article, authors = [] }) {
           slug, meta_description: metaDescription, tags,
           featured_image: featuredImage, status: newStatus,
           author_id: authorId ?? null,
+          image_brief: JSON.stringify({
+            prompt:       briefData?.prompt        ?? (article.image_brief ?? ''),
+            unsplashQuery: briefData?.unsplashQuery ?? '',
+            altText:      featuredImageAlt,
+            caption:      featuredImageCaption,
+          }),
         }),
       })
       if (!res.ok) throw new Error()
@@ -1483,11 +1503,12 @@ export default function EditorClient({ article, authors = [] }) {
               setEditingInlineImageData(null)
               setPlaceholderInitialFile(null)
               setPlaceholderInitialAlt('')
+              setPlaceholderInitialCaption('')
               placeholderReplaceRef.current = null
             }}
             initialSrc={editingInlineImageData?.src ?? ''}
             initialAlt={editingInlineImageData?.alt ?? placeholderInitialAlt}
-            initialCaption={editingInlineImageData?.caption ?? ''}
+            initialCaption={editingInlineImageData?.caption ?? placeholderInitialCaption}
             mode={editingInlineImageData ? 'edit' : 'insert'}
             initialFile={placeholderInitialFile}
           />
@@ -1597,7 +1618,7 @@ export default function EditorClient({ article, authors = [] }) {
                     <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(article.image_brief || '').then(() => {
+                          navigator.clipboard.writeText(briefPrompt).then(() => {
                             setBriefCopied(true)
                             setTimeout(() => setBriefCopied(false), 1500)
                           })
@@ -1630,7 +1651,7 @@ export default function EditorClient({ article, authors = [] }) {
                       )}
                     </div>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13.5px', color: '#8c857c', lineHeight: 1.6 }}>{article.image_brief}</p>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: '#8c857c', lineHeight: 1.6 }}>{briefPrompt}</p>
                 </div>
                 <button className="show-on-mobile" onClick={() => setShowBrief(true)} style={{
                   display: 'none', marginBottom: '12px', padding: '8px 14px', borderRadius: '6px',
@@ -1682,6 +1703,48 @@ export default function EditorClient({ article, authors = [] }) {
             )}
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }} />
+
+            {/* Alt text + caption for hero image */}
+            <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '5px' }}>
+                  Alt Teks Imej Hero
+                </div>
+                <input
+                  value={featuredImageAlt}
+                  onChange={e => { setFeaturedImageAlt(e.target.value); setIsDirty(true) }}
+                  maxLength={125}
+                  placeholder="Teks alternatif ringkas dan deskriptif…"
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '8px 10px', borderRadius: '4px',
+                    background: '#0e0d0c', border: '1px solid rgba(237,232,223,0.11)',
+                    color: '#ede8df', fontSize: '13px',
+                    fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                  }}
+                />
+                <div style={{ fontSize: '11px', color: '#3a3530', marginTop: '3px', textAlign: 'right' }}>
+                  {featuredImageAlt.length}/125
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '5px' }}>
+                  Kapsyen Imej Hero
+                </div>
+                <input
+                  value={featuredImageCaption}
+                  onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
+                  placeholder="Kapsyen pendek bergaya berita…"
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '8px 10px', borderRadius: '4px',
+                    background: '#0e0d0c', border: '1px solid rgba(237,232,223,0.11)',
+                    color: '#ede8df', fontSize: '13px',
+                    fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
           </section>
 
           {/* 3. TipTap body editor */}
