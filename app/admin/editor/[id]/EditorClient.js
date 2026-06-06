@@ -582,6 +582,7 @@ function CropModal({ src, onConfirm, onCancel }) {
 function InlineImageModal({
   articleId, onInsert, onClose,
   initialSrc = '', initialAlt = '', initialCaption = '', mode = 'insert',
+  initialFile = null,
 }) {
   const [tab,          setTab]          = useState('upload')
   const [url,          setUrl]          = useState(mode === 'edit' ? initialSrc : '')
@@ -603,6 +604,11 @@ function InlineImageModal({
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
+
+  // Auto-load initial file from placeholder "Muat Naik" flow
+  useEffect(() => {
+    if (initialFile) handleFileSelect(initialFile)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // File selected — read as dataURL for preview/crop; actual upload happens on insert
   const handleFileSelect = (file) => {
@@ -989,7 +995,10 @@ export default function EditorClient({ article, authors = [] }) {
 
   // Inline image modal state
   const [showInlineImageModal,    setShowInlineImageModal]    = useState(false)
-  const [editingInlineImageData,  setEditingInlineImageData]  = useState(null) // {src,alt,caption} when editing
+  const [editingInlineImageData,  setEditingInlineImageData]  = useState(null) //
+  const [placeholderInitialFile,  setPlaceholderInitialFile]  = useState(null)
+  const [placeholderInitialAlt,   setPlaceholderInitialAlt]   = useState('')
+  const [briefCopied,             setBriefCopied]             = useState(false) {src,alt,caption} when editing
 
   const [authorId, setAuthorId] = useState(article.author_id ?? null)
 
@@ -1008,7 +1017,12 @@ export default function EditorClient({ article, authors = [] }) {
     extensions: [
       StarterKit,
       Image.configure({ inline: false, allowBase64: false }),
-      createImagePlaceholderExtension(article.id),
+      createImagePlaceholderExtension(article.id, ({ file, pos, description }) => {
+        placeholderReplaceRef.current = pos
+        setPlaceholderInitialFile(file)
+        setPlaceholderInitialAlt(description)
+        setShowInlineImageModal(true)
+      }),
     ],
     content: article.body ?? '',
     onUpdate: () => setIsDirty(true),
@@ -1098,7 +1112,15 @@ export default function EditorClient({ article, authors = [] }) {
   // Insert or update inline image
   const insertInlineImage = ({ src, alt, caption }) => {
     if (!editor) return
-    if (hoverEditPosRef.current !== null) {
+    if (placeholderReplaceRef.current !== null) {
+      // Placeholder replacement: swap the placeholder node with a real image
+      const pos = placeholderReplaceRef.current
+      placeholderReplaceRef.current = null
+      const imgNode = editor.schema.nodes.image.create({
+        src, alt: alt || undefined, title: caption || undefined,
+      })
+      editor.view.dispatch(editor.state.tr.replaceWith(pos, pos + 1, imgNode))
+    } else if (hoverEditPosRef.current !== null) {
       // Hover-edit: replace node at stored position (no selection required)
       const pos  = hoverEditPosRef.current
       hoverEditPosRef.current = null
@@ -1139,7 +1161,8 @@ export default function EditorClient({ article, authors = [] }) {
 
   // Hover controls (edit / delete / move) shown when mouse is over an image
   const imgHoverTimer = useRef(null)
-  const hoverEditPosRef = useRef(null)
+  const hoverEditPosRef        = useRef(null)
+  const placeholderReplaceRef  = useRef(null)
   const [imgHover, setImgHover] = useState(null) // {top,left,width,height,src,alt,caption,pos,canUp,canDown}
 
   useEffect(() => {
@@ -1452,14 +1475,21 @@ export default function EditorClient({ article, authors = [] }) {
         )}
         {showInlineImageModal && (
           <InlineImageModal
-            key={editingInlineImageData ? 'inline-img-edit' : 'inline-img-insert'}
+            key={editingInlineImageData ? 'inline-img-edit' : placeholderInitialFile ? 'inline-img-placeholder' : 'inline-img-insert'}
             articleId={article.id}
             onInsert={insertInlineImage}
-            onClose={() => { setShowInlineImageModal(false); setEditingInlineImageData(null) }}
+            onClose={() => {
+              setShowInlineImageModal(false)
+              setEditingInlineImageData(null)
+              setPlaceholderInitialFile(null)
+              setPlaceholderInitialAlt('')
+              placeholderReplaceRef.current = null
+            }}
             initialSrc={editingInlineImageData?.src ?? ''}
-            initialAlt={editingInlineImageData?.alt ?? ''}
+            initialAlt={editingInlineImageData?.alt ?? placeholderInitialAlt}
             initialCaption={editingInlineImageData?.caption ?? ''}
             mode={editingInlineImageData ? 'edit' : 'insert'}
+            initialFile={placeholderInitialFile}
           />
         )}
       </AnimatePresence>
@@ -1562,7 +1592,44 @@ export default function EditorClient({ article, authors = [] }) {
               <>
                 <div style={{ padding: '14px 16px', borderRadius: '4px', marginBottom: '12px', background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderLeft: '3px solid #d4a853' }}
                   className="hide-on-mobile">
-                  <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '6px' }}>Cadangan AI — Imej Hero</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d' }}>Cadangan AI — Imej Hero</div>
+                    <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(article.image_brief || '').then(() => {
+                            setBriefCopied(true)
+                            setTimeout(() => setBriefCopied(false), 1500)
+                          })
+                        }}
+                        title="Salin cadangan imej"
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+                          color: briefCopied ? '#d4a853' : 'rgba(212,168,83,0.35)',
+                          display: 'flex', alignItems: 'center', borderRadius: '3px',
+                          transition: 'color 0.15s',
+                        }}
+                        onMouseEnter={e => { if (!briefCopied) e.currentTarget.style.color = 'rgba(212,168,83,0.65)' }}
+                        onMouseLeave={e => { if (!briefCopied) e.currentTarget.style.color = 'rgba(212,168,83,0.35)' }}
+                      >
+                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <rect x="9" y="9" width="13" height="13" rx="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                      </button>
+                      {briefCopied && (
+                        <span style={{
+                          position: 'absolute', bottom: '100%', right: 0, marginBottom: '4px',
+                          background: '#1e1c1a', border: '1px solid rgba(237,232,223,0.12)',
+                          color: '#d4a853', fontSize: '10px', fontWeight: 600,
+                          padding: '2px 6px', borderRadius: '3px', whiteSpace: 'nowrap',
+                          fontFamily: "'DM Sans',sans-serif", pointerEvents: 'none',
+                        }}>
+                          Disalin
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   <p style={{ margin: 0, fontSize: '13.5px', color: '#8c857c', lineHeight: 1.6 }}>{article.image_brief}</p>
                 </div>
                 <button className="show-on-mobile" onClick={() => setShowBrief(true)} style={{
