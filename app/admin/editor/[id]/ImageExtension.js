@@ -21,7 +21,7 @@ export const ImageWithCaption = Image.extend({
       /* ── The actual <img> ── */
       const img = document.createElement('img')
       img.setAttribute('src', node.attrs.src ?? '')
-      img.style.cssText = 'max-width:100%;width:100%;display:block;height:auto;border-radius:3px;'
+      img.style.cssText = 'max-width:100%;display:block;height:auto;border-radius:3px;'
       if (node.attrs.alt)   img.setAttribute('alt',   node.attrs.alt)
       if (node.attrs.title) img.setAttribute('title', node.attrs.title)
       dom.appendChild(img)
@@ -46,7 +46,7 @@ export const ImageWithCaption = Image.extend({
       const altDisplay = document.createElement('p')
       altDisplay.style.cssText = [
         'margin:2px 0 0',
-        'color:#3a3530',
+        'color:#7a7470',
         'font-size:11px',
         'line-height:1.3',
         'font-family:"DM Sans",sans-serif',

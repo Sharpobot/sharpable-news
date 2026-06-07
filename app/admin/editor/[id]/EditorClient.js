@@ -1005,7 +1005,6 @@ export default function EditorClient({ article, authors = [] }) {
   const [editingInlineImageData,  setEditingInlineImageData]  = useState(null) // {src,alt,caption} when editing
   const [placeholderInitialFile,  setPlaceholderInitialFile]  = useState(null)
   const [placeholderInitialAlt,   setPlaceholderInitialAlt]   = useState('')
-  const [briefCopied,             setBriefCopied]             = useState(false)
   const [featuredImageAlt,      setFeaturedImageAlt]      = useState(() => parseImageBrief(article.image_brief)?.altText  ?? '')
   const [featuredImageCaption,  setFeaturedImageCaption]  = useState(() => parseImageBrief(article.image_brief)?.caption  ?? '')
   const [placeholderInitialCaption, setPlaceholderInitialCaption] = useState('')
@@ -1621,36 +1620,24 @@ export default function EditorClient({ article, authors = [] }) {
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(briefPrompt).then(() => {
-                            setBriefCopied(true)
-                            setTimeout(() => setBriefCopied(false), 1500)
+                            toast.success('Cadangan imej disalin ke papan klip.', { duration: 2000 })
                           })
                         }}
                         title="Salin cadangan imej"
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
-                          color: briefCopied ? '#d4a853' : 'rgba(212,168,83,0.35)',
+                          color: 'rgba(212,168,83,0.35)',
                           display: 'flex', alignItems: 'center', borderRadius: '3px',
                           transition: 'color 0.15s',
                         }}
-                        onMouseEnter={e => { if (!briefCopied) e.currentTarget.style.color = 'rgba(212,168,83,0.65)' }}
-                        onMouseLeave={e => { if (!briefCopied) e.currentTarget.style.color = 'rgba(212,168,83,0.35)' }}
+                        onMouseEnter={e => { e.currentTarget.style.color = 'rgba(212,168,83,0.7)' }}
+                        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(212,168,83,0.35)' }}
                       >
                         <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <rect x="9" y="9" width="13" height="13" rx="2"/>
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                         </svg>
                       </button>
-                      {briefCopied && (
-                        <span style={{
-                          position: 'absolute', bottom: '100%', right: 0, marginBottom: '4px',
-                          background: '#1e1c1a', border: '1px solid rgba(237,232,223,0.12)',
-                          color: '#d4a853', fontSize: '10px', fontWeight: 600,
-                          padding: '2px 6px', borderRadius: '3px', whiteSpace: 'nowrap',
-                          fontFamily: "'DM Sans',sans-serif", pointerEvents: 'none',
-                        }}>
-                          Disalin
-                        </span>
-                      )}
                     </div>
                   </div>
                   <p style={{ margin: 0, fontSize: '13.5px', color: '#8c857c', lineHeight: 1.6 }}>{briefPrompt}</p>

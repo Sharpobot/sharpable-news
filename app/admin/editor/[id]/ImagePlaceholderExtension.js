@@ -2,6 +2,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
 import { useState, useRef } from 'react'
+import toast from 'react-hot-toast'
 import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 /* ── Copy icon (Lucide-style) ── */
@@ -19,15 +20,13 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
   const [uploading,     setUploading]     = useState(false)
   const [error,         setError]         = useState('')
   const [showSkipModal, setShowSkipModal] = useState(false)
-  const [copied,        setCopied]        = useState(false)
   const fileRef     = useRef(null)
   const articleId   = extension.options.articleId
   const onOpenModal = extension.options.onOpenModal
 
   const handleCopy = () => {
     navigator.clipboard.writeText(node.attrs.description || '').then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      toast.success('Cadangan disalin ke papan klip.', { duration: 2000 })
     })
   }
 
@@ -154,33 +153,20 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
               Cadangan Imej AI
             </div>
             {/* Copy button */}
-            <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
-              <button
-                onClick={handleCopy}
-                title="Salin penerangan"
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
-                  color: copied ? '#d4a853' : 'rgba(212,168,83,0.35)',
-                  display: 'flex', alignItems: 'center', borderRadius: '3px',
-                  transition: 'color 0.15s',
-                }}
-                onMouseEnter={e => { if (!copied) e.currentTarget.style.color = 'rgba(212,168,83,0.65)' }}
-                onMouseLeave={e => { if (!copied) e.currentTarget.style.color = 'rgba(212,168,83,0.35)' }}
-              >
-                <CopyIcon />
-              </button>
-              {copied && (
-                <span style={{
-                  position: 'absolute', bottom: '100%', right: 0, marginBottom: '4px',
-                  background: '#1e1c1a', border: '1px solid rgba(237,232,223,0.12)',
-                  color: '#d4a853', fontSize: '10px', fontWeight: 600,
-                  padding: '2px 6px', borderRadius: '3px', whiteSpace: 'nowrap',
-                  fontFamily: "'DM Sans',sans-serif", pointerEvents: 'none',
-                }}>
-                  Disalin
-                </span>
-              )}
-            </div>
+            <button
+              onClick={handleCopy}
+              title="Salin penerangan"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+                color: 'rgba(212,168,83,0.35)',
+                display: 'flex', alignItems: 'center', borderRadius: '3px',
+                transition: 'color 0.15s', flexShrink: 0,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'rgba(212,168,83,0.7)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(212,168,83,0.35)' }}
+            >
+              <CopyIcon />
+            </button>
           </div>
           <div className="imgph-desc">
             {node.attrs.description}
