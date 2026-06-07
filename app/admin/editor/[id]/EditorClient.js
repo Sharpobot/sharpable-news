@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Image from '@tiptap/extension-image'
+import { ImageWithCaption } from './ImageExtension'
 import { createImagePlaceholderExtension } from './ImagePlaceholderExtension'
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
@@ -1009,6 +1009,8 @@ export default function EditorClient({ article, authors = [] }) {
   const [featuredImageAlt,      setFeaturedImageAlt]      = useState(() => parseImageBrief(article.image_brief)?.altText  ?? '')
   const [featuredImageCaption,  setFeaturedImageCaption]  = useState(() => parseImageBrief(article.image_brief)?.caption  ?? '')
   const [placeholderInitialCaption, setPlaceholderInitialCaption] = useState('')
+  const [editingFeaturedAlt,     setEditingFeaturedAlt]     = useState(false)
+  const [editingFeaturedCaption, setEditingFeaturedCaption] = useState(false)
 
   const briefData   = parseImageBrief(article.image_brief)
   const briefPrompt = briefData?.prompt ?? article.image_brief ?? ''
@@ -1029,7 +1031,7 @@ export default function EditorClient({ article, authors = [] }) {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Image.configure({ inline: false, allowBase64: false }),
+      ImageWithCaption.configure({ inline: false, allowBase64: false }),
       createImagePlaceholderExtension(article.id, ({ file, pos, description, altText, caption }) => {
         placeholderReplaceRef.current = pos
         setPlaceholderInitialFile(file)
@@ -1188,7 +1190,7 @@ export default function EditorClient({ article, authors = [] }) {
   useEffect(() => {
     if (!editor) return
     const update = () => {
-      const selectedImg = document.querySelector('.tiptap-editor img.ProseMirror-selectednode')
+      const selectedImg = document.querySelector('.tiptap-editor .ProseMirror-selectednode img') ?? document.querySelector('.tiptap-editor img.ProseMirror-selectednode')
       if (!selectedImg || !editorContainerRef.current) { setImgMove(null); return }
       const containerRect = editorContainerRef.current.getBoundingClientRect()
       const imgRect = selectedImg.getBoundingClientRect()
@@ -1704,45 +1706,90 @@ export default function EditorClient({ article, authors = [] }) {
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }} />
 
-            {/* Alt text + caption for hero image */}
+            {/* Alt text + caption for hero image — click-to-edit */}
             <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Caption */}
               <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '5px' }}>
-                  Alt Teks Imej Hero
-                </div>
-                <input
-                  value={featuredImageAlt}
-                  onChange={e => { setFeaturedImageAlt(e.target.value); setIsDirty(true) }}
-                  maxLength={125}
-                  placeholder="Teks alternatif ringkas dan deskriptif…"
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    padding: '8px 10px', borderRadius: '4px',
-                    background: '#0e0d0c', border: '1px solid rgba(237,232,223,0.11)',
-                    color: '#ede8df', fontSize: '13px',
-                    fontFamily: "'DM Sans', sans-serif", outline: 'none',
-                  }}
-                />
-                <div style={{ fontSize: '11px', color: '#3a3530', marginTop: '3px', textAlign: 'right' }}>
-                  {featuredImageAlt.length}/125
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '5px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>
                   Kapsyen Imej Hero
                 </div>
-                <input
-                  value={featuredImageCaption}
-                  onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
-                  placeholder="Kapsyen pendek bergaya berita…"
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    padding: '8px 10px', borderRadius: '4px',
-                    background: '#0e0d0c', border: '1px solid rgba(237,232,223,0.11)',
-                    color: '#ede8df', fontSize: '13px',
-                    fontFamily: "'DM Sans', sans-serif", outline: 'none',
-                  }}
-                />
+                {editingFeaturedCaption ? (
+                  <input
+                    autoFocus
+                    value={featuredImageCaption}
+                    onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
+                    onBlur={() => setEditingFeaturedCaption(false)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedCaption(false) } }}
+                    placeholder="Kapsyen pendek bergaya berita…"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '7px 10px', borderRadius: '4px',
+                      background: '#0e0d0c', border: '1px solid rgba(212,168,83,0.35)',
+                      color: '#ede8df', fontSize: '13px',
+                      fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <div
+                    onClick={() => setEditingFeaturedCaption(true)}
+                    title="Klik untuk edit"
+                    style={{
+                      padding: '7px 10px', borderRadius: '4px', cursor: 'text',
+                      border: '1px solid rgba(237,232,223,0.07)',
+                      background: 'transparent', minHeight: '34px',
+                      fontSize: '13px', fontStyle: featuredImageCaption ? 'normal' : 'italic',
+                      color: featuredImageCaption ? '#ede8df' : '#3a3530',
+                      fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
+                    }}
+                  >
+                    {featuredImageCaption || 'Tiada kapsyen — klik untuk tambah'}
+                  </div>
+                )}
+              </div>
+
+              {/* Alt text */}
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>
+                  Alt Teks Imej Hero
+                </div>
+                {editingFeaturedAlt ? (
+                  <input
+                    autoFocus
+                    value={featuredImageAlt}
+                    onChange={e => { setFeaturedImageAlt(e.target.value); setIsDirty(true) }}
+                    onBlur={() => setEditingFeaturedAlt(false)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedAlt(false) } }}
+                    maxLength={125}
+                    placeholder="Teks alternatif ringkas dan deskriptif…"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '7px 10px', borderRadius: '4px',
+                      background: '#0e0d0c', border: '1px solid rgba(212,168,83,0.35)',
+                      color: '#ede8df', fontSize: '13px',
+                      fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <div
+                    onClick={() => setEditingFeaturedAlt(true)}
+                    title="Klik untuk edit"
+                    style={{
+                      padding: '7px 10px', borderRadius: '4px', cursor: 'text',
+                      border: '1px solid rgba(237,232,223,0.07)',
+                      background: 'transparent', minHeight: '34px',
+                      fontSize: '13px', fontStyle: featuredImageAlt ? 'normal' : 'italic',
+                      color: featuredImageAlt ? '#8c857c' : '#3a3530',
+                      fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
+                    }}
+                  >
+                    {featuredImageAlt ? `Alt: ${featuredImageAlt}` : 'Tiada alt teks — klik untuk tambah'}
+                  </div>
+                )}
+                {editingFeaturedAlt && (
+                  <div style={{ fontSize: '11px', color: '#3a3530', marginTop: '3px', textAlign: 'right' }}>
+                    {featuredImageAlt.length}/125
+                  </div>
+                )}
               </div>
             </div>
           </section>
