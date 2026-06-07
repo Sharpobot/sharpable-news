@@ -20,6 +20,95 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+/* ── Placeholder cards fill the grid until 12 real articles are published ── */
+const GRID_SIZE = 12
+const PLACEHOLDER_ARTICLES = [
+  {
+    id: 'ph-1', isPlaceholder: true, tags: ['Penyelidikan'],
+    title: 'Google DeepMind Perkenal Pengganti AlphaFold dengan Pemodelan Interaksi Protein Penuh',
+    meta_description: 'Versi terbaharu melampaui lipatan protein tunggal untuk memetakan interaksi pelbagai protein yang kompleks — satu kejayaan besar kepada penemuan ubat dan biologi sintetik.',
+    featured_image: 'https://picsum.photos/seed/deepmind-protein/800/500',
+    created_at: '2026-05-18T00:00:00Z', authors: { name: 'Priya Menon' },
+  },
+  {
+    id: 'ph-2', isPlaceholder: true, tags: ['Permulaan'],
+    title: 'Model Sumber Terbuka Mistral Mengatasi GPT-4 dalam Penanda Aras Penaakulan Undang-Undang',
+    meta_description: 'Keluaran terbaharu makmal yang berpusat di Paris ini, dilatih pada korpus teks undang-undang terpilih merentas 12 bidang kuasa, menarik perhatian syarikat korporat.',
+    featured_image: 'https://picsum.photos/seed/mistral-paris/800/500',
+    created_at: '2026-05-17T00:00:00Z', authors: { name: 'Thomas Laurent' },
+  },
+  {
+    id: 'ph-3', isPlaceholder: true, tags: ['Analisis'],
+    title: 'Ekonomi Tersembunyi Menjalankan LLM dalam Skala Besar: Pecahan Kos Penuh',
+    meta_description: 'Di sebalik setiap panggilan API tersembunyi rangkaian kluster GPU, kontrak kuasa, dan infrastruktur penyejukan yang kompleks. Kami memetakan keseluruhan unit ekonomi.',
+    featured_image: 'https://picsum.photos/seed/datacenter-gpu/800/500',
+    created_at: '2026-05-17T00:00:00Z', authors: { name: 'Elena Vasquez' },
+  },
+  {
+    id: 'ph-4', isPlaceholder: true, tags: ['Dasar'],
+    title: 'Akta AI EU Masuk Fasa Kedua: Syarikat Malaysia Perlu Bersedia untuk Audit Pematuhan',
+    meta_description: 'Dengan fasa penguatkuasaan penuh bermula suku ketiga 2026, syarikat yang mengeksport perkhidmatan AI ke Eropah perlu memenuhi keperluan penilaian risiko yang ketat.',
+    featured_image: 'https://picsum.photos/seed/eu-policy-law/800/500',
+    created_at: '2026-05-16T00:00:00Z', authors: { name: 'Sofia Reyes' },
+  },
+  {
+    id: 'ph-5', isPlaceholder: true, tags: ['Alatan'],
+    title: 'Cursor Melancarkan Mod Ejen: Pembangun Boleh Serahkan Keseluruhan Tugasan kepada AI',
+    meta_description: 'Kemas kini terbesar Cursor sejak pelancaran mengubah cara pembangun berinteraksi dengan kod — daripada autolengkap kepada automasi penuh aliran kerja pembangunan.',
+    featured_image: 'https://picsum.photos/seed/cursor-ide-dev/800/500',
+    created_at: '2026-05-15T00:00:00Z', authors: { name: 'James Whitfield' },
+  },
+  {
+    id: 'ph-6', isPlaceholder: true, tags: ['Industri'],
+    title: 'NVIDIA Catat Hasil Suku Tahunan Rekod $44 Bilion Didorong Permintaan GPU Pusat Data',
+    meta_description: 'Jenama H100 dan H200 terus mendominasi pasaran pengkomputeran AI peringkat enterprise, dengan senarai tunggu beberapa bulan masih berterusan walaupun kapasiti pengeluaran meningkat.',
+    featured_image: 'https://picsum.photos/seed/nvidia-chip-gpu/800/500',
+    created_at: '2026-05-14T00:00:00Z', authors: { name: 'Marcus Chen' },
+  },
+  {
+    id: 'ph-7', isPlaceholder: true, tags: ['Penyelidikan'],
+    title: 'Kaedah Baharu Penjajaran AI Mengurangkan Halusinasi 71% Tanpa Menjejaskan Prestasi',
+    meta_description: 'Penyelidik dari Stanford dan Carnegie Mellon memperkenalkan pendekatan latihan yang menyasar akar umbi ketidaktepatan faktual secara langsung dalam proses pengoptimuman model.',
+    featured_image: 'https://picsum.photos/seed/ai-alignment-research/800/500',
+    created_at: '2026-05-13T00:00:00Z', authors: { name: 'Priya Menon' },
+  },
+  {
+    id: 'ph-8', isPlaceholder: true, tags: ['Permulaan'],
+    title: 'Syarikat Permulaan AI Malaysia Kumpul RM48 Juta untuk Platform Automasi Pematuhan',
+    meta_description: 'Firma tempatan yang memfokus pada sektor perbankan dan kewangan mendapat sokongan daripada pelabur dari Singapura dan Taiwan dalam pusingan Siri A yang baru selesai.',
+    featured_image: 'https://picsum.photos/seed/malaysia-startup-kl/800/500',
+    created_at: '2026-05-12T00:00:00Z', authors: { name: 'Laila Nasser' },
+  },
+  {
+    id: 'ph-9', isPlaceholder: true, tags: ['Analisis'],
+    title: 'Selepas GPT-4: Mengapa Model Seterusnya Mungkin Bukan Tentang Lebih Banyak Parameter',
+    meta_description: 'Para penyelidik semakin bersetuju bahawa skala semata-mata sudah mencapai had pulangan berkurangan. Generasi seterusnya bergantung pada seni bina baharu, bukan hanya pengiraan lebih banyak.',
+    featured_image: 'https://picsum.photos/seed/neural-arch-next/800/500',
+    created_at: '2026-05-11T00:00:00Z', authors: { name: 'David Okafor' },
+  },
+  {
+    id: 'ph-10', isPlaceholder: true, tags: ['Dasar'],
+    title: 'Pelan Nasional AI Malaysia 2030: Hala Tuju Baharu untuk Ekosistem Teknologi Tempatan',
+    meta_description: 'Rangka kerja terbaharu kerajaan menetapkan sasaran khusus untuk penerapan AI dalam sektor awam, pendidikan, dan pembuatan — dengan peruntukan RM2.5 bilion sepanjang lima tahun.',
+    featured_image: 'https://picsum.photos/seed/malaysia-tech-policy/800/500',
+    created_at: '2026-05-10T00:00:00Z', authors: { name: 'Sofia Reyes' },
+  },
+  {
+    id: 'ph-11', isPlaceholder: true, tags: ['Alatan'],
+    title: 'Claude API Kini Menyokong Pengiraan Lanjutan: Apa yang Berubah untuk Pembangun',
+    meta_description: 'Anthropic memperluaskan keupayaan API dengan ciri pengiraan lanjutan yang membolehkan model menjalankan analisis matematik dan data secara langsung dalam respons.',
+    featured_image: 'https://picsum.photos/seed/claude-api-dev/800/500',
+    created_at: '2026-05-09T00:00:00Z', authors: { name: 'James Whitfield' },
+  },
+  {
+    id: 'ph-12', isPlaceholder: true, tags: ['Industri'],
+    title: 'Pasaran Model AI Bahasa Kecil Semakin Rancak: Siapa Menang Perlumbaan Edge AI?',
+    meta_description: 'Dengan peningkatan permintaan untuk AI yang boleh beroperasi pada peranti tanpa sambungan awan, firma seperti Microsoft, Apple, dan Qualcomm bersaing mendominasi segmen SLM.',
+    featured_image: 'https://picsum.photos/seed/edge-ai-mobile/800/500',
+    created_at: '2026-05-08T00:00:00Z', authors: { name: 'Elena Vasquez' },
+  },
+]
+
 export default function HomePageClient({ articles = [] }) {
   useEffect(() => {
     /* ── Scroll-reveal ── */
@@ -140,88 +229,78 @@ export default function HomePageClient({ articles = [] }) {
           </div>
           <div className="cards-grid">
 
-            {articles.length > 0 ? articles.map((article, i) => (
-              <Link key={article.id} href={`/artikel/${article.slug}`} className="card reveal" style={{ textDecoration: 'none' }}>
-                <div className="card-img">
-                  <div className={`card-img-inner ci-${(i % 6) + 1}`}>
-                    <img
-                      className="card-photo"
-                      src={article.featured_image ?? `https://picsum.photos/seed/${article.slug}/800/500`}
-                      alt={article.title}
-                    />
-                  </div>
-                </div>
-                <div className="card-cat">
-                  {article.tags?.[0] && (
-                    <span className={`tag ${tagClass(article.tags[0])}`}>{article.tags[0]}</span>
-                  )}
-                </div>
-                <h3 className="card-title">{article.title}</h3>
-                {article.meta_description && (
-                  <p className="card-excerpt">{article.meta_description}</p>
-                )}
-                <div className="card-meta">
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" style={{ flexShrink: 0, opacity: 0.6 }}>
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                  <span>{article.authors?.name ?? 'Sharpable News'}</span>
-                  <span className="dot" />
-                  <span>{fmtDate(article.created_at)}</span>
-                </div>
-              </Link>
-            )) : (
-              /* ── Placeholder cards shown while DB has no published articles ── */
-              <>
-                <div className="card reveal">
-                  <div className="card-img">
-                    <div className="card-img-inner ci-1">
-                      <img className="card-photo" src="https://picsum.photos/seed/deepmind-protein/800/500" alt="Penyelidikan saintifik" />
-                    </div>
-                  </div>
-                  <div className="card-cat"><span className="tag t-research">Penyelidikan</span></div>
-                  <h3 className="card-title">Google DeepMind Perkenal Pengganti AlphaFold dengan Pemodelan Interaksi Protein Penuh</h3>
-                  <p className="card-excerpt">Versi terbaharu ini melampaui lipatan protein tunggal untuk memetakan interaksi pelbagai protein yang kompleks — satu kejayaan dengan implikasi besar kepada penemuan ubat dan biologi sintetik.</p>
-                  <div className="card-meta">
-                    <span>Priya Menon</span><span className="dot"></span>
-                    <span>18 Mei</span><span className="dot"></span>
-                    <span>8 min</span>
-                  </div>
-                </div>
+            {/* Real articles first; placeholders fill remaining slots until 12 real articles exist */}
+            {(() => {
+              const displayCards = articles.length >= GRID_SIZE
+                ? articles.slice(0, GRID_SIZE)
+                : [...articles, ...PLACEHOLDER_ARTICLES.slice(articles.length)]
 
-                <div className="card reveal">
-                  <div className="card-img">
-                    <div className="card-img-inner ci-2">
-                      <img className="card-photo" src="https://picsum.photos/seed/mistral-paris/800/500" alt="Pejabat syarikat teknologi" />
+              return displayCards.map((card, i) => {
+                if (card.isPlaceholder) {
+                  return (
+                    <div key={card.id} className="card reveal"
+                      style={{ opacity: 0.48, cursor: 'default', pointerEvents: 'none' }}>
+                      <div className="card-img">
+                        <div className={`card-img-inner ci-${(i % 6) + 1}`}>
+                          <img className="card-photo" src={card.featured_image} alt={card.title} />
+                        </div>
+                      </div>
+                      <div className="card-cat">
+                        <span style={{
+                          fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em',
+                          textTransform: 'uppercase', color: 'rgba(237,232,223,0.35)',
+                          border: '1px solid rgba(237,232,223,0.15)',
+                          padding: '2px 7px', borderRadius: '3px',
+                          fontFamily: '"DM Sans", sans-serif',
+                        }}>Akan Datang</span>
+                      </div>
+                      <h3 className="card-title">{card.title}</h3>
+                      {card.meta_description && (
+                        <p className="card-excerpt">{card.meta_description}</p>
+                      )}
+                      <div className="card-meta">
+                        <span>{card.authors?.name}</span>
+                        <span className="dot" />
+                        <span>{fmtDate(card.created_at)}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="card-cat"><span className="tag t-startups">Permulaan</span></div>
-                  <h3 className="card-title">Model Sumber Terbuka Mistral Mengatasi GPT-4 dalam Penanda Aras Penaakulan Undang-Undang</h3>
-                  <p className="card-excerpt">Keluaran terbaharu makmal yang berpusat di Paris ini, dilatih pada korpus teks undang-undang terpilih merentas 12 bidang kuasa, menarik perhatian syarikat korporat dan komuniti sumber terbuka.</p>
-                  <div className="card-meta">
-                    <span>Thomas Laurent</span><span className="dot"></span>
-                    <span>17 Mei</span><span className="dot"></span>
-                    <span>6 min</span>
-                  </div>
-                </div>
+                  )
+                }
 
-                <div className="card reveal">
-                  <div className="card-img">
-                    <div className="card-img-inner ci-3">
-                      <img className="card-photo" src="https://picsum.photos/seed/datacenter-gpu/800/500" alt="Pelayan pusat data" />
+                return (
+                  <Link key={card.id} href={`/artikel/${card.slug}`} className="card reveal"
+                    style={{ textDecoration: 'none' }}>
+                    <div className="card-img">
+                      <div className={`card-img-inner ci-${(i % 6) + 1}`}>
+                        <img
+                          className="card-photo"
+                          src={card.featured_image ?? `https://picsum.photos/seed/${card.slug}/800/500`}
+                          alt={card.title}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="card-cat"><span className="tag t-analysis">Analisis</span></div>
-                  <h3 className="card-title">Ekonomi Tersembunyi Menjalankan LLM dalam Skala Besar: Pecahan Kos Penuh</h3>
-                  <p className="card-excerpt">Di sebalik setiap panggilan API tersembunyi rangkaian kluster GPU, kontrak kuasa, dan infrastruktur penyejukan yang kompleks. Kami memetakan keseluruhan unit ekonomi untuk mengerahkan model frontier dalam persekitaran produksi.</p>
-                  <div className="card-meta">
-                    <span>Elena Vasquez</span><span className="dot"></span>
-                    <span>17 Mei</span><span className="dot"></span>
-                    <span>12 min</span>
-                  </div>
-                </div>
-              </>
-            )}
+                    <div className="card-cat">
+                      {card.tags?.[0] && (
+                        <span className={`tag ${tagClass(card.tags[0])}`}>{card.tags[0]}</span>
+                      )}
+                    </div>
+                    <h3 className="card-title">{card.title}</h3>
+                    {card.meta_description && (
+                      <p className="card-excerpt">{card.meta_description}</p>
+                    )}
+                    <div className="card-meta">
+                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" style={{ flexShrink: 0, opacity: 0.6 }}>
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      <span>{card.authors?.name ?? 'Sharpable News'}</span>
+                      <span className="dot" />
+                      <span>{fmtDate(card.created_at)}</span>
+                    </div>
+                  </Link>
+                )
+              })
+            })()}
 
           </div>
         </div>
