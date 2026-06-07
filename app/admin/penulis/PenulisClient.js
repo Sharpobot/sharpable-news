@@ -111,7 +111,7 @@ function AuthorModal({ author, onClose, onSaved }) {
   })
 
   const handleSave = async () => {
-    if (!name.trim()) { toast.error('Nama penulis diperlukan.'); return }
+    if (!name.trim()) { toast.error('Author name is required.'); return }
     setSaving(true)
     try {
       let photo_url = author?.photo_url ?? null
@@ -123,7 +123,7 @@ function AuthorModal({ author, onClose, onSaved }) {
         fd.append('file', croppedFile ?? rawFile)
         const res = await fetch('/api/upload-author-photo', { method: 'POST', body: fd })
         const data = await res.json()
-        if (!res.ok || data.error) throw new Error(data.error || 'Muat naik gagal')
+        if (!res.ok || data.error) throw new Error(data.error || 'Upload failed')
         photo_url = data.url
       }
 
@@ -136,8 +136,8 @@ function AuthorModal({ author, onClose, onSaved }) {
           body: JSON.stringify(payload),
         })
         const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Gagal mengemaskini')
-        toast.success('Penulis dikemaskini.')
+        if (!res.ok) throw new Error(data.error || 'Failed to update')
+        toast.success('Author updated.')
         onSaved(data.author, 'edit')
       } else {
         const res = await fetch('/api/authors', {
@@ -146,8 +146,8 @@ function AuthorModal({ author, onClose, onSaved }) {
           body: JSON.stringify(payload),
         })
         const data = await res.json()
-        if (!res.ok) throw new Error(data.error || 'Gagal mencipta')
-        toast.success('Penulis baru ditambah.')
+        if (!res.ok) throw new Error(data.error || 'Failed to create')
+        toast.success('Author added.')
         onSaved(data.author, 'add')
       }
       onClose()
@@ -187,7 +187,7 @@ function AuthorModal({ author, onClose, onSaved }) {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px 16px' }}>
           <div style={{ fontSize: '15px', fontWeight: 700, color: '#ede8df' }}>
-            {isEdit ? 'Edit Penulis' : 'Tambah Penulis'}
+            {isEdit ? 'Edit Author' : 'Add Author'}
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
@@ -203,7 +203,7 @@ function AuthorModal({ author, onClose, onSaved }) {
 
           {/* Photo upload + crop */}
           <div>
-            <div style={fieldLabel}>Foto Profil</div>
+            <div style={fieldLabel}>Profile Photo</div>
 
             {previewDataUrl ? (
               <div style={{ marginBottom: '8px' }}>
@@ -235,13 +235,13 @@ function AuthorModal({ author, onClose, onSaved }) {
                     /* Edit mode — existing photo, no crop needed unless re-uploaded */
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px' }}>
                       <Avatar src={previewDataUrl} name={name || '?'} size={64} />
-                      <div style={{ fontSize: '12.5px', color: '#56514d' }}>Foto semasa. Pilih foto baharu untuk menukar.</div>
+                      <div style={{ fontSize: '12.5px', color: '#56514d' }}>Current photo. Select a new one to change.</div>
                     </div>
                   )}
                 </div>
                 {rawFile && (
                   <div style={{ fontSize: '11px', color: '#3d3830', textAlign: 'center', marginBottom: '4px' }}>
-                    Laraskan kawasan potong bulatan
+                    Adjust the circular crop area
                   </div>
                 )}
                 <button
@@ -251,7 +251,7 @@ function AuthorModal({ author, onClose, onSaved }) {
                     border: '1px solid rgba(237,232,223,0.15)', background: 'transparent',
                     color: '#8c857c', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
                   }}>
-                  Tukar Foto
+                  Change Photo
                 </button>
               </div>
             ) : (
@@ -268,8 +268,8 @@ function AuthorModal({ author, onClose, onSaved }) {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.1)' }}
               >
                 <div style={{ fontSize: '24px', marginBottom: '6px', opacity: 0.3 }}>👤</div>
-                <div style={{ fontSize: '12.5px', color: '#8c857c', marginBottom: '2px' }}>Klik untuk pilih foto</div>
-                <div style={{ fontSize: '11px', color: '#3a3530' }}>JPG, PNG, WebP · Maks 4 MB</div>
+                <div style={{ fontSize: '12.5px', color: '#8c857c', marginBottom: '2px' }}>Click to select photo</div>
+                <div style={{ fontSize: '11px', color: '#3a3530' }}>JPG, PNG, WebP · Max 4 MB</div>
               </div>
             )}
 
@@ -279,16 +279,16 @@ function AuthorModal({ author, onClose, onSaved }) {
 
           {/* Name */}
           <div>
-            <div style={fieldLabel}>Nama <span style={{ color: '#ef4444' }}>*</span></div>
+            <div style={fieldLabel}>Name <span style={{ color: '#ef4444' }}>*</span></div>
             <input type="text" value={name} onChange={e => setName(e.target.value)}
-              placeholder="Nama penuh penulis…" style={inputStyle} />
+              placeholder="Author's full name…" style={inputStyle} />
           </div>
 
           {/* Bio */}
           <div>
-            <div style={fieldLabel}>Bio <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(satu ayat)</span></div>
+            <div style={fieldLabel}>Bio <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(one sentence)</span></div>
             <input type="text" value={bio} onChange={e => setBio(e.target.value)}
-              placeholder="Penulis teknologi yang pakar dalam AI dan inovasi digital…"
+              placeholder="Technology writer specialising in AI and digital innovation…"
               style={inputStyle} maxLength={180} />
             <div style={{ fontSize: '11px', color: '#3a3530', marginTop: '4px', textAlign: 'right' }}>
               {bio.length}/180
@@ -301,7 +301,7 @@ function AuthorModal({ author, onClose, onSaved }) {
               padding: '9px 18px', borderRadius: '6px', border: '1px solid rgba(237,232,223,0.11)',
               background: 'transparent', color: '#8c857c', fontSize: '13px', fontWeight: 600,
               cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-            }}>Batal</button>
+            }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} style={{
               padding: '9px 20px', borderRadius: '6px', border: 'none',
               background: saving ? '#3a3020' : '#d4a853',
@@ -311,7 +311,7 @@ function AuthorModal({ author, onClose, onSaved }) {
               display: 'flex', alignItems: 'center', gap: '7px',
             }}>
               {saving && <Spinner size={12} />}
-              {isEdit ? 'Simpan Perubahan' : 'Tambah Penulis'}
+              {isEdit ? 'Save Changes' : 'Add Author'}
             </button>
           </div>
         </div>
@@ -362,10 +362,10 @@ export default function PenulisClient({ initialAuthors }) {
       const res = await fetch(`/api/authors/${deleteTarget.id}`, { method: 'DELETE' })
       if (!res.ok) {
         const d = await res.json()
-        throw new Error(d.error || 'Gagal memadam')
+        throw new Error(d.error || 'Failed to delete')
       }
       setAuthors(prev => prev.filter(a => a.id !== deleteTarget.id))
-      toast.success('Penulis dipadamkan.')
+      toast.success('Author deleted.')
     } catch (err) {
       toast.error(err.message)
     } finally {
@@ -387,10 +387,10 @@ export default function PenulisClient({ initialAuthors }) {
 
       <ConfirmationModal
         open={!!deleteTarget}
-        title="Padam Penulis?"
-        message={`"${deleteTarget?.name}" akan dipadamkan. Artikel yang menggunakan penulis ini tidak akan terjejas.`}
-        confirmLabel={deleting ? 'Memadamkan…' : 'Ya, Padam'}
-        cancelLabel="Batal"
+        title="Delete Author?"
+        message={`"${deleteTarget?.name}" will be deleted. Articles using this author will not be affected.`}
+        confirmLabel={deleting ? 'Deleting…' : 'Yes, Delete'}
+        cancelLabel="Cancel"
         confirmColor="red"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
@@ -411,10 +411,10 @@ export default function PenulisClient({ initialAuthors }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: C.text1, fontFamily: "'Fraunces', serif" }}>
-            Penulis
+            Authors
           </h1>
           <div style={{ fontSize: '13px', color: C.text3, marginTop: '4px' }}>
-            {authors.length} {authors.length === 1 ? 'penulis' : 'penulis'} berdaftar
+            {authors.length} {authors.length === 1 ? 'author' : 'authors'} registered
           </div>
         </div>
         <button
@@ -429,7 +429,7 @@ export default function PenulisClient({ initialAuthors }) {
           <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Tambah Penulis
+          Add Author
         </button>
       </div>
 
@@ -441,8 +441,8 @@ export default function PenulisClient({ initialAuthors }) {
           borderRadius: '8px',
         }}>
           <div style={{ fontSize: '32px', marginBottom: '12px', opacity: 0.3 }}>✍️</div>
-          <div style={{ fontSize: '15px', fontWeight: 600, color: C.text1, marginBottom: '6px' }}>Tiada penulis lagi</div>
-          <div style={{ fontSize: '13px', color: C.text3 }}>Tambah penulis pertama untuk mula mengaitkan artikel.</div>
+          <div style={{ fontSize: '15px', fontWeight: 600, color: C.text1, marginBottom: '6px' }}>No authors yet</div>
+          <div style={{ fontSize: '13px', color: C.text3 }}>Add your first author to start assigning articles.</div>
         </div>
       )}
 
@@ -474,7 +474,7 @@ export default function PenulisClient({ initialAuthors }) {
                   )}
                   {!author.bio && (
                     <div style={{ fontSize: '12px', color: C.text3, marginTop: '3px', fontStyle: 'italic' }}>
-                      Tiada bio
+                      No bio
                     </div>
                   )}
                 </div>
@@ -498,7 +498,7 @@ export default function PenulisClient({ initialAuthors }) {
                     flex: 1, border: '1px solid rgba(239,68,68,0.2)',
                     background: 'transparent', color: '#ef4444',
                   }}>
-                  Padam
+                  Delete
                 </button>
               </div>
             </motion.div>

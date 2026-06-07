@@ -54,7 +54,7 @@ function TagInput({ tags, onChange }) {
       ))}
       <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
         onBlur={() => { if (input.trim()) add(input) }}
-        placeholder={tags.length ? '' : 'Taip tag + Enter…'}
+        placeholder={tags.length ? '' : 'Type tag + Enter…'}
         style={{ flex: 1, minWidth: '100px', background: 'none', border: 'none', outline: 'none', color: '#ede8df', fontSize: '13px', fontFamily: "'DM Sans', sans-serif" }}
       />
     </div>
@@ -95,10 +95,10 @@ function Toolbar({ editor, onInsertImage }) {
       {btn('I',         () => editor.chain().focus().toggleItalic().run(),                editor.isActive('italic'))}
       {btn('H2',        () => editor.chain().focus().toggleHeading({ level: 2 }).run(),   editor.isActive('heading', { level: 2 }))}
       {btn('H3',        () => editor.chain().focus().toggleHeading({ level: 3 }).run(),   editor.isActive('heading', { level: 3 }))}
-      {btn('• Senarai', () => editor.chain().focus().toggleBulletList().run(),            editor.isActive('bulletList'))}
-      {btn('1. Senarai',() => editor.chain().focus().toggleOrderedList().run(),           editor.isActive('orderedList'))}
+      {btn('• List',    () => editor.chain().focus().toggleBulletList().run(),            editor.isActive('bulletList'))}
+      {btn('1. List',  () => editor.chain().focus().toggleOrderedList().run(),           editor.isActive('orderedList'))}
       <button className="editor-tb-btn"
-        onMouseDown={e => { e.preventDefault(); onInsertImage() }} title="Sisip Imej"
+        onMouseDown={e => { e.preventDefault(); onInsertImage() }} title="Insert Image"
         style={btnStyle(false)}>
         <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -121,9 +121,9 @@ function verdictColor(v) {
 }
 
 const VERDICT_LABEL = {
-  publish: 'Lulus Semak',
-  review:  'Perlu Semakan',
-  reject:  'Gagal Semak',
+  publish: 'Passed Review',
+  review:  'Needs Review',
+  reject:  'Failed Review',
 }
 
 /* ── Fix item with WAJIB highlight + truncate ─────────────── */
@@ -145,7 +145,7 @@ function FixItem({ text }) {
         {restDisplay}
         {text.length > 100 && (
           <button onClick={() => setExpanded(v => !v)} style={btnStyle}>
-            {expanded ? 'Tutup' : 'Baca lagi'}
+            {expanded ? 'Close' : 'Read more'}
           </button>
         )}
       </li>
@@ -157,7 +157,7 @@ function FixItem({ text }) {
       {truncate ? text.slice(0, 100) + '…' : text}
       {text.length > 100 && (
         <button onClick={() => setExpanded(v => !v)} style={btnStyle}>
-          {expanded ? 'Tutup' : 'Baca lagi'}
+          {expanded ? 'Close' : 'Read more'}
         </button>
       )}
     </li>
@@ -187,15 +187,15 @@ function QualityPanel({ qf, originalQf }) {
   const remaining      = attentionItems.length
 
   const summaryParts = []
-  if (issuesFound > 0)   summaryParts.push(`${issuesFound} isu ditemui`)
-  if (corrsMade > 0)     summaryParts.push(`${corrsMade} diperbetulkan`)
-  if (remaining > 0)     summaryParts.push(`${remaining} perlu perhatian`)
-  else if (issuesFound > 0) summaryParts.push('semua diperbetulkan')
-  const summaryLine = summaryParts.join(' · ') || 'Tiada isu ditemui'
+  if (issuesFound > 0)   summaryParts.push(`${issuesFound} issues found`)
+  if (corrsMade > 0)     summaryParts.push(`${corrsMade} corrected`)
+  if (remaining > 0)     summaryParts.push(`${remaining} need attention`)
+  else if (issuesFound > 0) summaryParts.push('all corrected')
+  const summaryLine = summaryParts.join(' · ') || 'No issues found'
 
   return (
     <section style={{ marginBottom: '32px' }}>
-      <SectionLabel>Laporan Kualiti</SectionLabel>
+      <SectionLabel>Quality Report</SectionLabel>
       <div style={{ background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderRadius: '6px', padding: '16px' }}>
 
         {/* Compact header — always visible */}
@@ -209,7 +209,7 @@ function QualityPanel({ qf, originalQf }) {
             color: '#56514d', fontSize: '11px', cursor: 'pointer', padding: '4px 10px',
             borderRadius: '4px', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap',
           }}>
-            {expanded ? 'Tutup' : 'Lihat Laporan'}
+            {expanded ? 'Close' : 'View Report'}
           </button>
         </div>
         {/* Row 2: score */}
@@ -229,14 +229,14 @@ function QualityPanel({ qf, originalQf }) {
             {/* Perlu Perhatian Anda */}
             <div style={{ marginBottom: hasRevision && correctionItems.length > 0 ? '14px' : 0 }}>
               <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#d4a853', marginBottom: '8px' }}>
-                Perlu Perhatian Anda
+                Needs Your Attention
               </div>
               {attentionItems.length > 0 ? (
                 <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {attentionItems.map((fix, i) => <FixItem key={i} text={fix} />)}
                 </ul>
               ) : (
-                <div style={{ fontSize: '12.5px', color: '#10b981' }}>Tiada isu kritikal</div>
+                <div style={{ fontSize: '12.5px', color: '#10b981' }}>No critical issues</div>
               )}
             </div>
 
@@ -253,7 +253,7 @@ function QualityPanel({ qf, originalQf }) {
                     style={{ transition: 'transform 0.15s', transform: correctionsOpen ? 'rotate(90deg)' : 'none', flexShrink: 0 }}>
                     <polyline points="9 18 15 12 9 6"/>
                   </svg>
-                  Diperbetulkan oleh AI ({correctionItems.length})
+                  Corrected by AI ({correctionItems.length})
                 </button>
                 {correctionsOpen && (
                   <ul style={{ margin: '6px 0 0', padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -439,8 +439,8 @@ function AIBriefModal({ brief, onClose }) {
         <div style={{ width: '36px', height: '3px', background: 'rgba(237,232,223,0.15)', borderRadius: '999px', margin: '0 auto 20px' }} />
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
           <div>
-            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>Cadangan AI</div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df' }}>Imej Hero</div>
+            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>AI Suggestion</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df' }}>Hero Image</div>
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
@@ -521,8 +521,8 @@ function CropModal({ src, onConfirm, onCancel }) {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df', marginBottom: '2px' }}>Potong Imej Hero</div>
-            <div style={{ fontSize: '11.5px', color: '#56514d' }}>Nisbah 16:9 · Resolusi output 1280×720</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df', marginBottom: '2px' }}>Crop Hero Image</div>
+            <div style={{ fontSize: '11.5px', color: '#56514d' }}>16:9 ratio · Output resolution 1280×720</div>
           </div>
           <button onClick={onCancel} style={{
             background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
@@ -548,7 +548,7 @@ function CropModal({ src, onConfirm, onCancel }) {
           >
             <img ref={imgRef} src={src} onLoad={onImageLoad}
               style={{ maxWidth: '100%', maxHeight: '52vh', display: 'block', margin: '0 auto' }}
-              alt="Potong imej" />
+              alt="Crop image" />
           </ReactCrop>
         </div>
         {/* Actions */}
@@ -562,7 +562,7 @@ function CropModal({ src, onConfirm, onCancel }) {
           }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = '#ede8df' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.11)'; e.currentTarget.style.color = '#8c857c' }}
-          >Batal</button>
+          >Cancel</button>
           <button onClick={handleConfirm} style={{
             padding: '9px 20px', borderRadius: '6px', border: 'none',
             background: '#d4a853', color: '#0c0b0a', fontSize: '13px', fontWeight: 700,
@@ -571,7 +571,7 @@ function CropModal({ src, onConfirm, onCancel }) {
           }}
           onMouseEnter={e => { e.currentTarget.style.background = '#c49640' }}
           onMouseLeave={e => { e.currentTarget.style.background = '#d4a853' }}
-          >Gunakan Imej</button>
+          >Use Image</button>
         </div>
       </motion.div>
     </motion.div>
@@ -628,7 +628,7 @@ function InlineImageModal({
     fd.append('articleId', articleId)
     const res = await fetch('/api/upload-inline-image', { method: 'POST', body: fd })
     const data = await res.json()
-    if (!res.ok || data.error) throw new Error(data.error || 'Muat naik gagal')
+    if (!res.ok || data.error) throw new Error(data.error || 'Upload failed')
     return data.url
   }
 
@@ -730,10 +730,10 @@ function InlineImageModal({
         }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 700, color: '#ede8df', marginBottom: '1px' }}>
-              {mode === 'edit' ? 'Edit Imej' : 'Sisip Imej'}
+              {mode === 'edit' ? 'Edit Image' : 'Insert Image'}
             </div>
             <div style={{ fontSize: '11.5px', color: '#56514d' }}>
-              {mode === 'edit' ? 'Kemas kini imej, alt text atau kapsyen' : 'Muat naik fail atau masukkan URL'}
+              {mode === 'edit' ? 'Update image, alt text or caption' : 'Upload a file or enter a URL'}
             </div>
           </div>
           <button onClick={onClose} style={{
@@ -749,7 +749,7 @@ function InlineImageModal({
 
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid rgba(237,232,223,0.07)', paddingLeft: '12px', flexShrink: 0 }}>
-          {tabBtn('upload', 'Muat Naik')}
+          {tabBtn('upload', 'Upload')}
           {tabBtn('url', 'URL')}
         </div>
 
@@ -797,11 +797,11 @@ function InlineImageModal({
                       background: 'rgba(12,11,10,0.85)', border: '1px solid rgba(237,232,223,0.18)',
                       color: '#ede8df', borderRadius: '5px', padding: '4px 10px',
                       fontSize: '11.5px', cursor: 'pointer', fontWeight: 600,
-                    }}>Tukar</button>
+                    }}>Change</button>
                   </div>
                   {rawFile && (
                     <div style={{ fontSize: '11px', color: '#3d3830', textAlign: 'center', marginBottom: '2px' }}>
-                      Seret untuk memilih kawasan potong (pilihan)
+                      Drag to select crop area (optional)
                     </div>
                   )}
                 </div>
@@ -826,8 +826,8 @@ function InlineImageModal({
                         <line x1="12" y1="3" x2="12" y2="15"/>
                       </svg>
                     </div>
-                    <div style={{ fontSize: '13px', color: '#8c857c', marginBottom: '3px' }}>Klik untuk pilih imej</div>
-                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Maks 8 MB</div>
+                    <div style={{ fontSize: '13px', color: '#8c857c', marginBottom: '3px' }}>Click to select image</div>
+                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Max 8 MB</div>
                   </>
                 </div>
               )}
@@ -843,7 +843,7 @@ function InlineImageModal({
 
           {tab === 'url' && (
             <div style={{ marginBottom: '14px' }}>
-              <div style={fieldLabel}>URL Imej</div>
+              <div style={fieldLabel}>Image URL</div>
               <input
                 type="url" value={url} onChange={e => { setUrl(e.target.value); setPreviewDataUrl(''); setRawFile(null) }}
                 placeholder="https://…"
@@ -869,14 +869,14 @@ function InlineImageModal({
           {/* Shared fields */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
             <div>
-              <div style={fieldLabel}>Teks Alt <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(aksesibiliti)</span></div>
+              <div style={fieldLabel}>Alt Text <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(accessibility)</span></div>
               <input type="text" value={alt} onChange={e => setAlt(e.target.value)}
-                placeholder="Huraikan imej ini…" style={inputStyle} />
+                placeholder="Describe this image…" style={inputStyle} />
             </div>
             <div>
-              <div style={fieldLabel}>Kapsyen <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(pilihan)</span></div>
+              <div style={fieldLabel}>Caption <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
               <input type="text" value={caption} onChange={e => setCaption(e.target.value)}
-                placeholder="Kapsyen di bawah imej…" style={inputStyle} />
+                placeholder="Caption below the image…" style={inputStyle} />
             </div>
           </div>
 
@@ -891,7 +891,7 @@ function InlineImageModal({
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = '#ede8df' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.11)'; e.currentTarget.style.color = '#8c857c' }}
-            >Batal</button>
+            >Cancel</button>
             <button onClick={handleInsert} disabled={!canInsert} style={{
               padding: '9px 20px', borderRadius: '6px', border: 'none',
               background: canInsert ? '#d4a853' : '#1e1c1a',
@@ -906,7 +906,7 @@ function InlineImageModal({
             onMouseLeave={e => { if (canInsert) e.currentTarget.style.background = canInsert ? '#d4a853' : '#1e1c1a' }}
             >
               {uploading && <Spinner size={12} />}
-              {mode === 'edit' ? 'Kemas Kini' : 'Sisip Imej'}
+              {mode === 'edit' ? 'Update' : 'Insert Image'}
             </button>
           </div>
         </div>
@@ -926,7 +926,7 @@ function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, s
           <input type="text" value={slug} onChange={e => setSlug(e.target.value)} style={inputStyle} />
         </div>
         <div>
-          <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Meta Deskripsi</div>
+          <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Meta Description</div>
           <textarea value={metaDescription} onChange={e => setMetaDescription(e.target.value)} rows={3}
             style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
         </div>
@@ -942,7 +942,7 @@ function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, s
 function SaveButtons({ saveStatus, onDraft, onPublish }) {
   return (
     <section>
-      <SectionLabel>Tindakan</SectionLabel>
+      <SectionLabel>Actions</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <button onClick={onDraft} disabled={saveStatus === 'saving'} style={{
           width: '100%', padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
@@ -952,7 +952,7 @@ function SaveButtons({ saveStatus, onDraft, onPublish }) {
           fontFamily: "'DM Sans', sans-serif",
         }}>
           {saveStatus === 'saving' && <Spinner size={12} />}
-          Simpan Draf
+          Save Draft
         </button>
         <button onClick={onPublish} disabled={saveStatus === 'saving'} style={{
           width: '100%', padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 700,
@@ -963,7 +963,7 @@ function SaveButtons({ saveStatus, onDraft, onPublish }) {
           fontFamily: "'DM Sans', sans-serif",
         }}>
           {saveStatus === 'saving' && <Spinner size={12} />}
-          Terbit Sekarang
+          Publish Now
         </button>
       </div>
     </section>
@@ -1097,16 +1097,16 @@ export default function EditorClient({ article, authors = [] }) {
       setIsDirty(false)
       savedStateRef.current = { slug, metaDescription, tags, featuredImage }
       setSaveStatus('idle')
-      toast.success(newStatus === 'published' ? 'Artikel diterbitkan!' : 'Draf disimpan.')
+      toast.success(newStatus === 'published' ? 'Article published!' : 'Draft saved.')
     } catch {
       setSaveStatus('idle')
-      toast.error('Gagal menyimpan artikel.')
+      toast.error('Failed to save article.')
     }
   }
 
   const uploadFeaturedImage = async (file) => {
     setUploadStatus('uploading')
-    const tid = toast.loading('Memuat naik gambar…')
+    const tid = toast.loading('Uploading image…')
     try {
       const fd = new FormData()
       fd.append('file', file); fd.append('articleId', article.id)
@@ -1115,10 +1115,10 @@ export default function EditorClient({ article, authors = [] }) {
       if (!res.ok || error) throw new Error(error)
       setFeaturedImage(url)
       setUploadStatus('idle')
-      toast.success('Gambar berjaya dimuat naik.', { id: tid })
+      toast.success('Image uploaded successfully.', { id: tid })
     } catch {
       setUploadStatus('error')
-      toast.error('Muat naik gagal. Cuba lagi.', { id: tid })
+      toast.error('Upload failed. Try again.', { id: tid })
       setTimeout(() => setUploadStatus('idle'), 4000)
     }
   }
@@ -1465,20 +1465,20 @@ export default function EditorClient({ article, authors = [] }) {
       `}</style>
 
       {/* ── Confirmation modals ── */}
-      <ConfirmationModal open={modal === 'removeImage'} title="Buang Gambar Utama?" message="Gambar semasa akan dibuang secara kekal."
-        confirmLabel="Ya, Buang" cancelLabel="Batal" confirmColor="red"
+      <ConfirmationModal open={modal === 'removeImage'} title="Remove Hero Image?" message="The current image will be permanently removed."
+        confirmLabel="Yes, Remove" cancelLabel="Cancel" confirmColor="red"
         onConfirm={() => { setFeaturedImage(null); setModal(null) }} onCancel={() => setModal(null)} />
-      <ConfirmationModal open={modal === 'removeInlineImage'} title="Buang Imej?" message="Imej dalam artikel ini akan dibuang."
-        confirmLabel="Ya, Buang" cancelLabel="Batal" confirmColor="red"
+      <ConfirmationModal open={modal === 'removeInlineImage'} title="Remove Image?" message="This image will be removed from the article."
+        confirmLabel="Yes, Remove" cancelLabel="Cancel" confirmColor="red"
         onConfirm={() => { removeSelectedImage(); setModal(null) }} onCancel={() => setModal(null)} />
-      <ConfirmationModal open={modal === 'removeHoverImage'} title="Buang Imej?" message="Imej dalam artikel ini akan dibuang secara kekal."
-        confirmLabel="Ya, Buang" cancelLabel="Batal" confirmColor="red"
+      <ConfirmationModal open={modal === 'removeHoverImage'} title="Remove Image?" message="This image will be permanently removed from the article."
+        confirmLabel="Yes, Remove" cancelLabel="Cancel" confirmColor="red"
         onConfirm={() => { deleteHoverImage(); setModal(null) }} onCancel={() => { setModal(null); setImgHover(null) }} />
-      <ConfirmationModal open={modal === 'publish'} title="Terbitkan Artikel?" message="Artikel akan diterbitkan dan dapat dilihat oleh orang awam."
-        confirmLabel="Ya, Terbitkan" cancelLabel="Semak Semula" confirmColor="amber"
+      <ConfirmationModal open={modal === 'publish'} title="Publish Article?" message="The article will be published and visible to the public."
+        confirmLabel="Yes, Publish" cancelLabel="Review Again" confirmColor="amber"
         onConfirm={() => { setModal(null); save('published') }} onCancel={() => setModal(null)} />
-      <ConfirmationModal open={modal === 'unsaved'} title="Perubahan Belum Disimpan" message="Perubahan anda akan hilang jika anda keluar tanpa menyimpan."
-        confirmLabel="Keluar Tanpa Simpan" cancelLabel="Teruskan Edit" confirmColor="red"
+      <ConfirmationModal open={modal === 'unsaved'} title="Unsaved Changes" message="Your changes will be lost if you leave without saving."
+        confirmLabel="Leave Without Saving" cancelLabel="Keep Editing" confirmColor="red"
         onConfirm={() => { setModal(null); setIsDirty(false); router.push(pendingNav ?? '/admin') }}
         onCancel={() => { setModal(null); setPendingNav(null) }} />
 
@@ -1523,9 +1523,9 @@ export default function EditorClient({ article, authors = [] }) {
             style={{ color: '#56514d', fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
             ← Admin
           </Link>
-          {isDirty && <span className="dirty-dot" title="Ada perubahan belum disimpan" />}
+          {isDirty && <span className="dirty-dot" title="Unsaved changes" />}
           <span className="editor-header-sep">|</span>
-          <span className="editor-header-label">Penyunting Artikel</span>
+          <span className="editor-header-label">Article Editor</span>
         </div>
 
         <div className="editor-save-btns">
@@ -1536,7 +1536,7 @@ export default function EditorClient({ article, authors = [] }) {
             display: 'flex', alignItems: 'center', gap: '7px',
           }}>
             {saveStatus === 'saving' && <Spinner size={12} />}
-            Simpan Draf
+            Save Draft
           </button>
           <button onClick={() => setModal('publish')} disabled={saveStatus === 'saving'} style={{
             padding: '7px 18px', borderRadius: '6px', fontSize: '13px', fontWeight: 700,
@@ -1546,7 +1546,7 @@ export default function EditorClient({ article, authors = [] }) {
             display: 'flex', alignItems: 'center', gap: '7px',
           }}>
             {saveStatus === 'saving' && <Spinner size={12} />}
-            Terbit Sekarang
+            Publish Now
           </button>
         </div>
       </header>
@@ -1554,9 +1554,9 @@ export default function EditorClient({ article, authors = [] }) {
       {/* ── Mobile tab bar ── */}
       <div className="editor-tab-bar">
         {[
-          { id: 'kandungan', label: 'Kandungan' },
+          { id: 'kandungan', label: 'Content' },
           { id: 'seo',       label: 'SEO & Meta' },
-          { id: 'semakan',   label: 'Semakan' },
+          { id: 'semakan',   label: 'Review' },
         ].map(tab => (
           <button key={tab.id} className={`editor-tab-btn ${activeTab === tab.id ? 'tab-active' : ''}`}
             onClick={() => setActiveTab(tab.id)}>
@@ -1572,7 +1572,7 @@ export default function EditorClient({ article, authors = [] }) {
 
           {/* 1. Headline picker */}
           <section style={{ marginBottom: '40px' }}>
-            <SectionLabel>Pilih Tajuk</SectionLabel>
+            <SectionLabel>Choose Headline</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {headlines.map((h, i) => (
                 <label key={i} style={{
@@ -1591,10 +1591,10 @@ export default function EditorClient({ article, authors = [] }) {
                 </label>
               ))}
               <div style={{ marginTop: '4px' }}>
-                <SectionLabel>Tajuk Custom</SectionLabel>
+                <SectionLabel>Custom Headline</SectionLabel>
                 <input type="text" value={customHeadline}
                   onChange={e => { setCustomHeadline(e.target.value); setIsDirty(true) }}
-                  placeholder="Tulis tajuk sendiri…"
+                  placeholder="Write your own headline…"
                   style={{
                     ...inputStyle,
                     border: `1px solid ${customHeadline ? '#d4a853' : 'rgba(237,232,223,0.11)'}`,
@@ -1608,22 +1608,22 @@ export default function EditorClient({ article, authors = [] }) {
 
           {/* 2. Featured image section */}
           <section style={{ marginBottom: '40px' }}>
-            <SectionLabel>Imej Hero</SectionLabel>
+            <SectionLabel>Hero Image</SectionLabel>
 
             {article.image_brief && (
               <>
                 <div style={{ padding: '14px 16px', borderRadius: '4px', marginBottom: '12px', background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderLeft: '3px solid #d4a853' }}
                   className="hide-on-mobile">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d' }}>Cadangan AI — Imej Hero</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d' }}>AI Suggestion — Hero Image</div>
                     <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(briefPrompt).then(() => {
-                            toast.success('Cadangan imej disalin ke papan klip.', { duration: 2000 })
+                            toast.success('Image brief copied to clipboard.', { duration: 2000 })
                           })
                         }}
-                        title="Salin cadangan imej"
+                        title="Copy image brief"
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
                           color: 'rgba(212,168,83,0.35)',
@@ -1648,14 +1648,14 @@ export default function EditorClient({ article, authors = [] }) {
                   color: '#d4a853', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
                   fontFamily: "'DM Sans', sans-serif",
                 }}>
-                  Lihat Cadangan AI
+                  View AI Suggestion
                 </button>
               </>
             )}
 
             {featuredImage ? (
               <div style={{ position: 'relative', marginBottom: '10px' }}>
-                <img src={featuredImage} alt="Imej hero"
+                <img src={featuredImage} alt="Hero image"
                   style={{ width: '100%', borderRadius: '4px', display: 'block', aspectRatio: '16/9', objectFit: 'cover' }} />
                 <button onClick={() => setModal('removeImage')} style={{
                   position: 'absolute', top: '10px', right: '10px',
@@ -1678,14 +1678,14 @@ export default function EditorClient({ article, authors = [] }) {
               >
                 {uploadStatus === 'uploading' ? (
                   <div style={{ color: '#8c857c', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <Spinner size={14} />Memuat naik…
+                    <Spinner size={14} />Uploading…
                   </div>
                 ) : (
                   <>
                     <div style={{ fontSize: '28px', marginBottom: '8px', opacity: 0.4 }}>↑</div>
-                    <div style={{ fontSize: '13.5px', color: '#8c857c', marginBottom: '4px' }}>Seret & lepas imej, atau klik untuk pilih</div>
-                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Nisbah 16:9 akan dipotong · Maks 8 MB</div>
-                    {uploadStatus === 'error' && <div style={{ marginTop: '8px', fontSize: '12px', color: '#ef4444' }}>Muat naik gagal. Cuba lagi.</div>}
+                    <div style={{ fontSize: '13.5px', color: '#8c857c', marginBottom: '4px' }}>Drag & drop image, or click to select</div>
+                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · 16:9 ratio will be cropped · Max 8 MB</div>
+                    {uploadStatus === 'error' && <div style={{ marginTop: '8px', fontSize: '12px', color: '#ef4444' }}>Upload failed. Try again.</div>}
                   </>
                 )}
               </div>
@@ -1698,7 +1698,7 @@ export default function EditorClient({ article, authors = [] }) {
               {/* Caption */}
               <div>
                 <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>
-                  Kapsyen Imej Hero
+                  Hero Image Caption
                 </div>
                 {editingFeaturedCaption ? (
                   <input
@@ -1707,7 +1707,7 @@ export default function EditorClient({ article, authors = [] }) {
                     onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
                     onBlur={() => setEditingFeaturedCaption(false)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedCaption(false) } }}
-                    placeholder="Kapsyen pendek bergaya berita…"
+                    placeholder="Short news-style caption…"
                     style={{
                       width: '100%', boxSizing: 'border-box',
                       padding: '7px 10px', borderRadius: '4px',
@@ -1719,7 +1719,7 @@ export default function EditorClient({ article, authors = [] }) {
                 ) : (
                   <div
                     onClick={() => setEditingFeaturedCaption(true)}
-                    title="Klik untuk edit"
+                    title="Click to edit"
                     style={{
                       padding: '7px 10px', borderRadius: '4px', cursor: 'text',
                       border: '1px solid rgba(237,232,223,0.07)',
@@ -1729,7 +1729,7 @@ export default function EditorClient({ article, authors = [] }) {
                       fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
                     }}
                   >
-                    {featuredImageCaption || 'Tiada kapsyen — klik untuk tambah'}
+                    {featuredImageCaption || 'No caption — click to add'}
                   </div>
                 )}
               </div>
@@ -1737,7 +1737,7 @@ export default function EditorClient({ article, authors = [] }) {
               {/* Alt text */}
               <div>
                 <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>
-                  Alt Teks Imej Hero
+                  Hero Image Alt Text
                 </div>
                 {editingFeaturedAlt ? (
                   <input
@@ -1747,7 +1747,7 @@ export default function EditorClient({ article, authors = [] }) {
                     onBlur={() => setEditingFeaturedAlt(false)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedAlt(false) } }}
                     maxLength={125}
-                    placeholder="Teks alternatif ringkas dan deskriptif…"
+                    placeholder="Short, descriptive alt text…"
                     style={{
                       width: '100%', boxSizing: 'border-box',
                       padding: '7px 10px', borderRadius: '4px',
@@ -1759,7 +1759,7 @@ export default function EditorClient({ article, authors = [] }) {
                 ) : (
                   <div
                     onClick={() => setEditingFeaturedAlt(true)}
-                    title="Klik untuk edit"
+                    title="Click to edit"
                     style={{
                       padding: '7px 10px', borderRadius: '4px', cursor: 'text',
                       border: '1px solid rgba(237,232,223,0.07)',
@@ -1769,7 +1769,7 @@ export default function EditorClient({ article, authors = [] }) {
                       fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
                     }}
                   >
-                    {featuredImageAlt ? `Alt: ${featuredImageAlt}` : 'Tiada alt teks — klik untuk tambah'}
+                    {featuredImageAlt ? `Alt: ${featuredImageAlt}` : 'No alt text — click to add'}
                   </div>
                 )}
                 {editingFeaturedAlt && (
@@ -1783,7 +1783,7 @@ export default function EditorClient({ article, authors = [] }) {
 
           {/* 3. TipTap body editor */}
           <section style={{ marginBottom: '40px' }}>
-            <SectionLabel>Kandungan Artikel</SectionLabel>
+            <SectionLabel>Article Content</SectionLabel>
             <div style={{ border: '1px solid rgba(237,232,223,0.11)', borderRadius: '4px', background: '#0e0d0c', padding: '16px' }}>
               <Toolbar editor={editor} onInsertImage={() => setShowInlineImageModal(true)} />
               <div ref={editorContainerRef} style={{ borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px', position: 'relative' }}>
@@ -1802,17 +1802,17 @@ export default function EditorClient({ article, authors = [] }) {
                     backdropFilter: 'blur(4px)',
                   }}>
                     <button className="img-move-btn" disabled={!imgMove.canUp}
-                      onMouseDown={e => { e.preventDefault(); moveImage('up') }} title="Gerak ke atas">↑</button>
+                      onMouseDown={e => { e.preventDefault(); moveImage('up') }} title="Move up">↑</button>
                     <button className="img-move-btn" disabled={!imgMove.canDown}
-                      onMouseDown={e => { e.preventDefault(); moveImage('down') }} title="Gerak ke bawah">↓</button>
+                      onMouseDown={e => { e.preventDefault(); moveImage('down') }} title="Move down">↓</button>
                     <div style={{ width: '1px', background: 'rgba(237,232,223,0.1)', margin: '2px 1px' }} />
                     <button className="img-move-btn"
-                      onMouseDown={e => { e.preventDefault(); openEditImage() }} title="Edit imej"
+                      onMouseDown={e => { e.preventDefault(); openEditImage() }} title="Edit image"
                       style={{ fontSize: '13px', gap: '4px', paddingLeft: '6px', paddingRight: '6px', width: 'auto' }}>
                       ✏ <span style={{ fontSize: '11px', fontWeight: 600 }}>Edit</span>
                     </button>
                     <button className="img-move-btn"
-                      onMouseDown={e => { e.preventDefault(); setModal('removeInlineImage') }} title="Buang imej"
+                      onMouseDown={e => { e.preventDefault(); setModal('removeInlineImage') }} title="Remove image"
                       style={{ color: '#ef4444', borderColor: 'transparent', fontSize: '16px', lineHeight: 1 }}>×</button>
                   </div>
                 )}
@@ -1834,18 +1834,18 @@ export default function EditorClient({ article, authors = [] }) {
                   >
                     {/* ↑↓ move buttons — always visible (essential on mobile, convenient on desktop) */}
                     {imgHover.canUp && (
-                      <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('up') }} title="Pindah ke atas"
+                      <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('up') }} title="Move up"
                         style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↑</button>
                     )}
                     {imgHover.canDown && (
-                      <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('down') }} title="Pindah ke bawah"
+                      <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('down') }} title="Move down"
                         style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↓</button>
                     )}
                     {(imgHover.canUp || imgHover.canDown) && (
                       <div style={{ width: '1px', background: 'rgba(237,232,223,0.15)', margin: '4px 1px' }} />
                     )}
                     {/* Edit */}
-                    <button onMouseDown={e => { e.preventDefault(); openHoverEditImage() }} title="Edit imej"
+                    <button onMouseDown={e => { e.preventDefault(); openHoverEditImage() }} title="Edit image"
                       style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>
@@ -1855,7 +1855,7 @@ export default function EditorClient({ article, authors = [] }) {
                       </svg>
                     </button>
                     {/* Delete — opens ConfirmationModal */}
-                    <button onMouseDown={e => { e.preventDefault(); setModal('removeHoverImage') }} title="Padam imej"
+                    <button onMouseDown={e => { e.preventDefault(); setModal('removeHoverImage') }} title="Delete image"
                       style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>
@@ -1873,7 +1873,7 @@ export default function EditorClient({ article, authors = [] }) {
           {/* 4. Sources */}
           {sources.length > 0 && (
             <section style={{ marginBottom: '40px' }}>
-              <SectionLabel>Sumber ({sources.length})</SectionLabel>
+              <SectionLabel>Sources ({sources.length})</SectionLabel>
               <ol style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {sources.map((src, i) => (
                   <li key={i}>
@@ -1905,7 +1905,7 @@ export default function EditorClient({ article, authors = [] }) {
             {/* Author selector */}
             {authors.length > 0 && (
               <section style={{ marginBottom: '32px' }}>
-                <SectionLabel>Penulis</SectionLabel>
+                <SectionLabel>Author</SectionLabel>
                 <AuthorSelect
                   authors={authors}
                   value={authorId}

@@ -6,7 +6,7 @@ import {
 } from 'recharts'
 
 /* ── Date helpers ─────────────────────────────────────────────── */
-const MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis']
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 function fmt(iso)    { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` }
 function fmtShort(iso) { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]}` }
 
@@ -70,7 +70,7 @@ function ChartTooltip({ active, payload, label }) {
       boxShadow: '0 6px 24px rgba(0,0,0,0.35)',
     }}>
       <div style={{ color: 'var(--t3)', marginBottom: '3px', fontSize: '10.5px' }}>{label}</div>
-      <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{payload[0].value} artikel</div>
+      <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{payload[0].value} articles</div>
     </div>
   )
 }
@@ -102,7 +102,7 @@ export default function AdminClient({ analytics }) {
   const { totalPublished, totalDraft, totalGenerating, thisWeek, recentPublished, dailyCounts } = analytics
   const totalWeek = dailyCounts.reduce((s, d) => s + d.count, 0)
 
-  const todayLabel = new Date().toLocaleDateString('ms-MY', {
+  const todayLabel = new Date().toLocaleDateString('en-MY', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
@@ -243,11 +243,11 @@ export default function AdminClient({ analytics }) {
       <div style={{ marginBottom: '28px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--t1)', letterSpacing: '-0.015em' }}>
-            Papan Pemuka
+            Dashboard
           </h1>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
             <span className="status-dot" />
-            <span style={{ fontSize: '11.5px', color: 'var(--t2)' }}>Sistem aktif</span>
+            <span style={{ fontSize: '11.5px', color: 'var(--t2)' }}>System active</span>
           </span>
         </div>
         <div style={{ fontSize: '11.5px', color: 'var(--t3)' }}>{todayLabel}</div>
@@ -255,10 +255,10 @@ export default function AdminClient({ analytics }) {
 
       {/* ── Metrics strip — one unified instrument surface ── */}
       <div className="metrics-strip">
-        <MetricCell label="Diterbit"     target={totalPublished}  accent="#10b981" delay={0}   dividerColor="var(--divider)" />
-        <MetricCell label="Draf"         target={totalDraft}      accent="var(--t2)" delay={80}  dividerColor="var(--divider)" />
-        <MetricCell label="Menjana Kini" target={totalGenerating} accent="#f59e0b" delay={160} dividerColor="var(--divider)" />
-        <MetricCell label="7 Hari Ini"   target={thisWeek}        accent="#d4a853" delay={240} dividerColor="var(--divider)" isLast />
+        <MetricCell label="Published"    target={totalPublished}  accent="#10b981" delay={0}   dividerColor="var(--divider)" />
+        <MetricCell label="Draft"        target={totalDraft}      accent="var(--t2)" delay={80}  dividerColor="var(--divider)" />
+        <MetricCell label="Generating"   target={totalGenerating} accent="#f59e0b" delay={160} dividerColor="var(--divider)" />
+        <MetricCell label="This Week"    target={thisWeek}        accent="#d4a853" delay={240} dividerColor="var(--divider)" isLast />
       </div>
 
       {/* ── Bottom row ── */}
@@ -266,9 +266,9 @@ export default function AdminClient({ analytics }) {
 
         {/* Recent published */}
         <div className="dash-panel">
-          <div className="panel-label">5 Artikel Terbaru Diterbit</div>
+          <div className="panel-label">5 Latest Published Articles</div>
           {recentPublished.length === 0 ? (
-            <div style={{ fontSize: '13px', color: 'var(--t3)', padding: '4px 0' }}>Tiada artikel diterbit lagi.</div>
+            <div style={{ fontSize: '13px', color: 'var(--t3)', padding: '4px 0' }}>No articles published yet.</div>
           ) : (
             <div>
               {recentPublished.map((a, i) => (
@@ -287,7 +287,7 @@ export default function AdminClient({ analytics }) {
                       rel="noopener noreferrer"
                       className="article-link"
                     >
-                      {a.title ?? '(Tanpa tajuk)'}
+                      {a.title ?? '(Untitled)'}
                     </a>
                   </div>
                   <span className="article-date">{fmtShort(a.created_at)}</span>
@@ -301,12 +301,12 @@ export default function AdminClient({ analytics }) {
         <div className="dash-panel" style={{ overflow: 'hidden', minWidth: 0 }}>
           {/* Header: label left, weekly total right */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <div className="panel-label" style={{ margin: 0 }}>Artikel Diterbit — 7 Hari Lepas</div>
+            <div className="panel-label" style={{ margin: 0 }}>Articles Published — Last 7 Days</div>
             <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
               <span style={{ fontSize: '26px', fontWeight: 700, color: '#d4a853', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                 {totalWeek}
               </span>
-              <span style={{ fontSize: '10.5px', color: 'var(--t3)', display: 'block', marginTop: '1px' }}>artikel minggu ini</span>
+              <span style={{ fontSize: '10.5px', color: 'var(--t3)', display: 'block', marginTop: '1px' }}>articles this week</span>
             </div>
           </div>
 

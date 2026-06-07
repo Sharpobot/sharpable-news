@@ -8,12 +8,12 @@ import ConfirmationModal from '@/components/admin/ConfirmationModal'
 /* ── Status badge ─────────────────────────────────────────── */
 // Colors chosen to be readable on both dark and light backgrounds
 const STATUS_CFG = {
-  awaiting_topic_selection: { label: 'Pilih Topik', color: '#2563eb', bg: 'rgba(59,130,246,0.10)', dot: '#3b82f6' },
-  generating:      { label: 'Menjana',  color: '#d97706', bg: 'rgba(245,158,11,0.10)',  dot: '#f59e0b' },
-  ready_to_review: { label: 'Semak',    color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
-  draft:           { label: 'Draf',     color: null,      bg: null,                     dot: null      },
-  published:       { label: 'Diterbit', color: '#059669', bg: 'rgba(16,185,129,0.10)',  dot: '#10b981' },
-  failed:          { label: 'Gagal',    color: '#dc2626', bg: 'rgba(239,68,68,0.10)',   dot: '#ef4444' },
+  awaiting_topic_selection: { label: 'Select Topic',    color: '#2563eb', bg: 'rgba(59,130,246,0.10)', dot: '#3b82f6' },
+  generating:      { label: 'Generating',   color: '#d97706', bg: 'rgba(245,158,11,0.10)',  dot: '#f59e0b' },
+  ready_to_review: { label: 'Ready to Review', color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
+  draft:           { label: 'Draft',        color: null,      bg: null,                     dot: null      },
+  published:       { label: 'Published',    color: '#059669', bg: 'rgba(16,185,129,0.10)',  dot: '#10b981' },
+  failed:          { label: 'Failed',       color: '#dc2626', bg: 'rgba(239,68,68,0.10)',   dot: '#ef4444' },
 }
 function StatusBadge({ status }) {
   const cfg = STATUS_CFG[status] ?? { label: status, color: null, bg: null, dot: null }
@@ -32,7 +32,7 @@ function StatusBadge({ status }) {
 }
 
 /* ── Date formatter ─────────────────────────────────────────── */
-const MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis']
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 function fmt(iso) {
   const d = new Date(iso)
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
@@ -61,28 +61,28 @@ export default function ArtikelClient({ initialArticles }) {
     if (!targetArticle) return
     setModal(null)
     const label = targetArticle.title ?? `artikel ${targetArticle.id.slice(0, 8)}`
-    const tid = toast.loading('Memadam artikel...')
+    const tid = toast.loading('Deleting article...')
     try {
       const res = await fetch(`/api/articles/${targetArticle.id}`, { method: 'DELETE' })
-      if (!res.ok) { toast.error('Gagal memadam artikel.', { id: tid }); return }
+      if (!res.ok) { toast.error('Failed to delete article.', { id: tid }); return }
       setArticles(prev => prev.filter(a => a.id !== targetArticle.id))
-      toast.success(`"${label}" dipadam.`, { id: tid })
+      toast.success(`"${label}" deleted.`, { id: tid })
     } catch {
-      toast.error('Ralat semasa memadam.', { id: tid })
+      toast.error('Error while deleting.', { id: tid })
     }
   }
 
   const handleCancel = async () => {
     if (!targetArticle) return
     setModal(null)
-    const tid = toast.loading('Membatalkan...')
+    const tid = toast.loading('Cancelling...')
     try {
       const res = await fetch(`/api/articles/${targetArticle.id}`, { method: 'DELETE' })
-      if (!res.ok) { toast.error('Gagal membatalkan.', { id: tid }); return }
+      if (!res.ok) { toast.error('Failed to cancel.', { id: tid }); return }
       setArticles(prev => prev.filter(a => a.id !== targetArticle.id))
-      toast.success('Penjanaan dibatalkan.', { id: tid })
+      toast.success('Generation cancelled.', { id: tid })
     } catch {
-      toast.error('Ralat semasa membatalkan.', { id: tid })
+      toast.error('Error while cancelling.', { id: tid })
     }
   }
 
@@ -202,16 +202,16 @@ export default function ArtikelClient({ initialArticles }) {
 
       <ConfirmationModal
         open={modal === 'delete'}
-        title="Padam Artikel?"
-        message={`Artikel "${targetArticle?.title ?? targetArticle?.id?.slice(0, 8) ?? ''}" akan dipadam secara kekal.`}
-        confirmLabel="Ya, Padam" cancelLabel="Batal" confirmColor="red"
+        title="Delete Article?"
+        message={`Article "${targetArticle?.title ?? targetArticle?.id?.slice(0, 8) ?? ''}" will be permanently deleted.`}
+        confirmLabel="Yes, Delete" cancelLabel="Cancel" confirmColor="red"
         onConfirm={handleDelete} onCancel={() => setModal(null)}
       />
       <ConfirmationModal
         open={modal === 'cancel'}
-        title="Batalkan Penjanaan?"
-        message={`Penjanaan artikel #${targetArticle?.id?.slice(0, 8) ?? ''} akan dibatalkan dan dipadam.`}
-        confirmLabel="Ya, Batalkan" cancelLabel="Batal" confirmColor="red"
+        title="Cancel Generation?"
+        message={`Generation of article #${targetArticle?.id?.slice(0, 8) ?? ''} will be cancelled and deleted.`}
+        confirmLabel="Yes, Cancel" cancelLabel="Cancel" confirmColor="red"
         onConfirm={handleCancel} onCancel={() => setModal(null)}
       />
 
@@ -219,31 +219,31 @@ export default function ArtikelClient({ initialArticles }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--t1)', letterSpacing: '-0.015em' }}>
-            Semua Artikel
+            All Articles
           </h1>
           <span style={{ fontSize: '11.5px', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
-            {articles.length} artikel
+            {articles.length} articles
           </span>
         </div>
         <Link href="/admin/jana" className="jana-link-btn">
           <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
           </svg>
-          Jana Artikel
+          Generate Article
         </Link>
       </div>
 
       {/* Table */}
       <div className="at-table">
         <div className="at-header">
-          <span>Tajuk</span><span>Status</span><span>Tarikh</span><span />
+          <span>Title</span><span>Status</span><span>Date</span><span />
         </div>
 
         {articles.length === 0 ? (
           <div style={{ padding: '52px 20px', textAlign: 'center', color: 'var(--t3)', fontSize: '13.5px', lineHeight: 1.8 }}>
-            Tiada artikel lagi.{' '}
+            No articles yet.{' '}
             <Link href="/admin/jana" style={{ color: '#d4a853', textDecoration: 'none' }}>
-              Jana yang pertama →
+              Generate the first one →
             </Link>
           </div>
         ) : (
@@ -258,7 +258,7 @@ export default function ArtikelClient({ initialArticles }) {
                   <span className="at-title-plain">
                     {article.title ?? (
                       <span style={{ color: 'var(--t3)', fontStyle: 'italic', fontWeight: 400, fontSize: '13px' }}>
-                        Tanpa tajuk
+                        Untitled
                       </span>
                     )}
                   </span>
@@ -278,7 +278,7 @@ export default function ArtikelClient({ initialArticles }) {
                 <button
                   className="delete-btn"
                   onClick={() => ['generating', 'awaiting_topic_selection'].includes(article.status) ? openCancel(article) : openDelete(article)}
-                  title={['generating', 'awaiting_topic_selection'].includes(article.status) ? 'Batalkan penjanaan' : 'Padam artikel'}
+                  title={['generating', 'awaiting_topic_selection'].includes(article.status) ? 'Cancel generation' : 'Delete article'}
                 >
                   {['generating', 'awaiting_topic_selection'].includes(article.status) ? (
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

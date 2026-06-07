@@ -8,7 +8,7 @@ import ConfirmationModal from '@/components/admin/ConfirmationModal'
 const NAV = [
   {
     href: '/admin',
-    label: 'Papan Pemuka',
+    label: 'Dashboard',
     exact: true,
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -19,7 +19,7 @@ const NAV = [
   },
   {
     href: '/admin/artikel',
-    label: 'Artikel',
+    label: 'Articles',
     exact: false,
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -30,7 +30,7 @@ const NAV = [
   },
   {
     href: '/admin/jana',
-    label: 'Jana Artikel',
+    label: 'Generate',
     exact: false,
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@ const NAV = [
   },
   {
     href: '/admin/penulis',
-    label: 'Penulis',
+    label: 'Authors',
     exact: false,
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@ const NAV = [
   },
   {
     href: '/admin/tetapan',
-    label: 'Tetapan',
+    label: 'Settings',
     exact: false,
     icon: (
       <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@ export default function AdminSidebar({ children, logoutAction }) {
   const ThemeToggle = () => (
     <button
       onClick={toggleTheme}
-      title={lm ? 'Mod Gelap' : 'Mod Cerah'}
+      title={lm ? 'Dark Mode' : 'Light Mode'}
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         width: '32px', height: '32px', borderRadius: '6px',
@@ -226,10 +226,10 @@ export default function AdminSidebar({ children, logoutAction }) {
 
       <ConfirmationModal
         open={showLogoutModal}
-        title="Log Keluar?"
-        message="Anda akan keluar dari panel admin Sharpable News."
-        confirmLabel="Ya, Log Keluar"
-        cancelLabel="Batal"
+        title="Log Out?"
+        message="You will be signed out of the Sharpable News admin panel."
+        confirmLabel="Yes, Log Out"
+        cancelLabel="Cancel"
         confirmColor="red"
         onConfirm={handleLogoutConfirm}
         onCancel={() => setShowLogoutModal(false)}
@@ -304,7 +304,7 @@ export default function AdminSidebar({ children, logoutAction }) {
         <button
           className="admin-hamburger"
           onClick={() => setDrawerOpen(true)}
-          aria-label="Buka menu"
+          aria-label="Open menu"
           style={{ color: C.hamColor }}
         >
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -340,7 +340,7 @@ export default function AdminSidebar({ children, logoutAction }) {
           <button
             onClick={() => setDrawerOpen(false)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.text3, padding: '4px', borderRadius: '4px' }}
-            aria-label="Tutup menu"
+            aria-label="Close menu"
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -366,7 +366,7 @@ export default function AdminSidebar({ children, logoutAction }) {
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
-            Log Keluar
+            Log Out
           </button>
         </div>
       </div>
@@ -404,7 +404,7 @@ export default function AdminSidebar({ children, logoutAction }) {
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
-              Log Keluar
+              Log Out
             </button>
           </div>
         </aside>

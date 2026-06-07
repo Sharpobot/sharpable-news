@@ -6,19 +6,19 @@ import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 /* ── Agent definitions ─────────────────────────────────────── */
 const SEARCH_AGENTS = [
-  { key: 'trend-scout',    label: 'Pencari Trend',  optional: false },
-  { key: 'topic-selector', label: 'Pemilih Topik',  optional: false },
+  { key: 'trend-scout',    label: 'Trend Scout',    optional: false },
+  { key: 'topic-selector', label: 'Topic Selector', optional: false },
 ]
 const AGENTS = [
-  { key: 'trend-scout',     label: 'Pencari Trend',    optional: false },
-  { key: 'topic-selector',  label: 'Pemilih Topik',    optional: false },
-  { key: 'deep-researcher', label: 'Penyelidik',       optional: false },
-  { key: 'article-writer',  label: 'Penulis Artikel',  optional: false },
-  { key: 'seo-metadata',    label: 'Metadata SEO',     optional: false },
-  { key: 'image-brief',     label: 'Brief Imej',       optional: false },
-  { key: 'quality-checker', label: 'Penyemak Kualiti', optional: false },
-  { key: 'revision-agent',  label: 'Ejen Semakan',     optional: true  },
-  { key: 'save-article',    label: 'Simpan Artikel',   optional: false },
+  { key: 'trend-scout',     label: 'Trend Scout',      optional: false },
+  { key: 'topic-selector',  label: 'Topic Selector',   optional: false },
+  { key: 'deep-researcher', label: 'Researcher',       optional: false },
+  { key: 'article-writer',  label: 'Article Writer',   optional: false },
+  { key: 'seo-metadata',    label: 'SEO Metadata',     optional: false },
+  { key: 'image-brief',     label: 'Image Brief',      optional: false },
+  { key: 'quality-checker', label: 'Quality Checker',  optional: false },
+  { key: 'revision-agent',  label: 'Revision Agent',   optional: true  },
+  { key: 'save-article',    label: 'Save Article',     optional: false },
 ]
 const REQUIRED = AGENTS.filter(a => !a.optional)
 
@@ -54,7 +54,7 @@ function AgentRow({ agent, row }) {
         fontWeight: s === 'running' ? 600 : 400,
       }}>
         {agent.label}
-        {agent.optional && <span style={{ fontSize: '10px', color: 'var(--t3)', marginLeft: '5px' }}>(pilihan)</span>}
+        {agent.optional && <span style={{ fontSize: '10px', color: 'var(--t3)', marginLeft: '5px' }}>(optional)</span>}
       </span>
       {row?.message && (
         <span style={{ fontSize: '11.5px', color: 'var(--t3)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -105,7 +105,7 @@ function TopicCard({ option, onInitiateSelect, selecting, isSelected, isGreyedOu
             background: '#d4a853', color: '#0c0b0a',
             fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
           }}>
-            ✓ Dipilih
+            ✓ Selected
           </span>
         )}
       </div>
@@ -154,7 +154,7 @@ function TopicCard({ option, onInitiateSelect, selecting, isSelected, isGreyedOu
             transition: 'background 0.12s',
           }}
         >
-          {selecting ? <><Spinner size={12} /> Memulakan…</> : 'Pilih Topik Ini'}
+          {selecting ? <><Spinner size={12} /> Starting…</> : 'Select This Topic'}
         </button>
       )}
     </motion.div>
@@ -209,7 +209,7 @@ function ArticleCard({
   const showProgress      = isGenerating || isTerminal
 
   // Card title
-  const cardTitle = topicDirection.trim() || (articleId ? `Artikel Baru #${articleId.slice(0, 8)}` : 'Artikel Baru')
+  const cardTitle = topicDirection.trim() || (articleId ? `New Article #${articleId.slice(0, 8)}` : 'New Article')
 
   // Border/background accent by state
   const cardBorderColor = isReadyToReview
@@ -273,15 +273,15 @@ function ArticleCard({
           </span>
         )}
         {isReadyToReview && (
-          <span style={{ fontSize: '10.5px', color: '#10b981', fontWeight: 700, flexShrink: 0 }}>Siap Semak</span>
+          <span style={{ fontSize: '10.5px', color: '#10b981', fontWeight: 700, flexShrink: 0 }}>Ready to Review</span>
         )}
         {isFailed && (
-          <span style={{ fontSize: '10.5px', color: '#ef4444', fontWeight: 700, flexShrink: 0 }}>Gagal</span>
+          <span style={{ fontSize: '10.5px', color: '#ef4444', fontWeight: 700, flexShrink: 0 }}>Failed</span>
         )}
         {isTerminal && (
           <button
             onClick={() => onDismiss(localId)}
-            title="Tutup kad ini"
+            title="Close this card"
             style={{
               background: 'none', border: 'none', color: 'var(--t3)',
               cursor: 'pointer', padding: '2px 6px', fontSize: '18px',
@@ -304,7 +304,7 @@ function ArticleCard({
           <div>
             {!searchLocked && (
               <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: '8px' }}>
-                Langkah 1 — Cari Topik
+                Step 1 — Find Topic
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -329,7 +329,7 @@ function ArticleCard({
                     <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                     </svg>
-                    Cari Topik
+                    Find Topics
                   </button>
                   <button
                     onClick={() => onDismiss(localId)}
@@ -339,7 +339,7 @@ function ArticleCard({
                       cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", flexShrink: 0,
                     }}
                   >
-                    Batal
+                    Cancel
                   </button>
                 </>
               )}

@@ -26,7 +26,7 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(node.attrs.description || '').then(() => {
-      toast.success('Cadangan disalin ke papan klip.', { duration: 2000 })
+      toast.success('Suggestion copied to clipboard.', { duration: 2000 })
     })
   }
 
@@ -40,7 +40,7 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
       fd.append('articleId', articleId || 'placeholder')
       const res  = await fetch('/api/upload-inline-image', { method: 'POST', body: fd })
       const data = await res.json()
-      if (!res.ok || data.error) throw new Error(data.error || 'Muat naik gagal')
+      if (!res.ok || data.error) throw new Error(data.error || 'Upload failed')
       const pos     = getPos()
       const imgNode = editor.schema.nodes.image.create({ src: data.url, alt: node.attrs.description || undefined })
       editor.view.dispatch(editor.state.tr.replaceWith(pos, pos + 1, imgNode))
@@ -129,10 +129,10 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
 
       <ConfirmationModal
         open={showSkipModal}
-        title="Langkau Cadangan Imej?"
-        message="Cadangan imej ini akan dibuang dan tidak akan muncul dalam artikel yang diterbitkan."
-        confirmLabel="Ya, Langkau"
-        cancelLabel="Batal"
+        title="Skip Image Suggestion?"
+        message="This image suggestion will be removed and won't appear in the published article."
+        confirmLabel="Yes, Skip"
+        cancelLabel="Cancel"
         confirmColor="amber"
         onConfirm={handleSkipConfirmed}
         onCancel={() => setShowSkipModal(false)}
@@ -150,12 +150,12 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginBottom: '2px' }}>
             <div style={{ fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(212,168,83,0.45)', fontFamily: "'DM Sans',sans-serif" }}>
-              Cadangan Imej AI
+              AI Image Suggestion
             </div>
             {/* Copy button */}
             <button
               onClick={handleCopy}
-              title="Salin penerangan"
+              title="Copy description"
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
                 color: 'rgba(212,168,83,0.35)',
@@ -191,7 +191,7 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
               fontFamily: "'DM Sans',sans-serif",
             }}
           >
-            {uploading ? 'Memuat…' : 'Muat Naik'}
+            {uploading ? 'Uploading…' : 'Upload'}
           </button>
           <button
             onClick={() => setShowSkipModal(true)}
@@ -203,7 +203,7 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
               fontFamily: "'DM Sans',sans-serif",
             }}
           >
-            Langkau
+            Skip
           </button>
         </div>
 

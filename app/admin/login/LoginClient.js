@@ -22,7 +22,7 @@ export default function LoginClient() {
     setLoading(true)
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
     if (authError) {
-      setError('E-mel atau kata laluan tidak sah.')
+      setError('Invalid email or password.')
       setLoading(false)
       return
     }
@@ -97,10 +97,10 @@ export default function LoginClient() {
           <div style={{ padding: '28px 28px 32px' }}>
             <div style={{ marginBottom: '22px' }}>
               <div style={{ fontSize: '18px', fontWeight: 700, color: '#ede8df', marginBottom: '5px' }}>
-                Log Masuk
+                Sign In
               </div>
               <div style={{ fontSize: '13px', color: '#56514d', lineHeight: 1.5 }}>
-                Masukkan kelayakan admin anda untuk meneruskan.
+                Enter your admin credentials to continue.
               </div>
             </div>
 
@@ -108,7 +108,7 @@ export default function LoginClient() {
               {/* Email */}
               <div>
                 <label style={{ display: 'block', fontSize: '11px', color: '#56514d', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  E-mel
+                  Email
                 </label>
                 <input
                   className="login-input"
@@ -124,7 +124,7 @@ export default function LoginClient() {
               {/* Password */}
               <div>
                 <label style={{ display: 'block', fontSize: '11px', color: '#56514d', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  Kata Laluan
+                  Password
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -170,7 +170,7 @@ export default function LoginClient() {
               )}
 
               <button className="login-btn" type="submit" disabled={loading} style={{ marginTop: '4px' }}>
-                {loading ? 'Melog masuk…' : 'Log Masuk'}
+                {loading ? 'Signing in…' : 'Sign In'}
               </button>
             </form>
           </div>

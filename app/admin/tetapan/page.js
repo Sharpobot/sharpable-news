@@ -3,25 +3,25 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 const PIPELINE_AGENTS = [
-  { num: '01', key: 'trend-scout',     label: 'Pencari Trend',    desc: 'Mencari topik trending semasa' },
-  { num: '02', key: 'topic-selector',  label: 'Pemilih Topik',    desc: 'Memilih topik terbaik untuk pembaca Malaysia' },
-  { num: '03', key: 'deep-researcher', label: 'Penyelidik',       desc: 'Mengumpul fakta dan sumber utama' },
-  { num: '04', key: 'article-writer',  label: 'Penulis Artikel',  desc: 'Menulis artikel penuh dalam Bahasa Malaysia' },
-  { num: '05', key: 'seo-metadata',    label: 'Metadata SEO',     desc: 'Menjana slug, meta deskripsi, dan tag' },
-  { num: '06', key: 'image-brief',     label: 'Brief Imej',       desc: 'Menyediakan cadangan imej hero' },
-  { num: '07', key: 'quality-checker', label: 'Penyemak Kualiti', desc: 'Menilai kualiti artikel (0–100)' },
-  { num: '08', key: 'revision-agent',  label: 'Ejen Semakan',     desc: 'Membaiki artikel jika skor rendah (pilihan)', optional: true },
+  { num: '01', key: 'trend-scout',     label: 'Trend Scout',      desc: 'Searches for current trending topics' },
+  { num: '02', key: 'topic-selector',  label: 'Topic Selector',   desc: 'Selects the best topic for Malaysian readers' },
+  { num: '03', key: 'deep-researcher', label: 'Deep Researcher',  desc: 'Gathers facts and key sources' },
+  { num: '04', key: 'article-writer',  label: 'Article Writer',   desc: 'Writes a full article in Bahasa Malaysia' },
+  { num: '05', key: 'seo-metadata',    label: 'SEO Metadata',     desc: 'Generates slug, meta description, and tags' },
+  { num: '06', key: 'image-brief',     label: 'Image Brief',      desc: 'Prepares hero image suggestion' },
+  { num: '07', key: 'quality-checker', label: 'Quality Checker',  desc: 'Evaluates article quality (0–100)' },
+  { num: '08', key: 'revision-agent',  label: 'Revision Agent',   desc: 'Revises article if score is low (optional)', optional: true },
 ]
 
 const CONFIG_ROWS = [
-  { label: 'Model AI',          value: 'claude-sonnet-4-5' },
-  { label: 'Pembekal',          value: 'Anthropic' },
-  { label: 'Jumlah Ejen',       value: '7 wajib + 1 pilihan' },
-  { label: 'Jeda Antara Ejen',  value: '65 saat' },
-  { label: 'Masa Jana (anggaran)', value: '~9–10 minit' },
-  { label: 'Percubaan Semula',  value: 'Topik: maks 3x · Inngest: 1x' },
-  { label: 'Penyimpanan',       value: 'Supabase Postgres + Storage' },
-  { label: 'Antrian Tugas',     value: 'Inngest v4' },
+  { label: 'AI Model',             value: 'claude-sonnet-4-5' },
+  { label: 'Provider',             value: 'Anthropic' },
+  { label: 'Total Agents',         value: '7 required + 1 optional' },
+  { label: 'Delay Between Agents', value: '65 seconds' },
+  { label: 'Generation Time (est.)', value: '~9–10 minutes' },
+  { label: 'Retries',              value: 'Topic: max 3x · Inngest: 1x' },
+  { label: 'Storage',              value: 'Supabase Postgres + Storage' },
+  { label: 'Job Queue',            value: 'Inngest v4' },
 ]
 
 export default function TetapanPage() {
@@ -140,10 +140,10 @@ export default function TetapanPage() {
       {/* Header */}
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 700, color: 'var(--t1)', letterSpacing: '-0.015em' }}>
-          Tetapan
+          Settings
         </h1>
         <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--t3)' }}>
-          Konfigurasi dan maklumat sistem Sharpable News.
+          Configuration and system information for Sharpable News.
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export default function TetapanPage() {
       <div className="tet-panel">
         <div className="tet-panel-header" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span className="tet-status-dot" />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--t1)' }}>Sistem Aktif</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--t1)' }}>System Active</span>
           <span style={{ fontSize: '11.5px', color: 'var(--t3)', marginLeft: 'auto' }}>Sharpable News Admin v1.0</span>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function TetapanPage() {
       {/* Configuration */}
       <div className="tet-panel">
         <div className="tet-panel-header">
-          <span className="tet-section-label">Konfigurasi Pipeline</span>
+          <span className="tet-section-label">Pipeline Configuration</span>
         </div>
         {CONFIG_ROWS.map((row, i) => (
           <div key={i} className="tet-config-row">
@@ -172,7 +172,7 @@ export default function TetapanPage() {
       {/* Pipeline agents */}
       <div className="tet-panel">
         <div className="tet-panel-header">
-          <span className="tet-section-label">Ejen Pipeline AI</span>
+          <span className="tet-section-label">AI Pipeline Agents</span>
         </div>
         {PIPELINE_AGENTS.map((agent) => (
           <div key={agent.key} className="tet-agent-row"
@@ -181,7 +181,7 @@ export default function TetapanPage() {
             <div>
               <div className="tet-agent-label">
                 {agent.label}
-                {agent.optional && <span className="tet-optional-badge">Pilihan</span>}
+                {agent.optional && <span className="tet-optional-badge">Optional</span>}
               </div>
               <div className="tet-agent-desc">{agent.desc}</div>
             </div>
@@ -198,7 +198,7 @@ export default function TetapanPage() {
         borderRadius: '7px',
         fontSize: '12.5px', color: 'var(--t3)', lineHeight: 1.6,
       }}>
-        Tetapan lanjutan (kunci API, jadual penjanaan automatik, had kos) dikonfigurasikan melalui fail <code style={{ fontFamily: 'monospace', fontSize: '11.5px', color: 'var(--t2)', background: 'var(--chip-bg)', padding: '1px 5px', borderRadius: '3px' }}>.env.local</code>.
+        Advanced settings (API keys, auto-generation schedule, cost limits) are configured via the <code style={{ fontFamily: 'monospace', fontSize: '11.5px', color: 'var(--t2)', background: 'var(--chip-bg)', padding: '1px 5px', borderRadius: '3px' }}>.env.local</code> file.
       </div>
     </motion.div>
   )
