@@ -268,9 +268,28 @@ function ArticleCard({
 
         {/* Right-side chips/buttons */}
         {isGenerating && (
-          <span style={{ fontSize: '11px', color: '#d4a853', fontVariantNumeric: 'tabular-nums', fontWeight: 700, flexShrink: 0 }}>
-            {pct}%
-          </span>
+          <>
+            <span style={{ fontSize: '11px', color: '#d4a853', fontVariantNumeric: 'tabular-nums', fontWeight: 700, flexShrink: 0 }}>
+              {pct}%
+            </span>
+            <button
+              onClick={() => onOpenCancel(localId, articleId)}
+              title="Cancel generation"
+              style={{
+                background: 'none', border: 'none', color: 'var(--t3)',
+                padding: '0 2px', cursor: 'pointer', lineHeight: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                transition: 'color 0.12s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#ef4444' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--t3)' }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round">
+                <line x1="5" y1="5" x2="19" y2="19" />
+                <line x1="19" y1="5" x2="5" y2="19" />
+              </svg>
+            </button>
+          </>
         )}
         {isReadyToReview && (
           <span style={{ fontSize: '10.5px', color: '#10b981', fontWeight: 700, flexShrink: 0 }}>Ready to Review</span>
@@ -346,7 +365,7 @@ function ArticleCard({
             </div>
             {!searchLocked && (
               <div style={{ marginTop: '5px', fontSize: '11px', color: 'var(--t3)' }}>
-                Biarkan kosong untuk biarkan AI memilih topik trending terkini.
+                Leave blank to let AI pick the latest trending topics.
               </div>
             )}
           </div>
@@ -356,7 +375,7 @@ function ArticleCard({
         {showSearchMini && (
           <div>
             <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: '8px' }}>
-              Mencari Topik
+              Finding Topics
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
               {SEARCH_AGENTS.map(a => <AgentRow key={a.key} agent={a} row={progMap[a.key]} />)}
@@ -376,11 +395,11 @@ function ArticleCard({
                   fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase',
                   color: isGenerating ? 'var(--t3)' : '#d4a853', marginBottom: isGenerating ? 0 : '2px',
                 }}>
-                  {isGenerating ? 'Topik Dipilih' : 'Langkah 2 — Pilih Topik'}
+                  {isGenerating ? 'Selected Topic' : 'Step 2 — Select Topic'}
                 </div>
                 {!isGenerating && (
                   <div style={{ fontSize: '13px', color: 'var(--t1)', fontWeight: 600 }}>
-                    Pilih satu topik untuk diteruskan
+                    Select one topic to continue
                   </div>
                 )}
               </div>
@@ -396,12 +415,12 @@ function ArticleCard({
                       fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: '5px',
                       opacity: selecting ? 0.5 : 1, transition: 'background 0.12s',
                     }}
-                    title="Jana artikel menggunakan topik pertama secara automatik"
+                    title="Generate article using the first topic automatically"
                   >
                     <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                     </svg>
-                    Jana Automatik
+                    Auto Generate
                   </button>
                   <button
                     onClick={() => onOpenCancel(localId, articleId)}
@@ -411,7 +430,7 @@ function ArticleCard({
                       fontFamily: "'DM Sans', sans-serif",
                     }}
                   >
-                    Batal
+                    Cancel
                   </button>
                 </div>
               )}
@@ -442,7 +461,7 @@ function ArticleCard({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--t3)' }}>
-                Proses Jana
+                Generation Progress
               </div>
               {isGenerating && (
                 <div style={{ flex: 1, height: '2px', background: 'var(--divider)', borderRadius: '999px', overflow: 'hidden' }}>
@@ -452,21 +471,6 @@ function ArticleCard({
                     style={{ height: '100%', borderRadius: '999px', background: anyFailed ? '#ef4444' : '#d4a853' }}
                   />
                 </div>
-              )}
-              {isGenerating && (
-                <button
-                  onClick={() => onOpenCancel(localId, articleId)}
-                  style={{
-                    background: 'none', border: '1px solid var(--border)', color: 'var(--t3)',
-                    borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif", flexShrink: 0,
-                    transition: 'color 0.12s, border-color 0.12s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.4)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--t3)'; e.currentTarget.style.borderColor = 'var(--border)' }}
-                >
-                  Batal
-                </button>
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -494,7 +498,7 @@ function ArticleCard({
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
-              Buka Editor
+              Open Editor
             </a>
             <button
               onClick={() => onDismiss(localId)}
@@ -504,7 +508,7 @@ function ArticleCard({
                 cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
               }}
             >
-              Tutup
+              Close
             </button>
           </div>
         )}
@@ -516,7 +520,7 @@ function ArticleCard({
                 <polyline points="1 4 1 10 7 10"/>
                 <path d="M3.51 15a9 9 0 1 0 .49-3.68"/>
               </svg>
-              Jana Semula
+              Try Again
             </button>
             <button
               onClick={() => onDismiss(localId)}
@@ -526,7 +530,7 @@ function ArticleCard({
                 cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
               }}
             >
-              Tutup
+              Close
             </button>
           </div>
         )}
@@ -620,9 +624,9 @@ export default function JanaClient({ initialArticles = [] }) {
       if (nowTerminal.length > 0) {
         nowTerminal.forEach(({ articleStatus }) => {
           if (articleStatus === 'ready_to_review') {
-            toast.success('Artikel berjaya dijana! Klik "Buka Editor" untuk menyemak.')
+            toast.success('Article generated successfully! Click "Open Editor" to review.')
           } else {
-            toast.error('Penjanaan artikel gagal. Klik "Jana Semula" untuk cuba lagi.')
+            toast.error('Article generation failed. Click "Try Again" to retry.')
           }
         })
         const terminalIds = nowTerminal.map(r => r.id)
@@ -652,7 +656,7 @@ export default function JanaClient({ initialArticles = [] }) {
     const card = cards.find(c => c.localId === localId)
     if (!card) return
     setCards(prev => prev.map(c => c.localId === localId ? { ...c, isSearching: true } : c))
-    const tid = toast.loading('Mencari topik trending…')
+    const tid = toast.loading('Searching for trending topics…')
     try {
       const res = await fetch('/api/generate-topics', {
         method: 'POST',
@@ -661,16 +665,16 @@ export default function JanaClient({ initialArticles = [] }) {
       })
       const { articleId, error } = await res.json()
       if (error) {
-        toast.error(`Ralat: ${error}`, { id: tid })
+        toast.error(`Error: ${error}`, { id: tid })
         setCards(prev => prev.map(c => c.localId === localId ? { ...c, isSearching: false } : c))
         return
       }
-      toast.success('Mencari topik… tunggu sebentar.', { id: tid })
+      toast.success('Searching for topics… please wait.', { id: tid })
       setCards(prev => prev.map(c => c.localId === localId ? { ...c, articleId, isSearching: false } : c))
       setStatusMap(prev => ({ ...prev, [articleId]: 'awaiting_topic_selection' }))
       setPollingIds(prev => [...prev, articleId])
     } catch {
-      toast.error('Ralat semasa mencari topik.', { id: tid })
+      toast.error('Error while searching for topics.', { id: tid })
       setCards(prev => prev.map(c => c.localId === localId ? { ...c, isSearching: false } : c))
     }
   }
@@ -686,40 +690,40 @@ export default function JanaClient({ initialArticles = [] }) {
     const { localId, articleId, option } = confirmTopicTarget
     setConfirmTopicTarget(null)
     setSelectingId(articleId)
-    const tid = toast.loading('Memulakan penjanaan artikel…')
+    const tid = toast.loading('Starting article generation…')
     try {
       const res = await fetch('/api/select-topic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ articleId, option }),
       })
-      if (!res.ok) { toast.error('Gagal memilih topik.', { id: tid }); return }
-      toast.success('Topik dipilih! Menjana artikel… (~9 minit)', { id: tid })
+      if (!res.ok) { toast.error('Failed to select topic.', { id: tid }); return }
+      toast.success('Topic selected! Generating article… (~9 min)', { id: tid })
       setStatusMap(prev => ({ ...prev, [articleId]: 'generating' }))
       setCards(prev => prev.map(c => c.localId === localId ? { ...c, selectedOption: option } : c))
     } catch {
-      toast.error('Ralat semasa memilih topik.', { id: tid })
+      toast.error('Error while selecting topic.', { id: tid })
     } finally {
       setSelectingId(null)
     }
   }
 
-  /* ── Jana Automatik (no confirmation) ── */
+  /* ── Auto Generate (no confirmation) ── */
   const handleAutoSelect = async (localId, articleId, option) => {
     setSelectingId(articleId)
-    const tid = toast.loading('Memulakan penjanaan artikel…')
+    const tid = toast.loading('Starting article generation…')
     try {
       const res = await fetch('/api/select-topic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ articleId, option }),
       })
-      if (!res.ok) { toast.error('Gagal memilih topik.', { id: tid }); return }
-      toast.success('Topik dipilih! Menjana artikel… (~9 minit)', { id: tid })
+      if (!res.ok) { toast.error('Failed to select topic.', { id: tid }); return }
+      toast.success('Topic selected! Generating article… (~9 min)', { id: tid })
       setStatusMap(prev => ({ ...prev, [articleId]: 'generating' }))
       setCards(prev => prev.map(c => c.localId === localId ? { ...c, selectedOption: option } : c))
     } catch {
-      toast.error('Ralat semasa memilih topik.', { id: tid })
+      toast.error('Error while selecting topic.', { id: tid })
     } finally {
       setSelectingId(null)
     }
@@ -736,7 +740,7 @@ export default function JanaClient({ initialArticles = [] }) {
     if (!cancelTarget) return
     setShowCancelModal(false)
     const { localId, articleId } = cancelTarget
-    const tid = toast.loading('Membatalkan…')
+    const tid = toast.loading('Cancelling…')
     try {
       const currentStatus = statusMap[articleId]
       let res
@@ -749,12 +753,12 @@ export default function JanaClient({ initialArticles = [] }) {
       } else {
         res = await fetch(`/api/articles/${articleId}`, { method: 'DELETE' })
       }
-      if (!res.ok) { toast.error('Gagal membatalkan.', { id: tid }); return }
+      if (!res.ok) { toast.error('Failed to cancel.', { id: tid }); return }
       setCards(prev => prev.filter(c => c.localId !== localId))
       setPollingIds(prev => prev.filter(id => id !== articleId))
-      toast.success('Dibatalkan.', { id: tid })
+      toast.success('Cancelled.', { id: tid })
     } catch {
-      toast.error('Ralat semasa membatalkan.', { id: tid })
+      toast.error('Error while cancelling.', { id: tid })
     }
   }
 
@@ -763,7 +767,7 @@ export default function JanaClient({ initialArticles = [] }) {
     setCards(prev => prev.filter(c => c.localId !== localId))
   }
 
-  /* ── Jana Semula (retry with fresh card) ── */
+  /* ── Try Again (retry with fresh card) ── */
   const handleRetry = (localId, prevTopicDirection) => {
     const newLocalId = `local-${Date.now()}`
     setCards(prev => [
@@ -816,10 +820,10 @@ export default function JanaClient({ initialArticles = [] }) {
       {/* ── Confirmation: topic selection ── */}
       <ConfirmationModal
         open={!!confirmTopicTarget}
-        title="Pilih Topik Ini?"
-        message={confirmTopicTarget?.option?.topic ? `"${confirmTopicTarget.option.topic}"` : 'Topik ini akan digunakan untuk menjana artikel.'}
-        confirmLabel="Ya, Pilih Topik Ini"
-        cancelLabel="Semak Semula"
+        title="Select This Topic?"
+        message={confirmTopicTarget?.option?.topic ? `"${confirmTopicTarget.option.topic}"` : 'This topic will be used to generate the article.'}
+        confirmLabel="Yes, Select This Topic"
+        cancelLabel="Review Again"
         confirmColor="amber"
         onConfirm={handleConfirmSelectTopic}
         onCancel={() => setConfirmTopicTarget(null)}
@@ -828,10 +832,10 @@ export default function JanaClient({ initialArticles = [] }) {
       {/* ── Confirmation: cancel ── */}
       <ConfirmationModal
         open={showCancelModal}
-        title="Batalkan?"
-        message="Proses ini akan dibatalkan dan dipadam."
-        confirmLabel="Ya, Batalkan"
-        cancelLabel="Teruskan"
+        title="Cancel?"
+        message="This process will be cancelled and removed."
+        confirmLabel="Yes, Cancel"
+        cancelLabel="Keep Going"
         confirmColor="red"
         onConfirm={handleConfirmCancel}
         onCancel={() => setShowCancelModal(false)}
@@ -841,17 +845,17 @@ export default function JanaClient({ initialArticles = [] }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 700, color: 'var(--t1)', letterSpacing: '-0.015em' }}>
-            Jana Artikel
+            Generate Article
           </h1>
           <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--t3)' }}>
-            Cari topik trending, pilih yang terbaik, kemudian jana artikel penuh secara automatik
+            Find trending topics, pick the best one, then generate a full article automatically
           </p>
         </div>
         <button onClick={addNewCard} className="search-btn">
           <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
           </svg>
-          Jana Artikel Baru
+          New Article
         </button>
       </div>
 
@@ -890,8 +894,8 @@ export default function JanaClient({ initialArticles = [] }) {
             borderRadius: '10px', padding: '48px 20px', boxShadow: 'var(--surface-shadow), var(--surface-inset)',
             textAlign: 'center', color: 'var(--t3)', fontSize: '13.5px', lineHeight: 1.8,
           }}>
-          Tiada artikel sedang diproses.<br/>
-          Klik <span style={{ color: '#d4a853' }}>"Jana Artikel Baru"</span> untuk bermula.
+          No articles in progress.<br/>
+          Click <span style={{ color: '#d4a853' }}>"New Article"</span> to get started.
         </motion.div>
       )}
     </motion.div>

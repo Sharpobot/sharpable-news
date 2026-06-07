@@ -1654,53 +1654,14 @@ export default function EditorClient({ article, authors = [] }) {
             )}
 
             {featuredImage ? (
-              <div style={{ marginBottom: '10px' }}>
-                <div style={{ position: 'relative' }}>
-                  <img src={featuredImage} alt="Hero image"
-                    style={{ width: '100%', borderRadius: '4px 4px 0 0', display: 'block', aspectRatio: '16/9', objectFit: 'cover' }} />
-                  <button onClick={() => setModal('removeImage')} style={{
-                    position: 'absolute', top: '10px', right: '10px',
-                    background: 'rgba(12,11,10,0.8)', border: '1px solid rgba(237,232,223,0.15)',
-                    color: '#ede8df', borderRadius: '4px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer',
-                  }}>× Change</button>
-                </div>
-                {/* Caption bar — visually attached below image */}
-                {editingFeaturedCaption ? (
-                  <div style={{ background: '#0f0e0d', borderRadius: '0 0 4px 4px', border: '1px solid rgba(212,168,83,0.35)', borderTop: 'none' }}>
-                    <input
-                      autoFocus
-                      value={featuredImageCaption}
-                      onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
-                      onBlur={() => setEditingFeaturedCaption(false)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedCaption(false) } }}
-                      placeholder="Short news-style caption…"
-                      style={{
-                        width: '100%', boxSizing: 'border-box', padding: '9px 14px',
-                        background: 'transparent', border: 'none', color: '#c8c0b6',
-                        fontSize: '12px', fontStyle: 'italic',
-                        fontFamily: "'DM Sans', sans-serif", outline: 'none',
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => setEditingFeaturedCaption(true)}
-                    title="Click to edit caption"
-                    style={{
-                      background: '#0f0e0d', borderRadius: '0 0 4px 4px',
-                      border: '1px solid rgba(237,232,223,0.1)', borderTop: 'none',
-                      padding: '9px 14px', cursor: 'text',
-                      fontSize: '12px', fontStyle: 'italic',
-                      color: featuredImageCaption ? '#8c857c' : '#3a3530',
-                      fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
-                      transition: 'background 0.12s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#161412' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = '#0f0e0d' }}
-                  >
-                    {featuredImageCaption || 'Add a caption…'}
-                  </div>
-                )}
+              <div style={{ marginBottom: '10px', position: 'relative' }}>
+                <img src={featuredImage} alt="Hero image"
+                  style={{ width: '100%', borderRadius: '4px', display: 'block', aspectRatio: '16/9', objectFit: 'cover' }} />
+                <button onClick={() => setModal('removeImage')} style={{
+                  position: 'absolute', top: '10px', right: '10px',
+                  background: 'rgba(12,11,10,0.8)', border: '1px solid rgba(237,232,223,0.15)',
+                  color: '#ede8df', borderRadius: '4px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer',
+                }}>× Change</button>
               </div>
             ) : (
               <div
@@ -1731,6 +1692,47 @@ export default function EditorClient({ article, authors = [] }) {
             )}
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }} />
+
+            {/* Caption for hero image */}
+            {featuredImage && (
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>
+                  Thumbnail Caption
+                </div>
+                {editingFeaturedCaption ? (
+                  <input
+                    autoFocus
+                    value={featuredImageCaption}
+                    onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
+                    onBlur={() => setEditingFeaturedCaption(false)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedCaption(false) } }}
+                    placeholder="Short news-style caption…"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '7px 10px', borderRadius: '4px',
+                      background: '#0e0d0c', border: '1px solid rgba(212,168,83,0.35)',
+                      color: '#ede8df', fontSize: '13px',
+                      fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <div
+                    onClick={() => setEditingFeaturedCaption(true)}
+                    title="Click to edit caption"
+                    style={{
+                      padding: '7px 10px', borderRadius: '4px', cursor: 'text',
+                      border: '1px solid rgba(237,232,223,0.07)',
+                      background: 'transparent', minHeight: '34px',
+                      fontSize: '13px', fontStyle: featuredImageCaption ? 'normal' : 'italic',
+                      color: featuredImageCaption ? '#8c857c' : '#3a3530',
+                      fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
+                    }}
+                  >
+                    {featuredImageCaption || 'No caption — click to add'}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Alt text for hero image */}
             <div style={{ marginTop: '10px' }}>

@@ -1250,6 +1250,36 @@ button { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s
   font-style: italic;
 }
 
+/* Featured hero image + attached caption */
+.article-featured-figure {
+  margin: 0;
+}
+
+.article-featured-figure img {
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 4px 4px 0 0;
+}
+
+.article-featured-figure figcaption {
+  padding: 9px 14px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-2);
+  line-height: 1.4;
+  text-align: center;
+  background: #1c1a17;
+  border: 2px solid rgba(212, 168, 83, 0.6);
+  border-radius: 0 0 4px 4px;
+}
+
+[data-theme="light"] .article-featured-figure figcaption {
+  background: var(--bg-2);
+}
+
 .article-footer-nav {
   padding: 32px 0 64px;
   border-top: 1px solid var(--border);

@@ -62,6 +62,15 @@ function addCaptions(html) {
   )
 }
 
+function parseImageBrief(raw) {
+  if (!raw) return null
+  try {
+    const p = JSON.parse(raw)
+    if (p && typeof p === 'object') return p
+  } catch { /* legacy plain-text brief */ }
+  return null
+}
+
 /* ── Page ─────────────────────────────────────────────────── */
 export default async function ArticlePage({ params }) {
   const { slug } = await params
@@ -69,7 +78,7 @@ export default async function ArticlePage({ params }) {
 
   const { data: article, error } = await supabase
     .from('articles')
-    .select('id, title, slug, body, tags, meta_description, featured_image, created_at, author_id, authors(id, name, bio, photo_url)')
+    .select('id, title, slug, body, tags, meta_description, featured_image, image_brief, created_at, author_id, authors(id, name, bio, photo_url)')
     .eq('slug', slug)
     .eq('status', 'published')
     .single()
@@ -103,6 +112,9 @@ export default async function ArticlePage({ params }) {
   }
 
   const bodyHTML = addCaptions(renderBody(article.body))
+  const imageBrief = parseImageBrief(article.image_brief)
+  const featuredCaption = imageBrief?.caption?.trim() ?? ''
+  const featuredAlt = imageBrief?.altText?.trim() || article.title
   const publishedDate = new Date(article.created_at).toLocaleDateString('ms-MY', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
@@ -184,11 +196,18 @@ export default async function ArticlePage({ params }) {
         {/* ── Featured image ── */}
         {article.featured_image && (
           <div style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 20px 0', boxSizing: 'border-box' }}>
-            <img
-              src={article.featured_image}
-              alt={article.title}
-              style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '4px' }}
-            />
+            {featuredCaption ? (
+              <figure className="article-featured-figure">
+                <img src={article.featured_image} alt={featuredAlt} />
+                <figcaption>{featuredCaption}</figcaption>
+              </figure>
+            ) : (
+              <img
+                src={article.featured_image}
+                alt={featuredAlt}
+                style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '4px' }}
+              />
+            )}
           </div>
         )}
 
