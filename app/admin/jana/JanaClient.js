@@ -896,7 +896,7 @@ export default function JanaClient({ initialArticles = [] }) {
             textAlign: 'center', color: 'var(--t3)', fontSize: '13.5px', lineHeight: 1.8,
           }}>
           No articles in progress.<br/>
-          Click <span style={{ color: '#d4a853' }}>"New Article"</span> to get started.
+          Click <span style={{ color: '#d4a853' }}>&ldquo;New Article&rdquo;</span> to get started.
         </motion.div>
       )}
     </motion.div>

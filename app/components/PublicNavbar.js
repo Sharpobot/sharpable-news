@@ -82,10 +82,10 @@ export default function PublicNavbar() {
       <nav className="navbar" id="navbar">
         <div className="container">
           <div className="navbar-inner">
-            <a href="/" className="logo">
+            <Link href="/" className="logo">
               <span className="logo-word">Sharpable</span>
               <span className="logo-dot"></span>
-            </a>
+            </Link>
             <div className="nav-pipe"></div>
             <nav className="nav-links">
               <a href="#" className="nav-link active">Terkini</a>

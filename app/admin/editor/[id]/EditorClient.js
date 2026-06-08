@@ -166,10 +166,10 @@ function FixItem({ text }) {
 
 /* ── Quality flags panel (progressive disclosure) ──────────── */
 function QualityPanel({ qf, originalQf }) {
-  if (!qf || !Object.keys(qf).length) return null
-
   const [expanded,        setExpanded]        = useState(false)
   const [correctionsOpen, setCorrectionsOpen] = useState(false)
+
+  if (!qf || !Object.keys(qf).length) return null
 
   const hasRevision    = !!(originalQf && Object.keys(originalQf).length)
   const score          = qf.overall_score
