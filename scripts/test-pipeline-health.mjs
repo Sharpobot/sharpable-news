@@ -41,10 +41,10 @@ console.log('\n[2] topic-selector.js')
 const topicSelectorSrc = readFileSync(path.join(root, 'lib/agents/topic-selector.js'), 'utf8')
 
 check('exports topicSelector function',    topicSelectorSrc.includes('export async function topicSelector'))
-check('returns exactly 6 options',         topicSelectorSrc.includes('EXACTLY 6'))
-check('comment says 6 not 3',              topicSelectorSrc.includes('exactly 6 distinct') && !topicSelectorSrc.includes('exactly 3'))
-check('JSON template has 6 entries',       (topicSelectorSrc.match(/"sourceUrl"/g) || []).length >= 6)
-check('maxTokens increased to 1500',       topicSelectorSrc.includes('1500'))
+check('returns exactly 3 options',         topicSelectorSrc.includes('EXACTLY 3'))
+check('comment says 3 not 6',              topicSelectorSrc.includes('exactly 3 distinct') && !topicSelectorSrc.includes('exactly 6'))
+check('JSON template has 3 entries',       (topicSelectorSrc.match(/"sourceUrl"/g) || []).length === 3)
+check('maxTokens set to 1000',             topicSelectorSrc.includes('1000'))
 check('direction priority block present',  topicSelectorSrc.includes('DIRECTION PRIORITY'))
 check('topicDirection destructured',       topicSelectorSrc.includes('topicDirection = null'))
 
@@ -53,7 +53,7 @@ console.log('\n[3] pipeline-messages.js')
 const msgSrc = readFileSync(path.join(root, 'lib/pipeline-messages.js'), 'utf8')
 
 check('file exists and exports PIPELINE_MESSAGES', msgSrc.includes('export const PIPELINE_MESSAGES'))
-check('TOPIC_SELECTOR start says 6',       msgSrc.includes('6 topic options'))
+check('TOPIC_SELECTOR start says 3',       msgSrc.includes('3 topic options'))
 check('done message uses count function',  msgSrc.includes('topic options ready'))
 check('all 9 pipeline stages present',     [
   'TREND_SCOUT', 'TOPIC_SELECTOR', 'DEEP_RESEARCHER', 'ARTICLE_WRITER',
