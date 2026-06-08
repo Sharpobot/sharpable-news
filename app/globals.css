@@ -1250,6 +1250,23 @@ button { transition: background 0.15s ease, color 0.15s ease, border-color 0.15s
   font-style: italic;
 }
 
+/* Dark mode: brighter byline + inline image captions on article pages */
+html:not([data-theme="light"]) .article-byline {
+  color: #a8a29c;
+}
+html:not([data-theme="light"]) .article-byline .article-byline-author {
+  color: #d4cfc6;
+}
+html:not([data-theme="light"]) .article-byline .article-byline-date {
+  color: #a8a29c;
+}
+html:not([data-theme="light"]) .article-byline .article-byline-sep {
+  opacity: 0.45;
+}
+html:not([data-theme="light"]) .article-figure figcaption {
+  color: #a8a29c;
+}
+
 /* Featured hero image + attached caption */
 .article-featured-figure {
   margin: 0;

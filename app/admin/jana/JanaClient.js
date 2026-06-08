@@ -202,14 +202,15 @@ function ArticleCard({
   const anyFailed = AGENTS.some(a => progMap[a.key]?.status === 'failed')
   const pct       = total > 0 ? Math.round((done / total) * 100) : 0
 
-  // Section visibility
-  const showSearchSection = !isTerminal && (isPending || isSearchingBeforeId || isAwaitingSelection || (isGenerating && topicDirection.trim()))
+  // Section visibility — keep topic direction visible (read-only) from first search through completion
+  const hasStartedFlow  = !!articleId || isSearching
+  const showSearchSection = !isTerminal && (isPending || hasStartedFlow)
   const showTopicCards    = (isAwaitingSelection && hasOptions) || (isGenerating && topicOptions && topicOptions.length > 0)
   const showSearchMini    = isAwaitingSelection && !hasOptions
   const showProgress      = isGenerating || isTerminal
 
-  // Card title
-  const cardTitle = topicDirection.trim() || (articleId ? `New Article #${articleId.slice(0, 8)}` : 'New Article')
+  // Card title — topic direction, then selected topic, then generic label (never expose raw ID)
+  const cardTitle = topicDirection.trim() || selectedOption?.topic || 'New Article'
 
   // Border/background accent by state
   const cardBorderColor = isReadyToReview

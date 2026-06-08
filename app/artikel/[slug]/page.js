@@ -153,11 +153,11 @@ export default async function ArticlePage({ params }) {
                     <img
                       src={article.authors.photo_url}
                       alt={article.authors.name}
-                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                     />
                   ) : (
                     <div style={{
-                      width: '28px', height: '28px', borderRadius: '50%',
+                      width: '36px', height: '36px', borderRadius: '50%',
                       background: 'rgba(212,168,83,0.15)', flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#d4a853', fontSize: '11px', fontWeight: 700,
@@ -166,15 +166,15 @@ export default async function ArticlePage({ params }) {
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    <span style={{
+                    <span className="article-byline-author" style={{
                       fontSize: '13.5px', fontWeight: 600, lineHeight: 1,
                       textDecoration: 'underline', textUnderlineOffset: '3px',
                       textDecorationColor: 'rgba(237,232,223,0.18)',
                     }}>
                       {article.authors.name}
                     </span>
-                    <span style={{ opacity: 0.3, fontSize: '13px', lineHeight: 1 }}>·</span>
-                    <time dateTime={article.created_at} style={{ fontSize: '13px', lineHeight: 1 }}>
+                    <span className="article-byline-sep" style={{ fontSize: '13px', lineHeight: 1 }}>·</span>
+                    <time dateTime={article.created_at} className="article-byline-date" style={{ fontSize: '13px', lineHeight: 1 }}>
                       {publishedDate}
                     </time>
                   </div>

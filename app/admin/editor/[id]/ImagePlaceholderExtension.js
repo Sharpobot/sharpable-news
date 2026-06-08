@@ -88,41 +88,77 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
           user-select: none;
           box-sizing: border-box;
         }
+        .imgph-content {
+          flex: 1;
+          min-width: 0;
+        }
+        .imgph-label {
+          font-size: 9.5px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: rgba(212,168,83,0.45);
+          font-family: 'DM Sans', sans-serif;
+          margin-bottom: 3px;
+        }
         .imgph-desc {
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
           font-size: 12px;
           color: #56514d;
-          line-height: 1.4;
+          line-height: 1.45;
           font-family: 'DM Sans', sans-serif;
         }
         .imgph-actions {
           display: flex;
+          align-items: center;
           gap: 6px;
           flex-shrink: 0;
         }
+        .imgph-copy {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+          padding: 0;
+          border-radius: 4px;
+          border: 1px solid rgba(237,232,223,0.1);
+          background: transparent;
+          color: rgba(212,168,83,0.45);
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: color 0.15s, border-color 0.15s, background 0.15s;
+        }
+        .imgph-copy:hover {
+          color: rgba(212,168,83,0.85);
+          border-color: rgba(212,168,83,0.28);
+          background: rgba(212,168,83,0.06);
+        }
         @media (max-width: 640px) {
           .imgph-block {
-            flex-direction: column;
+            flex-wrap: wrap;
             align-items: flex-start;
-            padding: 8px 10px;
-            gap: 8px;
+            padding: 10px 12px;
+            gap: 10px;
+          }
+          .imgph-content {
+            flex: 1 1 calc(100% - 34px);
+            min-width: 0;
           }
           .imgph-desc {
-            -webkit-line-clamp: 2;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            overflow: hidden;
           }
           .imgph-actions {
             width: 100%;
+            justify-content: flex-end;
           }
-          .imgph-actions button {
+          .imgph-actions .imgph-upload,
+          .imgph-actions .imgph-skip {
             flex: 1;
             justify-content: center;
-          }
-        }
-        @media (min-width: 641px) {
-          .imgph-desc {
-            -webkit-line-clamp: unset;
+            text-align: center;
           }
         }
       `}</style>
@@ -147,30 +183,9 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
         </svg>
 
         {/* Description */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginBottom: '2px' }}>
-            <div style={{ fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(212,168,83,0.45)', fontFamily: "'DM Sans',sans-serif" }}>
-              AI Image Suggestion
-            </div>
-            {/* Copy button */}
-            <button
-              onClick={handleCopy}
-              title="Copy description"
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
-                color: 'rgba(212,168,83,0.35)',
-                display: 'flex', alignItems: 'center', borderRadius: '3px',
-                transition: 'color 0.15s', flexShrink: 0,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = 'rgba(212,168,83,0.7)' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(212,168,83,0.35)' }}
-            >
-              <CopyIcon />
-            </button>
-          </div>
-          <div className="imgph-desc">
-            {node.attrs.description}
-          </div>
+        <div className="imgph-content">
+          <div className="imgph-label">AI Image Suggestion</div>
+          <div className="imgph-desc">{node.attrs.description}</div>
           {error && (
             <div style={{ fontSize: '11px', color: '#ef4444', marginTop: '3px', fontFamily: "'DM Sans',sans-serif" }}>
               {error}
@@ -178,9 +193,19 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
           )}
         </div>
 
-        {/* Buttons */}
+        {/* Actions: copy + upload + skip */}
         <div className="imgph-actions">
           <button
+            type="button"
+            className="imgph-copy"
+            onClick={handleCopy}
+            title="Copy description"
+          >
+            <CopyIcon />
+          </button>
+          <button
+            type="button"
+            className="imgph-upload"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
             style={{
@@ -194,6 +219,8 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
             {uploading ? 'Uploading…' : 'Upload'}
           </button>
           <button
+            type="button"
+            className="imgph-skip"
             onClick={() => setShowSkipModal(true)}
             style={{
               padding: '4px 9px', borderRadius: '4px',

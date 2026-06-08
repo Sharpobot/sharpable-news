@@ -927,8 +927,8 @@ function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, s
         </div>
         <div>
           <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Meta Description</div>
-          <textarea value={metaDescription} onChange={e => setMetaDescription(e.target.value)} rows={3}
-            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }} />
+          <textarea value={metaDescription} onChange={e => setMetaDescription(e.target.value)} rows={4}
+            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, minHeight: '96px' }} />
         </div>
         <div>
           <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Tag</div>

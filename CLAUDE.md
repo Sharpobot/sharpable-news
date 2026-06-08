@@ -567,6 +567,14 @@ Input was cleared on search start. Fixed: input stays visible as read-only durin
 
 ---
 
+## CRITICAL RULES
+
+1. **`lib/inngest-functions.js` and `lib/agents/` are the most sensitive files.** Never modify them as part of UI, translation, or styling prompts — pipeline changes must be in dedicated focused prompts only.
+2. **Always specify exact file paths in prompts** — never use broad directory sweeps on `lib/`.
+3. **After any prompt touching pipeline files, verify the context object fields being passed into `save-article` are intact.**
+
+---
+
 ## Important Rules / Gotchas
 
 1. **Never use the anon Supabase client for server-side writes** — always `createAdminSupabaseClient()`.
