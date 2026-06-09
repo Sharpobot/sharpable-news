@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -7,24 +8,20 @@ import ConfirmationModal from '@/components/admin/ConfirmationModal'
 
 /* ── Status config ─────────────────────────────────────────── */
 const STATUS_CFG = {
-  awaiting_topic_selection: { label: 'Select Topic',     color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
-  generating:               { label: 'Generating',       color: '#d97706', bg: 'rgba(245,158,11,0.10)',  dot: '#f59e0b' },
-  ready_to_review:          { label: 'Ready to Review',  color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
-  draft:                    { label: 'Draft',            color: null,      bg: null,                     dot: null      },
-  published:                { label: 'Published',        color: '#059669', bg: 'rgba(16,185,129,0.10)',  dot: '#10b981' },
-  failed:                   { label: 'Failed',           color: '#dc2626', bg: 'rgba(239,68,68,0.10)',   dot: '#ef4444' },
+  awaiting_topic_selection: { label: 'Select Topic',    color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
+  generating:               { label: 'Generating',      color: '#d97706', bg: 'rgba(245,158,11,0.10)',  dot: '#f59e0b' },
+  ready_to_review:          { label: 'Ready to Review', color: '#2563eb', bg: 'rgba(59,130,246,0.10)',  dot: '#3b82f6' },
+  draft:                    { label: 'Draft',           color: null,      bg: null,                     dot: null      },
+  published:                { label: 'Published',       color: '#059669', bg: 'rgba(16,185,129,0.10)',  dot: '#10b981' },
+  failed:                   { label: 'Failed',          color: '#dc2626', bg: 'rgba(239,68,68,0.10)',   dot: '#ef4444' },
 }
-
-// Statuses where the dropdown is available
 const DROPDOWN_OPTIONS = [
-  { value: 'published',       label: 'Published' },
+  { value: 'published',       label: 'Published'       },
   { value: 'ready_to_review', label: 'Ready to Review' },
-  { value: 'draft',           label: 'Draft' },
+  { value: 'draft',           label: 'Draft'           },
 ]
-// Read-only statuses — no dropdown, no editor link
 const READ_ONLY_STATUS = new Set(['generating', 'failed', 'awaiting_topic_selection'])
-// Editable statuses — show editor link
-const EDITABLE = new Set(['ready_to_review', 'draft', 'published'])
+const EDITABLE         = new Set(['ready_to_review', 'draft', 'published'])
 
 /* ── Date formatter ─────────────────────────────────────────── */
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -33,19 +30,23 @@ function fmt(iso) {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
-/* ── Grid layout — 6 columns matching header & rows exactly ── */
-// checkbox(40px) | title(1fr) | status(165px) | views(62px) | date(110px) | action(36px)
-const COLS = '40px 1fr 165px 62px 110px 36px'
-
 export default function ArtikelClient({ initialArticles }) {
-  const [articles, setArticles]       = useState(initialArticles)
-  const [lm, setLm]                   = useState(false)
-  const [modal, setModal]             = useState(null)   // 'delete' | 'cancel' | 'bulk-delete' | null
-  const [targetArticle, setTarget]    = useState(null)
-  const [selectedIds, setSelectedIds] = useState(new Set())
-  const [openDropdown, setOpenDropdown] = useState(null) // article id whose dropdown is open
+  const [articles, setArticles]         = useState(initialArticles)
+  const [lm, setLm]                     = useState(false)
+  const [modal, setModal]               = useState(null)
+  const [targetArticle, setTarget]      = useState(null)
+  const [selectedIds, setSelectedIds]   = useState(new Set())
+  const [openDropdown, setOpenDropdown] = useState(null)   // article id
+  const [dropdownPos, setDropdownPos]   = useState(null)   // { top, left } — fixed viewport coords
+  const [isMounted, setIsMounted]       = useState(false)  // SSR guard for createPortal
 
-  /* ── Theme sync ─── */
+  // Map of article-id → trigger <button> DOM element, populated via callback refs
+  const triggerRefs = useRef(new Map())
+
+  /* ── Mount guard — createPortal needs document.body ── */
+  useEffect(() => { setIsMounted(true) }, [])
+
+  /* ── Theme ── */
   useEffect(() => {
     const saved = localStorage.getItem('admin-theme') || 'dark'
     setLm(saved === 'light')
@@ -54,33 +55,56 @@ export default function ArtikelClient({ initialArticles }) {
     return () => window.removeEventListener('admin-theme-change', handler)
   }, [])
 
-  /* ── Close dropdown on outside click ─── */
+  /* ── Close dropdown ── */
+  const closeDropdown = () => {
+    setOpenDropdown(null)
+    setDropdownPos(null)
+  }
+
+  /*
+   * Open dropdown for an article.
+   * Reads the trigger button's viewport position via getBoundingClientRect()
+   * so the portal menu can be placed with position:fixed without any
+   * relationship to the table's overflow:hidden context.
+   */
+  const openDropdownFor = (articleId) => {
+    const el = triggerRefs.current.get(articleId)
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    setDropdownPos({ top: rect.bottom + 6, left: rect.left })
+    setOpenDropdown(articleId)
+  }
+
+  /*
+   * Close on outside click.
+   * Excludes .status-dd-wrap (the trigger area) AND .status-dd-portal-menu
+   * (the portal menu itself, which lives in document.body — outside the wrap).
+   */
   useEffect(() => {
     if (!openDropdown) return
     const handler = (e) => {
-      if (!e.target.closest('.status-dd-wrap')) setOpenDropdown(null)
+      const inTrigger = e.target.closest('.status-dd-wrap')
+      const inMenu    = e.target.closest('.status-dd-portal-menu')
+      if (!inTrigger && !inMenu) closeDropdown()
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [openDropdown])
 
-  /* ── Selection helpers ─── */
+  /* ── Selection helpers ── */
   const selectionActive = selectedIds.size > 0
   const isAllSelected   = articles.length > 0 && articles.every(a => selectedIds.has(a.id))
   const toggleSelect    = (id) => setSelectedIds(prev => {
-    const next = new Set(prev)
-    next.has(id) ? next.delete(id) : next.add(id)
-    return next
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
   })
   const toggleSelectAll = () =>
     isAllSelected ? setSelectedIds(new Set()) : setSelectedIds(new Set(articles.map(a => a.id)))
   const exitSelection   = () => setSelectedIds(new Set())
 
-  /* ── Status update (single row dropdown) ─── */
+  /* ── Status update (single) ── */
   const updateStatus = async (articleId, newStatus) => {
-    setOpenDropdown(null)
+    closeDropdown()
     const originalStatus = articles.find(a => a.id === articleId)?.status
-    // Optimistic
     setArticles(list => list.map(a => a.id === articleId ? { ...a, status: newStatus } : a))
     try {
       const res = await fetch(`/api/articles/${articleId}`, {
@@ -89,72 +113,71 @@ export default function ArtikelClient({ initialArticles }) {
         body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) throw new Error()
-      toast.success(`Status dikemas kini kepada "${STATUS_CFG[newStatus]?.label ?? newStatus}".`)
+      toast.success(`Status updated to "${STATUS_CFG[newStatus]?.label ?? newStatus}".`)
     } catch {
-      // Revert
       setArticles(list => list.map(a => a.id === articleId ? { ...a, status: originalStatus } : a))
-      toast.error('Gagal mengemas kini status.')
+      toast.error('Failed to update status.')
     }
   }
 
-  /* ── Single delete / cancel ─── */
+  /* ── Single delete / cancel ── */
   const openDelete = (article) => { setTarget(article); setModal('delete') }
   const openCancel = (article) => { setTarget(article); setModal('cancel') }
 
   const handleDelete = async () => {
     if (!targetArticle) return
     setModal(null)
-    const label = targetArticle.title ?? `artikel ${targetArticle.id.slice(0, 8)}`
-    const tid = toast.loading('Memadam artikel...')
+    const label = targetArticle.title ?? `article ${targetArticle.id.slice(0, 8)}`
+    const tid = toast.loading('Deleting article...')
     try {
       const res = await fetch(`/api/articles/${targetArticle.id}`, { method: 'DELETE' })
-      if (!res.ok) { toast.error('Gagal memadam artikel.', { id: tid }); return }
+      if (!res.ok) { toast.error('Failed to delete.', { id: tid }); return }
       setArticles(prev => prev.filter(a => a.id !== targetArticle.id))
-      toast.success(`"${label}" dipadam.`, { id: tid })
+      toast.success(`"${label}" deleted.`, { id: tid })
     } catch {
-      toast.error('Ralat semasa memadam.', { id: tid })
+      toast.error('Error deleting.', { id: tid })
     }
   }
 
   const handleCancel = async () => {
     if (!targetArticle) return
     setModal(null)
-    const tid = toast.loading('Membatalkan...')
+    const tid = toast.loading('Cancelling...')
     try {
       const res = await fetch(`/api/articles/${targetArticle.id}`, { method: 'DELETE' })
-      if (!res.ok) { toast.error('Gagal membatalkan.', { id: tid }); return }
+      if (!res.ok) { toast.error('Failed to cancel.', { id: tid }); return }
       setArticles(prev => prev.filter(a => a.id !== targetArticle.id))
-      toast.success('Penjanaan dibatalkan.', { id: tid })
+      toast.success('Generation cancelled.', { id: tid })
     } catch {
-      toast.error('Ralat semasa membatalkan.', { id: tid })
+      toast.error('Error cancelling.', { id: tid })
     }
   }
 
-  /* ── Bulk delete ─── */
+  /* ── Bulk delete ── */
   const handleBulkDelete = async () => {
     setModal(null)
     const ids = [...selectedIds]
-    const tid = toast.loading(`Memadam ${ids.length} artikel...`)
+    const tid = toast.loading(`Deleting ${ids.length} articles...`)
     const results = await Promise.allSettled(
       ids.map(id => fetch(`/api/articles/${id}`, { method: 'DELETE' }))
     )
     const succeeded = ids.filter((_, i) =>
       results[i].status === 'fulfilled' && results[i].value?.ok
     )
-    const failCount = ids.length - succeeded.length
+    const failCount    = ids.length - succeeded.length
     const succeededSet = new Set(succeeded)
     setArticles(prev => prev.filter(a => !succeededSet.has(a.id)))
     exitSelection()
     failCount > 0
-      ? toast.error(`${succeeded.length} dipadam, ${failCount} gagal.`, { id: tid })
-      : toast.success(`${succeeded.length} artikel dipadam.`, { id: tid })
+      ? toast.error(`${succeeded.length} deleted, ${failCount} failed.`, { id: tid })
+      : toast.success(`${succeeded.length} articles deleted.`, { id: tid })
   }
 
-  /* ── Bulk status change ─── */
+  /* ── Bulk status change ── */
   const handleBulkStatus = async (newStatus) => {
-    const ids = [...selectedIds]
+    const ids   = [...selectedIds]
     const label = STATUS_CFG[newStatus]?.label ?? newStatus
-    const tid = toast.loading(`Mengemas kini ${ids.length} artikel...`)
+    const tid   = toast.loading(`Updating ${ids.length} articles...`)
     const results = await Promise.allSettled(
       ids.map(id => fetch(`/api/articles/${id}`, {
         method: 'PATCH',
@@ -165,16 +188,16 @@ export default function ArtikelClient({ initialArticles }) {
     const succeeded = ids.filter((_, i) =>
       results[i].status === 'fulfilled' && results[i].value?.ok
     )
-    const failCount = ids.length - succeeded.length
+    const failCount    = ids.length - succeeded.length
     const succeededSet = new Set(succeeded)
     setArticles(prev => prev.map(a => succeededSet.has(a.id) ? { ...a, status: newStatus } : a))
     exitSelection()
     failCount > 0
-      ? toast.error(`${succeeded.length} dikemas kini, ${failCount} gagal.`, { id: tid })
-      : toast.success(`${succeeded.length} artikel ditetapkan sebagai "${label}".`, { id: tid })
+      ? toast.error(`${succeeded.length} updated, ${failCount} failed.`, { id: tid })
+      : toast.success(`${succeeded.length} articles set to "${label}".`, { id: tid })
   }
 
-  /* ── CSS vars (theme) ─── */
+  /* ── CSS vars (theme) ── */
   const vars = lm ? `
     --bg:#f8f8f8; --surface:#ffffff; --surface2:#f1f1f1;
     --border:#e5e7eb; --divider:#f0f0f0;
@@ -185,7 +208,7 @@ export default function ArtikelClient({ initialArticles }) {
     --badge-bg:rgba(0,0,0,0.05);
     --jana-bg:rgba(212,168,83,0.1); --jana-border:rgba(212,168,83,0.28);
     --dd-bg:#ffffff; --dd-border:#e5e7eb; --dd-hover:#f3f4f6; --dd-shadow:0 4px 16px rgba(0,0,0,0.12);
-    --banner-bg:#ffffff; --banner-border:#e5e7eb; --banner-shadow:0 -4px 24px rgba(0,0,0,0.10);
+    --banner-bg:#ffffff; --banner-border:rgba(24,21,15,0.1);
     --cb-accent:#d4a853;
   ` : `
     --bg:#0c0b0a; --surface:#0f0e0d; --surface2:#131110;
@@ -197,9 +220,19 @@ export default function ArtikelClient({ initialArticles }) {
     --badge-bg:rgba(237,232,223,0.07);
     --jana-bg:rgba(212,168,83,0.08); --jana-border:rgba(212,168,83,0.22);
     --dd-bg:#1c1a18; --dd-border:rgba(237,232,223,0.1); --dd-hover:rgba(237,232,223,0.05); --dd-shadow:0 4px 20px rgba(0,0,0,0.35);
-    --banner-bg:#141210; --banner-border:rgba(237,232,223,0.09); --banner-shadow:0 -4px 24px rgba(0,0,0,0.4);
+    --banner-bg:#141210; --banner-border:rgba(237,232,223,0.09);
     --cb-accent:#d4a853;
   `
+
+  // Inline theme vars object for the portal (it lives in document.body, outside the CSS scope)
+  const themeStyle = Object.fromEntries(
+    vars.trim().split(';')
+      .map(s => s.trim()).filter(Boolean)
+      .map(s => { const i = s.indexOf(':'); return [s.slice(0, i).trim(), s.slice(i + 1).trim()] })
+  )
+
+  // The article whose dropdown is currently open
+  const ddArticle = openDropdown ? articles.find(a => a.id === openDropdown) ?? null : null
 
   return (
     <motion.div
@@ -212,82 +245,72 @@ export default function ArtikelClient({ initialArticles }) {
       <style>{`
         .admin-page-content { ${vars} }
 
-        /* ── Table shell ── */
-        .at-table {
+        /* ── Table wrapper ── */
+        .at-wrap {
           background: var(--surface);
           border: 1px solid var(--border);
-          border-radius: 8px; overflow: visible;
+          border-radius: 8px; overflow: hidden;
           box-shadow: var(--surface-shadow), var(--surface-inset);
           width: 100%;
         }
+        .at-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
-        /* ── Shared grid — header and rows use identical columns ── */
-        .at-header, .at-row {
-          display: grid;
-          grid-template-columns: ${COLS};
-          align-items: center;
-        }
-        .at-header {
-          padding: 9px 20px;
+        /* ── Column widths via <colgroup> ── */
+        .col-cb     { width: 44px; }
+        .col-status { width: 16%; }
+        .col-views  { width: 9%; }
+        .col-date   { width: 13%; }
+        .col-action { width: 72px; }
+
+        /* ── Header ── */
+        .at-table thead th {
+          padding: 9px 14px;
           border-bottom: 1px solid var(--border);
           font-size: 9px; font-weight: 700;
           letter-spacing: 0.13em; text-transform: uppercase;
-          color: var(--t3);
-          border-radius: 8px 8px 0 0;
+          color: var(--t3); white-space: nowrap;
+          text-align: left; background: var(--surface);
         }
-        .at-row {
-          padding: 13px 20px;
-          border-bottom: 1px solid var(--divider);
-          transition: background 0.1s;
-          position: relative;
-        }
-        .at-row:last-child { border-bottom: none; border-radius: 0 0 8px 8px; }
-        .at-row:hover { background: var(--row-hover); }
-        .at-row.at-selected { background: var(--sel-row) !important; }
+        .at-table thead th.th-cb     { width: 44px; padding-left: 16px; padding-right: 8px; text-align: center; }
+        .at-table thead th.th-center { text-align: center; }
+        .at-table thead th.th-right  { text-align: right; padding-right: 16px; }
 
-        /* ── Checkbox column ── */
-        .at-cb {
-          display: flex; align-items: center; justify-content: center;
-          opacity: 0; transition: opacity 0.13s;
-        }
-        /* Show on row hover, when row is selected, or when any selection is active */
-        .at-row:hover .at-cb,
-        .at-row.at-selected .at-cb,
-        .at-table.sel-active .at-cb { opacity: 1; }
-        /* Header checkbox always visible (content conditionally rendered) */
-        .at-header .at-cb { opacity: 1; }
+        /* ── Body rows ── */
+        .at-table tbody tr { border-bottom: 1px solid var(--divider); transition: background 0.1s; }
+        .at-table tbody tr:last-child  { border-bottom: none; }
+        .at-table tbody tr:hover       { background: var(--row-hover); }
+        .at-table tbody tr.at-selected { background: var(--sel-row) !important; }
 
-        .cb-box {
-          width: 15px; height: 15px; cursor: pointer;
-          accent-color: var(--cb-accent); flex-shrink: 0;
-        }
+        /* ── Body cells ── */
+        .at-table tbody td { padding: 13px 14px; vertical-align: middle; overflow: hidden; }
+        .at-table tbody td.td-cb     { padding-left: 16px; padding-right: 8px; text-align: center; width: 44px; }
+        .at-table tbody td.td-center { text-align: center; }
+        .at-table tbody td.td-right  { text-align: right; padding-right: 16px; }
+
+        /* ── Checkbox ── */
+        .at-cb { opacity: 0; transition: opacity 0.13s; display: inline-flex; align-items: center; justify-content: center; }
+        .at-table tbody tr:hover .at-cb,
+        .at-table tbody tr.at-selected .at-cb,
+        .at-wrap.sel-active .at-cb { opacity: 1; }
+        .at-table thead tr .at-cb  { opacity: 1; }
+        .cb-box { width: 15px; height: 15px; cursor: pointer; accent-color: var(--cb-accent); }
 
         /* ── Title cell ── */
-        .at-title-cell { min-width: 0; overflow: hidden; }
         .article-title-link {
           color: #d4a853; text-decoration: none;
           font-size: 13.5px; font-weight: 500; line-height: 1.4;
           overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-          display: block; max-width: 100%;
-          transition: color 0.1s;
+          display: block; max-width: 100%; transition: color 0.1s;
         }
         .article-title-link:hover { color: #e8c86c; }
         .at-title-plain {
-          font-size: 13.5px; font-weight: 500;
-          color: var(--t1); line-height: 1.4;
-          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-          max-width: 100%; display: block;
+          font-size: 13.5px; font-weight: 500; color: var(--t1);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%;
         }
-        .at-slug {
-          font-size: 10.5px; color: var(--t3);
-          margin-top: 2px; line-height: 1.3;
-          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
+        .at-slug { font-size: 10.5px; color: var(--t3); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* ── Status dropdown ── */
-        .status-dd-wrap {
-          position: relative; display: inline-flex; align-items: center;
-        }
+        /* ── Status trigger (badge + caret only — no inline menu) ── */
+        .status-dd-wrap { position: relative; display: inline-flex; align-items: center; }
         .status-dd-trigger {
           background: none; border: none; padding: 0;
           display: inline-flex; align-items: center; gap: 4px;
@@ -295,29 +318,27 @@ export default function ArtikelClient({ initialArticles }) {
         }
         .status-dd-trigger:not(.ro):hover { opacity: 0.78; }
         .status-dd-trigger.ro { cursor: default; pointer-events: none; }
-
         .status-pill {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 3px 10px; border-radius: 999px;
-          font-size: 11.5px; font-weight: 600;
-          letter-spacing: 0.02em; white-space: nowrap;
+          font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap;
         }
-        .status-pill-dot {
-          width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
-        }
-        .dd-caret {
-          color: var(--t3); display: inline-flex; align-items: center;
-          transition: transform 0.15s;
-        }
+        .status-pill-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+        .dd-caret { color: var(--t3); display: inline-flex; align-items: center; transition: transform 0.15s; }
         .dd-caret.open { transform: rotate(180deg); }
 
-        .status-dd-menu {
-          position: absolute; top: calc(100% + 6px); left: 0;
+        /*
+         * Portal dropdown menu — VISUAL styles only.
+         * position:fixed + top/left are set as inline style on the portal element.
+         * Class name .status-dd-portal-menu is used by the outside-click handler
+         * so clicks inside the menu don't trigger close.
+         */
+        .status-dd-portal-menu {
           background: var(--dd-bg);
           border: 1px solid var(--dd-border);
           border-radius: 8px; overflow: hidden;
           box-shadow: var(--dd-shadow);
-          z-index: 500; min-width: 170px;
+          min-width: 170px;
         }
         .dd-item {
           display: flex; align-items: center; gap: 8px;
@@ -327,46 +348,34 @@ export default function ArtikelClient({ initialArticles }) {
         }
         .dd-item:hover { background: var(--dd-hover); }
         .dd-item.dd-active { color: #d4a853; }
-        .dd-item-dot {
-          width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
-        }
+        .dd-item-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 
-        /* ── Date / views cells ── */
-        .at-num {
-          font-size: 11.5px; color: var(--t3);
-          font-variant-numeric: tabular-nums;
-        }
+        /* ── Numeric cells ── */
+        .at-num { font-size: 11.5px; color: var(--t3); font-variant-numeric: tabular-nums; }
 
-        /* ── Delete / cancel button ── */
-        .del-btn {
+        /* ── Action icon buttons ── */
+        .icon-btn {
           background: none; border: none; cursor: pointer;
           color: var(--del-idle); padding: 5px; border-radius: 4px;
-          display: flex; align-items: center; justify-content: center;
-          transition: color 0.12s; margin-left: auto;
+          display: inline-flex; align-items: center; justify-content: center;
+          transition: color 0.12s; text-decoration: none;
         }
-        .del-btn:hover { color: var(--del-hover); }
+        .del-btn:hover     { color: var(--del-hover); }
+        .preview-btn       { color: var(--t3); }
+        .preview-btn:hover { color: var(--t2); }
 
-        /* ── Generate button ── */
+        /* ── Generate link button ── */
         .jana-link-btn {
-          display: inline-flex; align-items: center; gap: 7px;
-          padding: 8px 16px;
-          background: var(--jana-bg); color: #d4a853;
-          border: 1px solid var(--jana-border);
+          display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px;
+          background: var(--jana-bg); color: #d4a853; border: 1px solid var(--jana-border);
           border-radius: 7px; font-size: 13px; font-weight: 600;
           text-decoration: none; white-space: nowrap;
           transition: background 0.12s, border-color 0.12s;
         }
-        .jana-link-btn:hover {
-          background: rgba(212,168,83,0.16);
-          border-color: rgba(212,168,83,0.4);
-        }
+        .jana-link-btn:hover { background: rgba(212,168,83,0.16); border-color: rgba(212,168,83,0.4); }
 
-        /* ── Bulk action banner ── */
-        @keyframes banner-pulse {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.35; }
-        }
-        /* Positioning is applied inline on the motion.div — only button styles here */
+        /* ── Bulk banner buttons ── */
+        @keyframes banner-pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
         .bulk-btn {
           padding: 7px 16px; border-radius: 6px;
           font-size: 12.5px; font-weight: 600; font-family: 'DM Sans', sans-serif;
@@ -374,50 +383,21 @@ export default function ArtikelClient({ initialArticles }) {
           transition: background 0.12s, border-color 0.12s, color 0.12s;
           white-space: nowrap; line-height: 1;
         }
-        .bulk-cancel {
-          background: none; border: 1px solid var(--banner-border); color: var(--t2);
-        }
-        .bulk-cancel:hover { border-color: var(--t2); color: var(--t1); }
-        .bulk-delete {
-          background: rgba(239,68,68,0.10); color: #ef4444;
-          border-color: rgba(239,68,68,0.25);
-        }
-        .bulk-delete:hover { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.4); }
-        .bulk-draft {
-          background: var(--badge-bg); color: var(--t2); border-color: var(--border);
-        }
-        .bulk-draft:hover { background: var(--row-hover); border-color: var(--border); }
-        .bulk-publish {
-          background: rgba(16,185,129,0.10); color: #10b981;
-          border-color: rgba(16,185,129,0.25);
-        }
+        .bulk-cancel        { background: none; border: 1px solid var(--banner-border); color: var(--t2); }
+        .bulk-cancel:hover  { border-color: var(--t2); color: var(--t1); }
+        .bulk-delete        { background: rgba(239,68,68,0.10);  color: #ef4444; border-color: rgba(239,68,68,0.25); }
+        .bulk-delete:hover  { background: rgba(239,68,68,0.18);  border-color: rgba(239,68,68,0.4); }
+        .bulk-draft         { background: var(--badge-bg); color: var(--t2); border-color: var(--border); }
+        .bulk-draft:hover   { background: var(--row-hover); }
+        .bulk-publish       { background: rgba(16,185,129,0.10); color: #10b981; border-color: rgba(16,185,129,0.25); }
         .bulk-publish:hover { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4); }
 
-        /* Responsive — matches settings banner breakpoints exactly */
         @media (max-width: 640px) {
           .bulk-banner { left: 0 !important; top: 51px !important; }
-          .bulk-btn { padding: 6px 12px; font-size: 12px; }
+          .bulk-btn    { padding: 6px 12px; font-size: 12px; }
+          .hide-mobile { display: none; }
         }
-        @media (min-width: 641px) {
-          .bulk-banner { left: 220px !important; }
-        }
-
-        /* ── Mobile ── */
-        @media (max-width: 640px) {
-          .at-header { display: none; }
-          .at-row {
-            grid-template-columns: 32px 1fr auto;
-            grid-template-rows: auto auto;
-            padding: 13px 16px; gap: 4px 10px;
-          }
-          .at-cb    { grid-column: 1; grid-row: 1 / span 2; opacity: 0; }
-          .at-table.sel-active .at-row .at-cb { opacity: 1; }
-          .at-row.at-selected .at-cb           { opacity: 1; }
-          .at-title-cell  { grid-column: 2; grid-row: 1; }
-          .at-status-cell { grid-column: 2; grid-row: 2; }
-          .at-action-cell { grid-column: 3; grid-row: 1 / span 2; display: flex; align-items: center; }
-          .at-views-cell, .at-date-cell { display: none; }
-        }
+        @media (min-width: 641px) { .bulk-banner { left: 220px !important; } }
       `}</style>
 
       {/* ── Modals ── */}
@@ -462,184 +442,228 @@ export default function ArtikelClient({ initialArticles }) {
       </div>
 
       {/* ── Table ── */}
-      <div className={`at-table${selectionActive ? ' sel-active' : ''}`}>
+      <div className={`at-wrap${selectionActive ? ' sel-active' : ''}`}>
+        <table className="at-table">
+          <colgroup>
+            <col className="col-cb" />
+            <col className="col-title" />
+            <col className="col-status" />
+            <col className="col-views hide-mobile" />
+            <col className="col-date  hide-mobile" />
+            <col className="col-action" />
+          </colgroup>
 
-        {/* Header row */}
-        <div className="at-header">
-          {/* Col 1 — select-all checkbox (only visible when selection is active) */}
-          <div className="at-cb">
-            {selectionActive && (
-              <input
-                type="checkbox"
-                className="cb-box"
-                checked={isAllSelected}
-                onChange={toggleSelectAll}
-                title={isAllSelected ? 'Deselect all' : 'Select all'}
-              />
+          <thead>
+            <tr>
+              <th className="th-cb">
+                <div className="at-cb">
+                  {selectionActive && (
+                    <input
+                      type="checkbox" className="cb-box"
+                      checked={isAllSelected} onChange={toggleSelectAll}
+                      title={isAllSelected ? 'Deselect all' : 'Select all'}
+                    />
+                  )}
+                </div>
+              </th>
+              <th>Title</th>
+              <th className="th-center">Status</th>
+              <th className="th-center hide-mobile">Views</th>
+              <th className="th-center hide-mobile">Date</th>
+              <th className="th-right" />
+            </tr>
+          </thead>
+
+          <tbody>
+            {articles.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: '52px 20px', textAlign: 'center', color: 'var(--t3)', fontSize: '13.5px', lineHeight: 1.8 }}>
+                  No articles yet.{' '}
+                  <Link href="/admin/jana" style={{ color: '#d4a853', textDecoration: 'none' }}>
+                    Generate the first one →
+                  </Link>
+                </td>
+              </tr>
+            ) : (
+              articles.map((article) => {
+                const isSelected   = selectedIds.has(article.id)
+                const isReadOnly   = READ_ONLY_STATUS.has(article.status)
+                const isDdOpen     = openDropdown === article.id
+                const isGenerating = ['generating', 'awaiting_topic_selection'].includes(article.status)
+                const cfg          = STATUS_CFG[article.status] ?? { label: article.status, color: null, bg: null, dot: null }
+
+                return (
+                  <tr key={article.id} className={isSelected ? 'at-selected' : ''}>
+
+                    {/* Col 1 — checkbox */}
+                    <td className="td-cb">
+                      <div className="at-cb">
+                        <input
+                          type="checkbox" className="cb-box"
+                          checked={isSelected} onChange={() => toggleSelect(article.id)}
+                        />
+                      </div>
+                    </td>
+
+                    {/* Col 2 — title + slug */}
+                    <td>
+                      {EDITABLE.has(article.status) && article.title ? (
+                        <Link href={`/admin/editor/${article.id}`} className="article-title-link">
+                          {article.title}
+                        </Link>
+                      ) : (
+                        <span className="at-title-plain">
+                          {article.title ?? (
+                            <span style={{ color: 'var(--t3)', fontStyle: 'italic', fontWeight: 400, fontSize: '13px' }}>
+                              Untitled
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {article.slug && !/^draft-\d+$/.test(article.slug) && (
+                        <div className="at-slug">/artikel/{article.slug}</div>
+                      )}
+                    </td>
+
+                    {/* Col 3 — status badge + trigger
+                        No inline <div className="status-dd-menu"> here.
+                        The menu is rendered via createPortal below to escape overflow:hidden. */}
+                    <td className="td-center">
+                      <div className="status-dd-wrap">
+                        <button
+                          ref={el => {
+                            // Callback ref: keep a map of article-id → DOM button element
+                            if (el) triggerRefs.current.set(article.id, el)
+                            else    triggerRefs.current.delete(article.id)
+                          }}
+                          className={`status-dd-trigger${isReadOnly ? ' ro' : ''}`}
+                          onClick={isReadOnly ? undefined : () =>
+                            isDdOpen ? closeDropdown() : openDropdownFor(article.id)
+                          }
+                        >
+                          <span
+                            className="status-pill"
+                            style={{ background: cfg.bg ?? 'var(--badge-bg)', color: cfg.color ?? 'var(--t2)' }}
+                          >
+                            <span className="status-pill-dot" style={{ background: cfg.dot ?? 'var(--t3)' }} />
+                            {cfg.label}
+                          </span>
+                          {!isReadOnly && (
+                            <span className={`dd-caret${isDdOpen ? ' open' : ''}`}>
+                              <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                <path d="M6 9l6 6 6-6"/>
+                              </svg>
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* Col 4 — views */}
+                    <td
+                      className="td-center at-num hide-mobile"
+                      style={{ color: article.views ? '#60a5fa' : undefined }}
+                    >
+                      {article.views ? article.views.toLocaleString() : '—'}
+                    </td>
+
+                    {/* Col 5 — date */}
+                    <td className="td-center at-num hide-mobile">
+                      {fmt(article.created_at)}
+                    </td>
+
+                    {/* Col 6 — action icons */}
+                    <td className="td-right">
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                        {article.status === 'published' && article.slug && (
+                          <a
+                            href={`/artikel/${article.slug}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="icon-btn preview-btn"
+                            title="View published article"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </a>
+                        )}
+                        <button
+                          className="icon-btn del-btn"
+                          onClick={() => isGenerating ? openCancel(article) : openDelete(article)}
+                          title={isGenerating ? 'Cancel generation' : 'Delete article'}
+                        >
+                          {isGenerating ? (
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+
+                  </tr>
+                )
+              })
             )}
-          </div>
-          {/* Col 2 */}
-          <span>Title</span>
-          {/* Col 3 */}
-          <span>Status</span>
-          {/* Col 4 */}
-          <span style={{ textAlign: 'right' }}>Views</span>
-          {/* Col 5 */}
-          <span>Date</span>
-          {/* Col 6 */}
-          <span />
-        </div>
+          </tbody>
+        </table>
+      </div>
 
-        {articles.length === 0 ? (
-          <div style={{ padding: '52px 20px', textAlign: 'center', color: 'var(--t3)', fontSize: '13.5px', lineHeight: 1.8 }}>
-            No articles yet.{' '}
-            <Link href="/admin/jana" style={{ color: '#d4a853', textDecoration: 'none' }}>
-              Generate the first one →
-            </Link>
-          </div>
-        ) : (
-          articles.map((article) => {
-            const isSelected      = selectedIds.has(article.id)
-            const isReadOnly      = READ_ONLY_STATUS.has(article.status)
-            const isDdOpen        = openDropdown === article.id
-            const isGenerating    = ['generating', 'awaiting_topic_selection'].includes(article.status)
-            const cfg             = STATUS_CFG[article.status] ?? { label: article.status, color: null, bg: null, dot: null }
-
+      {/*
+       * ── Status dropdown portal ──────────────────────────────────────────────
+       *
+       * Rendered directly into document.body via createPortal, so it is
+       * completely outside the table's overflow:hidden stacking context.
+       *
+       * Position: fixed (viewport-relative). Coordinates come from
+       * getBoundingClientRect() on the trigger button, computed when the
+       * dropdown opens — so it always sits flush below the badge regardless
+       * of scroll position or table layout.
+       *
+       * themeStyle injects the current CSS custom properties as inline styles
+       * so the portal menu picks up --dd-bg, --dd-border, etc. without being
+       * in the .admin-page-content scope.
+       */}
+      {isMounted && ddArticle && dropdownPos && createPortal(
+        <div
+          className="status-dd-portal-menu"
+          style={{
+            position: 'fixed',
+            top:  dropdownPos.top,
+            left: dropdownPos.left,
+            zIndex: 9999,
+            fontFamily: "'DM Sans', sans-serif",
+            ...themeStyle,
+          }}
+        >
+          {DROPDOWN_OPTIONS.map(opt => {
+            const oCfg      = STATUS_CFG[opt.value] ?? {}
+            const isCurrent = ddArticle.status === opt.value
             return (
               <div
-                key={article.id}
-                className={`at-row${isSelected ? ' at-selected' : ''}`}
+                key={opt.value}
+                className={`dd-item${isCurrent ? ' dd-active' : ''}`}
+                onClick={() => isCurrent ? closeDropdown() : updateStatus(ddArticle.id, opt.value)}
               >
-                {/* Col 1 — checkbox */}
-                <div className="at-cb">
-                  <input
-                    type="checkbox"
-                    className="cb-box"
-                    checked={isSelected}
-                    onChange={() => toggleSelect(article.id)}
-                  />
-                </div>
-
-                {/* Col 2 — title + slug */}
-                <div className="at-title-cell">
-                  {EDITABLE.has(article.status) && article.title ? (
-                    <Link href={`/admin/editor/${article.id}`} className="article-title-link">
-                      {article.title}
-                    </Link>
-                  ) : (
-                    <span className="at-title-plain">
-                      {article.title ?? (
-                        <span style={{ color: 'var(--t3)', fontStyle: 'italic', fontWeight: 400, fontSize: '13px' }}>
-                          Untitled
-                        </span>
-                      )}
-                    </span>
-                  )}
-                  {article.slug && !/^draft-\d+$/.test(article.slug) && (
-                    <div className="at-slug">/artikel/{article.slug}</div>
-                  )}
-                </div>
-
-                {/* Col 3 — status (dropdown or read-only badge) */}
-                <div className="at-status-cell">
-                  <div className="status-dd-wrap">
-                    <button
-                      className={`status-dd-trigger${isReadOnly ? ' ro' : ''}`}
-                      onClick={isReadOnly ? undefined : () => setOpenDropdown(isDdOpen ? null : article.id)}
-                    >
-                      {/* Badge pill */}
-                      <span
-                        className="status-pill"
-                        style={{
-                          background: cfg.bg ?? 'var(--badge-bg)',
-                          color: cfg.color ?? 'var(--t2)',
-                        }}
-                      >
-                        <span
-                          className="status-pill-dot"
-                          style={{ background: cfg.dot ?? 'var(--t3)' }}
-                        />
-                        {cfg.label}
-                      </span>
-                      {/* Caret — only for editable statuses */}
-                      {!isReadOnly && (
-                        <span className={`dd-caret${isDdOpen ? ' open' : ''}`}>
-                          <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path d="M6 9l6 6 6-6"/>
-                          </svg>
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Dropdown menu */}
-                    {isDdOpen && (
-                      <div className="status-dd-menu">
-                        {DROPDOWN_OPTIONS.map(opt => {
-                          const oCfg = STATUS_CFG[opt.value] ?? {}
-                          const isCurrent = article.status === opt.value
-                          return (
-                            <div
-                              key={opt.value}
-                              className={`dd-item${isCurrent ? ' dd-active' : ''}`}
-                              onClick={() => {
-                                if (!isCurrent) updateStatus(article.id, opt.value)
-                                else setOpenDropdown(null)
-                              }}
-                            >
-                              <span
-                                className="dd-item-dot"
-                                style={{ background: oCfg.dot ?? 'var(--t3)' }}
-                              />
-                              {opt.label}
-                              {isCurrent && (
-                                <svg style={{ marginLeft: 'auto' }} width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                  <path d="M20 6L9 17l-5-5"/>
-                                </svg>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Col 4 — views */}
-                <div
-                  className="at-num at-views-cell"
-                  style={{ textAlign: 'right', color: article.views ? '#60a5fa' : undefined }}
-                >
-                  {article.views ? article.views.toLocaleString() : '—'}
-                </div>
-
-                {/* Col 5 — date */}
-                <div className="at-num at-date-cell">
-                  {fmt(article.created_at)}
-                </div>
-
-                {/* Col 6 — delete / cancel */}
-                <div className="at-action-cell" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
-                    className="del-btn"
-                    onClick={() => isGenerating ? openCancel(article) : openDelete(article)}
-                    title={isGenerating ? 'Cancel generation' : 'Delete article'}
-                  >
-                    {isGenerating ? (
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>
-                      </svg>
-                    ) : (
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-                      </svg>
-                    )}
-                  </button>
-                </div>
+                <span className="dd-item-dot" style={{ background: oCfg.dot ?? 'var(--t3)' }} />
+                {opt.label}
+                {isCurrent && (
+                  <svg style={{ marginLeft: 'auto' }} width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                )}
               </div>
             )
-          })
-        )}
-      </div>
+          })}
+        </div>,
+        document.body
+      )}
 
       {/* ── Bulk action banner — slides down from top, matches settings banner ── */}
       <AnimatePresence>
@@ -651,24 +675,15 @@ export default function ArtikelClient({ initialArticles }) {
             exit={{   y: -64, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 420, damping: 36 }}
             style={{
-              position: 'fixed',
-              left: '240px',
-              right: 0,
-              top: 0,
-              zIndex: 120,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '10px',
-              padding: '10px 16px',
+              position: 'fixed', left: '240px', right: 0, top: 0, zIndex: 120,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: '10px', padding: '10px 16px',
               background: 'var(--banner-bg)',
               borderBottom: '1px solid var(--banner-border)',
               boxShadow: '0 4px 24px rgba(0,0,0,0.22)',
-              flexWrap: 'nowrap',
-              fontFamily: "'DM Sans', sans-serif",
+              flexWrap: 'nowrap', fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            {/* Left — amber pulse dot + count */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{
                 width: '7px', height: '7px', borderRadius: '50%',
@@ -679,7 +694,6 @@ export default function ArtikelClient({ initialArticles }) {
                 {selectedIds.size} {selectedIds.size === 1 ? 'article' : 'articles'} selected
               </span>
             </div>
-            {/* Right — action buttons */}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button className="bulk-btn bulk-cancel"  onClick={exitSelection}>Cancel</button>
               <button className="bulk-btn bulk-delete"  onClick={() => setModal('bulk-delete')}>Delete</button>
