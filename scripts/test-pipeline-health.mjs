@@ -47,6 +47,8 @@ check('JSON template has 3 entries',       (topicSelectorSrc.match(/"sourceUrl"/
 check('maxTokens set to 1000',             topicSelectorSrc.includes('1000'))
 check('direction priority block present',  topicSelectorSrc.includes('DIRECTION PRIORITY'))
 check('topicDirection destructured',       topicSelectorSrc.includes('topicDirection = null'))
+check('imports STYLE_GUIDE',               topicSelectorSrc.includes("import { STYLE_GUIDE } from './style-guide.js'"))
+check('STYLE_GUIDE injected in prompt',    topicSelectorSrc.includes('${STYLE_GUIDE}'))
 
 // ── 3. pipeline-messages.js ─────────────────────────────────────────────────
 console.log('\n[3] pipeline-messages.js')
