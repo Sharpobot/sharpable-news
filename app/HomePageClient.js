@@ -62,8 +62,8 @@ export default function HomePageClient({ articles = [] }) {
   const heroMain = next()
   const heroSide = [next(), next(), next(), next()]
 
-  // Terkini grid — exactly 6 slots, hard cap
-  const terkiniSlots = [next(), next(), next(), next(), next(), next()]
+  // Terkini grid — exactly 3 slots, 1×3 single row
+  const terkiniSlots = [next(), next(), next()]
 
   // Trending (4 slots)
   const trendItems = [next(), next(), next(), next()]
