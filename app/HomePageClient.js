@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import PublicNavbar from './components/PublicNavbar'
 import Footer from './components/Footer'
 
 /* ── Tag helpers ──────────────────────────────────────────── */
@@ -33,7 +32,7 @@ function AuthorPip({ author, size = 24 }) {
   return <span className="avatar" />
 }
 
-/* ── Shared placeholder badge style ─────────────────────── */
+/* ── Shared placeholder styles ───────────────────────────── */
 const PH_BADGE = {
   fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em',
   textTransform: 'uppercase', color: 'rgba(237,232,223,0.35)',
@@ -43,55 +42,46 @@ const PH_BADGE = {
 }
 const PH = { opacity: 0.48, cursor: 'default', pointerEvents: 'none' }
 
-/* ── Terkini grid placeholder pool ──────────────────────── */
-const GRID_SIZE = 12
-const PLACEHOLDER_ARTICLES = [
-  { id:'ph-1',  isPlaceholder:true, tags:['Penyelidikan'], title:'Google DeepMind Perkenal Pengganti AlphaFold dengan Pemodelan Interaksi Protein Penuh', meta_description:'Versi terbaharu melampaui lipatan protein tunggal untuk memetakan interaksi pelbagai protein yang kompleks.', featured_image:'https://picsum.photos/seed/deepmind-protein/800/500',   created_at:'2026-05-18T00:00:00Z', authors:{name:'Priya Menon'} },
-  { id:'ph-2',  isPlaceholder:true, tags:['Permulaan'],    title:'Model Sumber Terbuka Mistral Mengatasi GPT-4 dalam Penanda Aras Penaakulan Undang-Undang', meta_description:'Keluaran terbaharu makmal Paris ini menarik perhatian syarikat korporat besar.', featured_image:'https://picsum.photos/seed/mistral-paris/800/500',   created_at:'2026-05-17T00:00:00Z', authors:{name:'Thomas Laurent'} },
-  { id:'ph-3',  isPlaceholder:true, tags:['Analisis'],     title:'Ekonomi Tersembunyi Menjalankan LLM dalam Skala Besar: Pecahan Kos Penuh', meta_description:'Di sebalik setiap panggilan API tersembunyi rangkaian kluster GPU dan kontrak kuasa.', featured_image:'https://picsum.photos/seed/datacenter-gpu/800/500',   created_at:'2026-05-17T00:00:00Z', authors:{name:'Elena Vasquez'} },
-  { id:'ph-4',  isPlaceholder:true, tags:['Dasar'],        title:'Akta AI EU Masuk Fasa Kedua: Syarikat Malaysia Perlu Bersedia untuk Audit Pematuhan', meta_description:'Fasa penguatkuasaan penuh bermula suku ketiga 2026.', featured_image:'https://picsum.photos/seed/eu-policy-law/800/500',   created_at:'2026-05-16T00:00:00Z', authors:{name:'Sofia Reyes'} },
-  { id:'ph-5',  isPlaceholder:true, tags:['Alatan'],       title:'Cursor Melancarkan Mod Ejen: Pembangun Boleh Serahkan Keseluruhan Tugasan kepada AI', meta_description:'Kemas kini terbesar Cursor sejak pelancaran mengubah cara pembangun berinteraksi dengan kod.', featured_image:'https://picsum.photos/seed/cursor-ide-dev/800/500',   created_at:'2026-05-15T00:00:00Z', authors:{name:'James Whitfield'} },
-  { id:'ph-6',  isPlaceholder:true, tags:['Industri'],     title:'NVIDIA Catat Hasil Suku Tahunan Rekod $44 Bilion Didorong Permintaan GPU Pusat Data', meta_description:'Jenama H100 dan H200 terus mendominasi pasaran dengan senarai tunggu berbulan-bulan.', featured_image:'https://picsum.photos/seed/nvidia-chip-gpu/800/500',   created_at:'2026-05-14T00:00:00Z', authors:{name:'Marcus Chen'} },
-  { id:'ph-7',  isPlaceholder:true, tags:['Penyelidikan'], title:'Kaedah Baharu Penjajaran AI Mengurangkan Halusinasi 71% Tanpa Menjejaskan Prestasi', meta_description:'Penyelidik dari Stanford dan Carnegie Mellon memperkenalkan pendekatan latihan baharu.', featured_image:'https://picsum.photos/seed/ai-alignment-research/800/500', created_at:'2026-05-13T00:00:00Z', authors:{name:'Priya Menon'} },
-  { id:'ph-8',  isPlaceholder:true, tags:['Permulaan'],    title:'Syarikat Permulaan AI Malaysia Kumpul RM48 Juta untuk Platform Automasi Pematuhan', meta_description:'Firma tempatan ini mendapat sokongan daripada pelabur dari Singapura dan Taiwan.', featured_image:'https://picsum.photos/seed/malaysia-startup-kl/800/500',   created_at:'2026-05-12T00:00:00Z', authors:{name:'Laila Nasser'} },
-  { id:'ph-9',  isPlaceholder:true, tags:['Analisis'],     title:'Selepas GPT-4: Mengapa Model Seterusnya Mungkin Bukan Tentang Lebih Banyak Parameter', meta_description:'Generasi seterusnya bergantung pada seni bina baharu, bukan hanya pengiraan lebih banyak.', featured_image:'https://picsum.photos/seed/neural-arch-next/800/500',   created_at:'2026-05-11T00:00:00Z', authors:{name:'David Okafor'} },
-  { id:'ph-10', isPlaceholder:true, tags:['Dasar'],        title:'Pelan Nasional AI Malaysia 2030: Hala Tuju Baharu untuk Ekosistem Teknologi Tempatan', meta_description:'Rangka kerja terbaharu kerajaan menetapkan sasaran khusus untuk penerapan AI.', featured_image:'https://picsum.photos/seed/malaysia-tech-policy/800/500', created_at:'2026-05-10T00:00:00Z', authors:{name:'Sofia Reyes'} },
-  { id:'ph-11', isPlaceholder:true, tags:['Alatan'],       title:'Claude API Kini Menyokong Pengiraan Lanjutan: Apa yang Berubah untuk Pembangun', meta_description:'Anthropic memperluaskan keupayaan API dengan ciri pengiraan lanjutan baharu.', featured_image:'https://picsum.photos/seed/claude-api-dev/800/500',   created_at:'2026-05-09T00:00:00Z', authors:{name:'James Whitfield'} },
-  { id:'ph-12', isPlaceholder:true, tags:['Industri'],     title:'Pasaran Model AI Bahasa Kecil Semakin Rancak: Siapa Menang Perlumbaan Edge AI?', meta_description:'Microsoft, Apple, dan Qualcomm bersaing mendominasi segmen SLM.', featured_image:'https://picsum.photos/seed/edge-ai-mobile/800/500',   created_at:'2026-05-08T00:00:00Z', authors:{name:'Elena Vasquez'} },
+/* ── Placeholder pools (used when real article slot is empty) ── */
+const TERKINI_PH = [
+  { id:'ph-1',  tags:['Penyelidikan'], title:'Google DeepMind Perkenal Pengganti AlphaFold dengan Pemodelan Interaksi Protein Penuh', meta_description:'Versi terbaharu melampaui lipatan protein tunggal untuk memetakan interaksi pelbagai protein yang kompleks.', featured_image:'https://picsum.photos/seed/deepmind-protein/800/500',   created_at:'2026-05-18T00:00:00Z', authors:{name:'Priya Menon'} },
+  { id:'ph-2',  tags:['Permulaan'],    title:'Model Sumber Terbuka Mistral Mengatasi GPT-4 dalam Penanda Aras Penaakulan Undang-Undang', meta_description:'Keluaran terbaharu makmal Paris ini menarik perhatian syarikat korporat besar.', featured_image:'https://picsum.photos/seed/mistral-paris/800/500',   created_at:'2026-05-17T00:00:00Z', authors:{name:'Thomas Laurent'} },
+  { id:'ph-3',  tags:['Analisis'],     title:'Ekonomi Tersembunyi Menjalankan LLM dalam Skala Besar: Pecahan Kos Penuh', meta_description:'Di sebalik setiap panggilan API tersembunyi rangkaian kluster GPU dan kontrak kuasa.', featured_image:'https://picsum.photos/seed/datacenter-gpu/800/500',   created_at:'2026-05-17T00:00:00Z', authors:{name:'Elena Vasquez'} },
+  { id:'ph-4',  tags:['Dasar'],        title:'Akta AI EU Masuk Fasa Kedua: Syarikat Malaysia Perlu Bersedia untuk Audit Pematuhan', meta_description:'Fasa penguatkuasaan penuh bermula suku ketiga 2026.', featured_image:'https://picsum.photos/seed/eu-policy-law/800/500',   created_at:'2026-05-16T00:00:00Z', authors:{name:'Sofia Reyes'} },
+  { id:'ph-5',  tags:['Alatan'],       title:'Cursor Melancarkan Mod Ejen: Pembangun Boleh Serahkan Keseluruhan Tugasan kepada AI', meta_description:'Kemas kini terbesar Cursor sejak pelancaran mengubah cara pembangun berinteraksi dengan kod.', featured_image:'https://picsum.photos/seed/cursor-ide-dev/800/500',   created_at:'2026-05-15T00:00:00Z', authors:{name:'James Whitfield'} },
+  { id:'ph-6',  tags:['Industri'],     title:'NVIDIA Catat Hasil Suku Tahunan Rekod $44 Bilion Didorong Permintaan GPU Pusat Data', meta_description:'Jenama H100 dan H200 terus mendominasi pasaran dengan senarai tunggu berbulan-bulan.', featured_image:'https://picsum.photos/seed/nvidia-chip-gpu/800/500',   created_at:'2026-05-14T00:00:00Z', authors:{name:'Marcus Chen'} },
 ]
 
-/* ── Generic "Akan Datang" placeholder for stack/sidebar items ── */
-function AkanDatangSidebarItem({ className = 'sidebar-item', children }) {
-  return (
-    <div className={className} style={PH}>
-      <span style={PH_BADGE}>Akan Datang</span>
-      {children}
-    </div>
-  )
-}
-
 export default function HomePageClient({ articles = [] }) {
-  /* ── Section data slices ── */
-  const heroMain   = articles[0] ?? null
-  const heroSide   = [1, 2, 3, 4].map(i => articles[i] ?? null)
-  const trendItems = [0, 1, 2, 3].map(i => articles[i] ?? null)
-  const deepMain   = articles[0] ?? null
-  const deepStack  = [1, 2, 3, 4].map(i => articles[i] ?? null)
 
-  const researchPool = articles.filter(a => a.tags?.some(t => /penyelidik/i.test(t)))
-  const researchMain = researchPool[0] ?? null
-  const researchSide = [0, 1, 2, 3].map(i => researchPool[i + 1] ?? null)
+  /* ── Sequential slot assignment — no duplicates across page ── */
+  let cursor = 0
+  const next = () => articles[cursor++] ?? null
 
-  const startupPool = articles.filter(a => a.tags?.some(t => /permulaan/i.test(t) || /startup/i.test(t)))
-  const startupMain = startupPool[0] ?? null
-  const startupSide = [0, 1, 2, 3].map(i => startupPool[i + 1] ?? null)
+  // Hero (5 slots)
+  const heroMain = next()
+  const heroSide = [next(), next(), next(), next()]
 
-  const moreCards = [0, 1, 2].map(i => articles[i] ?? null)
+  // Terkini grid — exactly 6 slots, hard cap
+  const terkiniSlots = [next(), next(), next(), next(), next(), next()]
 
-  /* ── Terkini grid display cards ── */
-  const displayCards = articles.length >= GRID_SIZE
-    ? articles.slice(0, GRID_SIZE)
-    : [...articles, ...PLACEHOLDER_ARTICLES.slice(articles.length)]
+  // Trending (4 slots)
+  const trendItems = [next(), next(), next(), next()]
+
+  // Deep Dive (5 slots)
+  const deepMain  = next()
+  const deepStack = [next(), next(), next(), next()]
+
+  // Research Spotlight (5 slots)
+  const researchMain = next()
+  const researchSide = [next(), next(), next(), next()]
+
+  // Startup Watch (5 slots)
+  const startupMain = next()
+  const startupSide = [next(), next(), next(), next()]
+
+  // More from Sharpable (3 slots)
+  const moreCards = [next(), next(), next()]
 
   /* ── Scroll-reveal ── */
   useEffect(() => {
@@ -118,8 +108,6 @@ export default function HomePageClient({ articles = [] }) {
 
   return (
     <>
-      <PublicNavbar />
-
       {/* ═══════════ BREAKING TICKER ═══════════ */}
       <div className="ticker-bar">
         <div className="ticker-label">LIVE</div>
@@ -150,7 +138,7 @@ export default function HomePageClient({ articles = [] }) {
         <div className="container">
           <div className="hero-grid" style={{ opacity: 0, animation: 'fadeUp 0.75s ease 0.05s forwards' }}>
 
-            {/* ── Hero main ── */}
+            {/* Hero main */}
             {heroMain ? (
               <div className="hero-main">
                 <Link href={`/artikel/${heroMain.slug}`} style={{ display: 'block', textDecoration: 'none' }}>
@@ -200,7 +188,7 @@ export default function HomePageClient({ articles = [] }) {
               </div>
             )}
 
-            {/* ── Hero sidebar ── */}
+            {/* Hero sidebar */}
             <div className="hero-sidebar">
               <div className="sidebar-header">Berita Utama</div>
               <div className="sidebar-list">
@@ -227,7 +215,7 @@ export default function HomePageClient({ articles = [] }) {
 
       <div className="divider"></div>
 
-      {/* ═══════════ LATEST (3-col grid) ═══════════ */}
+      {/* ═══════════ LATEST — exactly 6 slots, 3×2 grid ═══════════ */}
       <section className="section">
         <div className="container">
           <div className="sec-head">
@@ -235,24 +223,23 @@ export default function HomePageClient({ articles = [] }) {
             <a href="#" className="view-all">Lihat semua →</a>
           </div>
           <div className="cards-grid">
-            {displayCards.map((card, i) => {
-              if (card.isPlaceholder) {
+            {terkiniSlots.map((card, i) => {
+              if (!card) {
+                const ph = TERKINI_PH[i] ?? TERKINI_PH[i % TERKINI_PH.length]
                 return (
-                  <div key={card.id} className="card reveal" style={{ ...PH }}>
+                  <div key={`tkph-${i}`} className="card reveal" style={PH}>
                     <div className="card-img">
                       <div className={`card-img-inner ci-${(i % 6) + 1}`}>
-                        <img className="card-photo" src={card.featured_image} alt={card.title} />
+                        <img className="card-photo" src={ph.featured_image} alt={ph.title} />
                       </div>
                     </div>
-                    <div className="card-cat">
-                      <span style={PH_BADGE}>Akan Datang</span>
-                    </div>
-                    <h3 className="card-title">{card.title}</h3>
-                    {card.meta_description && <p className="card-excerpt">{card.meta_description}</p>}
+                    <div className="card-cat"><span style={PH_BADGE}>Akan Datang</span></div>
+                    <h3 className="card-title">{ph.title}</h3>
+                    <p className="card-excerpt">{ph.meta_description}</p>
                     <div className="card-meta">
-                      <span>{card.authors?.name}</span>
+                      <span>{ph.authors?.name}</span>
                       <span className="dot" />
-                      <span>{fmtDate(card.created_at)}</span>
+                      <span>{fmtDate(ph.created_at)}</span>
                     </div>
                   </div>
                 )
@@ -313,16 +300,10 @@ export default function HomePageClient({ articles = [] }) {
                 <span className="trend-num">{String(i + 1).padStart(2, '0')}</span>
                 <div className="trend-body">
                   <div className="trend-cat">
-                    {i === 0 && <span className="tag t-industry">Industri</span>}
-                    {i === 1 && <span className="tag t-tools">Alatan</span>}
-                    {i === 2 && <span className="tag t-policy">Dasar</span>}
-                    {i === 3 && <span className="tag t-research">Penyelidikan</span>}
+                    {[<span key="t" className="tag t-industry">Industri</span>, <span key="t" className="tag t-tools">Alatan</span>, <span key="t" className="tag t-policy">Dasar</span>, <span key="t" className="tag t-research">Penyelidikan</span>][i]}
                   </div>
                   <div className="trend-title">
-                    {i === 0 && "Sam Altman: 'Kita Mungkin Saksikan Sistem AI Mampu Menjalankan Penyelidikan Saintifik Baharu Menjelang 2026'"}
-                    {i === 1 && 'Cursor lwn GitHub Copilot lwn Windsurf: Perbandingan Jujur Seorang Pembangun pada 2026'}
-                    {i === 2 && 'Majlis AI Negara China Keluarkan Garis Panduan Baharu untuk Penggunaan Model Domestik'}
-                    {i === 3 && 'Keterepretasian Mekanistik Hasilkan Kejayaan dalam Memahami Kepala Perhatian Model AI'}
+                    {["Sam Altman: 'Kita Mungkin Saksikan Sistem AI Mampu Menjalankan Penyelidikan Saintifik Baharu Menjelang 2026'", 'Cursor lwn GitHub Copilot lwn Windsurf: Perbandingan Jujur Seorang Pembangun pada 2026', 'Majlis AI Negara China Keluarkan Garis Panduan Baharu untuk Penggunaan Model Domestik', 'Keterepretasian Mekanistik Hasilkan Kejayaan dalam Memahami Kepala Perhatian Model AI'][i]}
                   </div>
                   <div className="trend-meta"><span style={PH_BADGE}>Akan Datang</span></div>
                 </div>
@@ -341,16 +322,11 @@ export default function HomePageClient({ articles = [] }) {
           </div>
           <div className="deep-grid">
 
-            {/* Featured card */}
             {deepMain ? (
               <Link href={`/artikel/${deepMain.slug}`} className="featured-card reveal" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="card-img">
                   <div className="card-img-inner ci-4">
-                    <img
-                      className="card-photo"
-                      src={deepMain.featured_image ?? `https://picsum.photos/seed/${deepMain.slug}/800/600`}
-                      alt={deepMain.title}
-                    />
+                    <img className="card-photo" src={deepMain.featured_image ?? `https://picsum.photos/seed/${deepMain.slug}/800/600`} alt={deepMain.title} />
                   </div>
                 </div>
                 <div className="card-cat" style={{ marginBottom: '10px' }}>
@@ -385,15 +361,14 @@ export default function HomePageClient({ articles = [] }) {
               </div>
             )}
 
-            {/* Stack list */}
             <div className="stack-list">
               {deepStack.map((a, i) => {
                 const ci = [5, 6, 1, 3][i]
                 const phData = [
-                  { seed: 'bigtech-acquire', alt: 'Penyatuan teknologi', cat: 't-startups', label: 'Permulaan', title: 'Penyatuan Senyap: Bagaimana Gergasi Teknologi Menyerap Ekosistem Syarikat Permulaan AI', meta: 'Elena Vasquez · 13 Mei · 9 min' },
-                  { seed: 'ai-agent-robot',  alt: 'Automasi AI',       cat: 't-tools',    label: 'Alatan',    title: 'Melampaui Autolengkap: Gelombang Baharu Ejen AI yang Benar-Benar Menghasilkan Produk', meta: 'Marcus Chen · 12 Mei · 7 min' },
-                  { seed: 'law-court-policy',alt: 'Dasar AI',           cat: 't-policy',   label: 'Dasar',     title: 'Liabiliti di Era AI: Siapa Menanggung Akibat Apabila Model Tersasar Secara Bencana?', meta: 'Sofia Reyes · 11 Mei · 8 min' },
-                  { seed: 'nvidia-chip',     alt: 'GPU semikonduktor',  cat: 't-industry', label: 'Industri',  title: 'Platform NIM NVIDIA Senyap-Senyap Menjadi Kubernetes untuk Inferens AI', meta: 'James Whitfield · 10 Mei · 6 min' },
+                  { seed: 'bigtech-acquire', alt: 'Penyatuan teknologi', cat: 't-startups', label: 'Permulaan', title: 'Penyatuan Senyap: Bagaimana Gergasi Teknologi Menyerap Ekosistem Syarikat Permulaan AI' },
+                  { seed: 'ai-agent-robot',  alt: 'Automasi AI',        cat: 't-tools',    label: 'Alatan',    title: 'Melampaui Autolengkap: Gelombang Baharu Ejen AI yang Benar-Benar Menghasilkan Produk' },
+                  { seed: 'law-court-policy',alt: 'Dasar AI',            cat: 't-policy',   label: 'Dasar',     title: 'Liabiliti di Era AI: Siapa Menanggung Akibat Apabila Model Tersasar Secara Bencana?' },
+                  { seed: 'nvidia-chip',     alt: 'GPU semikonduktor',   cat: 't-industry', label: 'Industri',  title: 'Platform NIM NVIDIA Senyap-Senyap Menjadi Kubernetes untuk Inferens AI' },
                 ][i]
                 return a ? (
                   <Link key={a.id} href={`/artikel/${a.slug}`} className="stack-item reveal" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -436,16 +411,10 @@ export default function HomePageClient({ articles = [] }) {
             <Link href="/kategori/Penyelidikan" className="view-all">Semua Penyelidikan →</Link>
           </div>
           <div className="cat-grid">
-
-            {/* Main */}
             {researchMain ? (
               <Link href={`/artikel/${researchMain.slug}`} className="cat-main reveal" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="cat-main-img">
-                  <img
-                    className="card-photo"
-                    src={researchMain.featured_image ?? `https://picsum.photos/seed/${researchMain.slug}/1200/675`}
-                    alt={researchMain.title}
-                  />
+                  <img className="card-photo" src={researchMain.featured_image ?? `https://picsum.photos/seed/${researchMain.slug}/1200/675`} alt={researchMain.title} />
                 </div>
                 <div style={{ marginBottom: '12px' }}>
                   {researchMain.tags?.[0] && <span className={`tag ${tagClass(researchMain.tags[0])}`}>{researchMain.tags[0]}</span>}
@@ -477,7 +446,6 @@ export default function HomePageClient({ articles = [] }) {
               </div>
             )}
 
-            {/* Sidebar */}
             <div className="cat-side-list">
               {researchSide.map((a, i) => {
                 const phData = [
@@ -525,16 +493,10 @@ export default function HomePageClient({ articles = [] }) {
             <Link href="/kategori/Permulaan" className="view-all">Semua Permulaan →</Link>
           </div>
           <div className="cat-grid">
-
-            {/* Main */}
             {startupMain ? (
               <Link href={`/artikel/${startupMain.slug}`} className="cat-main reveal" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="cat-main-img">
-                  <img
-                    className="card-photo"
-                    src={startupMain.featured_image ?? `https://picsum.photos/seed/${startupMain.slug}/1200/675`}
-                    alt={startupMain.title}
-                  />
+                  <img className="card-photo" src={startupMain.featured_image ?? `https://picsum.photos/seed/${startupMain.slug}/1200/675`} alt={startupMain.title} />
                 </div>
                 <div style={{ marginBottom: '12px' }}>
                   {startupMain.tags?.[0] && <span className={`tag ${tagClass(startupMain.tags[0])}`}>{startupMain.tags[0]}</span>}
@@ -566,14 +528,13 @@ export default function HomePageClient({ articles = [] }) {
               </div>
             )}
 
-            {/* Sidebar */}
             <div className="cat-side-list">
               {startupSide.map((a, i) => {
                 const phData = [
-                  { seed: 'cohere-enterprise',      alt: 'Cohere korporat',     title: 'Cohere Beralih ke Hanya Korporat, Tutup Akses API B2C Secara Kekal', meta: 'James Whitfield · 12 Mei · 4 min' },
-                  { seed: 'character-ai-social',    alt: 'Character AI',        title: 'Character.AI Lapor 100 Juta Pengguna Aktif — Bolehkah Ia Jana Pendapatan Sebelum Wang Habis?', meta: 'Sofia Reyes · 11 Mei · 7 min' },
-                  { seed: 'research-startup-lab',   alt: 'Makmal penyelidikan', title: "Bekas Penyelidik OpenAI Lancar 'Northlight' — Makmal Asas Berfokus Perancangan Jangka Panjang", meta: 'Marcus Chen · 9 Mei · 5 min' },
-                  { seed: 'startup-pitch-demo',     alt: 'Pitching permulaan',  title: 'YC W26: Syarikat AI Paling Patut Diperhati daripada Kumpulan Tahun Ini', meta: 'Laila Nasser · 7 Mei · 8 min' },
+                  { seed: 'cohere-enterprise',    alt: 'Cohere korporat',     title: 'Cohere Beralih ke Hanya Korporat, Tutup Akses API B2C Secara Kekal', meta: 'James Whitfield · 12 Mei · 4 min' },
+                  { seed: 'character-ai-social',  alt: 'Character AI',        title: 'Character.AI Lapor 100 Juta Pengguna Aktif — Bolehkah Ia Jana Pendapatan Sebelum Wang Habis?', meta: 'Sofia Reyes · 11 Mei · 7 min' },
+                  { seed: 'research-startup-lab', alt: 'Makmal penyelidikan', title: "Bekas Penyelidik OpenAI Lancar 'Northlight' — Makmal Asas Berfokus Perancangan Jangka Panjang", meta: 'Marcus Chen · 9 Mei · 5 min' },
+                  { seed: 'startup-pitch-demo',   alt: 'Pitching permulaan',  title: 'YC W26: Syarikat AI Paling Patut Diperhati daripada Kumpulan Tahun Ini', meta: 'Laila Nasser · 7 Mei · 8 min' },
                 ][i]
                 return a ? (
                   <Link key={a.id} href={`/artikel/${a.slug}`} className="cat-side-item reveal" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -615,19 +576,15 @@ export default function HomePageClient({ articles = [] }) {
           <div className="cards-grid">
             {moreCards.map((a, i) => {
               const phData = [
-                { seed: 'whitehouse-gov',    alt: 'Kerajaan dan dasar',        cat: 't-policy',   label: 'Dasar',    title: 'Di Sebalik Majlis AI Rumah Putih: Apa yang Sebenarnya Membimbangkan Mereka', excerpt: 'Laporan eksklusif tentang perdebatan dalaman yang membentuk tadbir urus AI Amerika Syarikat.' },
-                { seed: 'coding-developer',  alt: 'Alatan pengekodan',         cat: 't-tools',    label: 'Alatan',   title: 'Kami Uji Semua AI Penulisan Kod Utama pada 2026. Inilah yang Sebenarnya Berubah.', excerpt: 'Daripada Cursor dan Copilot hingga Devin dan Claude Code, landskap pembangunan kod berbantukan AI telah berubah.' },
-                { seed: 'global-geopolitics',alt: 'Geopolitik teknologi global',cat: 't-industry', label: 'Industri', title: 'Geopolitik Kawalan Eksport GPU: Tinjauan Enam Bulan', excerpt: 'Enam bulan selepas sekatan cip terbaharu, kami mengkaji negara-negara yang menemui jalan alternatif.' },
+                { seed: 'whitehouse-gov',    alt: 'Kerajaan dan dasar',         cat: 't-policy',   label: 'Dasar',    title: 'Di Sebalik Majlis AI Rumah Putih: Apa yang Sebenarnya Membimbangkan Mereka', excerpt: 'Laporan eksklusif tentang perdebatan dalaman yang membentuk tadbir urus AI Amerika Syarikat.' },
+                { seed: 'coding-developer',  alt: 'Alatan pengekodan pembangun', cat: 't-tools',    label: 'Alatan',   title: 'Kami Uji Semua AI Penulisan Kod Utama pada 2026. Inilah yang Sebenarnya Berubah.', excerpt: 'Daripada Cursor dan Copilot hingga Devin dan Claude Code, landskap pembangunan kod berbantukan AI telah berubah.' },
+                { seed: 'global-geopolitics',alt: 'Geopolitik teknologi global', cat: 't-industry', label: 'Industri', title: 'Geopolitik Kawalan Eksport GPU: Tinjauan Enam Bulan', excerpt: 'Enam bulan selepas sekatan cip terbaharu, kami mengkaji negara-negara yang menemui jalan alternatif.' },
               ][i]
               return a ? (
                 <Link key={a.id} href={`/artikel/${a.slug}`} className="card reveal" style={{ textDecoration: 'none' }}>
                   <div className="card-img">
                     <div className={`card-img-inner ci-${[6, 2, 4][i]}`}>
-                      <img
-                        className="card-photo"
-                        src={a.featured_image ?? `https://picsum.photos/seed/${a.slug}/800/500`}
-                        alt={a.title}
-                      />
+                      <img className="card-photo" src={a.featured_image ?? `https://picsum.photos/seed/${a.slug}/800/500`} alt={a.title} />
                     </div>
                   </div>
                   <div className="card-cat">
@@ -654,9 +611,7 @@ export default function HomePageClient({ articles = [] }) {
                   <div className="card-cat"><span style={PH_BADGE}>Akan Datang</span></div>
                   <h3 className="card-title">{phData.title}</h3>
                   <p className="card-excerpt">{phData.excerpt}</p>
-                  <div className="card-meta">
-                    <span style={PH_BADGE}>Akan Datang</span>
-                  </div>
+                  <div className="card-meta"><span style={PH_BADGE}>Akan Datang</span></div>
                 </div>
               )
             })}
@@ -673,18 +628,9 @@ export default function HomePageClient({ articles = [] }) {
               <h2 className="nl-title">Kekal selangkah lebih maju dalam dunia AI — setiap pagi.</h2>
               <p className="nl-desc">The Sharpable Brief menapis isyarat daripada gangguan: lima cerita AI penting, dipilih oleh pasukan editorial kami, dihantar ke peti masuk anda sebelum jam 8 pagi.</p>
               <div className="nl-stats">
-                <div>
-                  <div className="stat-n">84k</div>
-                  <div className="stat-l">Pelanggan</div>
-                </div>
-                <div>
-                  <div className="stat-n">4.9</div>
-                  <div className="stat-l">Penilaian purata</div>
-                </div>
-                <div>
-                  <div className="stat-n">Harian</div>
-                  <div className="stat-l">Kekerapan</div>
-                </div>
+                <div><div className="stat-n">84k</div><div className="stat-l">Pelanggan</div></div>
+                <div><div className="stat-n">4.9</div><div className="stat-l">Penilaian purata</div></div>
+                <div><div className="stat-n">Harian</div><div className="stat-l">Kekerapan</div></div>
               </div>
             </div>
             <div className="nl-form">
@@ -699,7 +645,6 @@ export default function HomePageClient({ articles = [] }) {
       </section>
 
       <Footer />
-
     </>
   )
 }

@@ -17,15 +17,17 @@ function fmtDate(iso) {
 
 const POPULAR = ['GPT-5', 'Akta AI EU', 'keterepretasian', 'Mistral', 'Claude', 'ejen AI', 'RLHF']
 
-// Default fallback categories if fetch fails
 const DEFAULT_CATEGORIES = ['Penyelidikan', 'Permulaan', 'Alatan', 'Dasar', 'Analisis', 'Industri']
 
-export default function PublicNavbar() {
+/**
+ * categories prop is fetched server-side by PublicNavbarServer and passed in.
+ * Falls back to DEFAULT_CATEGORIES if not provided (e.g. during testing).
+ */
+export default function PublicNavbar({ categories = DEFAULT_CATEGORIES }) {
   const [searchOpen,    setSearchOpen]    = useState(false)
   const [query,         setQuery]         = useState('')
   const [results,       setResults]       = useState([])
   const [loading,       setLoading]       = useState(false)
-  const [categories,    setCategories]    = useState(DEFAULT_CATEGORIES)
   const [subOpen,       setSubOpen]       = useState(false)
   const [subEmail,      setSubEmail]      = useState('')
   const [subError,      setSubError]      = useState('')
@@ -33,14 +35,6 @@ export default function PublicNavbar() {
   const [subSubmitting, setSubSubmitting] = useState(false)
   const inputRef    = useRef(null)
   const subInputRef = useRef(null)
-
-  /* ── Fetch dynamic categories ── */
-  useEffect(() => {
-    fetch('/api/categories')
-      .then(r => r.json())
-      .then(data => { if (data.categories?.length) setCategories(data.categories) })
-      .catch(() => {})
-  }, [])
 
   /* ── Navbar scroll border ── */
   useEffect(() => {

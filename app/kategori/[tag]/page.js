@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/db/supabase-server'
 import Link from 'next/link'
-import PublicNavbar from '@/app/components/PublicNavbar'
+import PublicNavbarServer from '@/app/components/PublicNavbarServer'
 import Footer from '@/app/components/Footer'
 import { notFound } from 'next/navigation'
 
@@ -66,7 +66,7 @@ export default async function KategoriPage({ params }) {
 
   return (
     <>
-      <PublicNavbar />
+      <PublicNavbarServer />
       <div style={{
         minHeight: '100vh',
         paddingTop: '80px',

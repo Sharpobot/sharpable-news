@@ -4,7 +4,7 @@ import { generateHTML } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import { notFound } from 'next/navigation'
-import PublicNavbar from '@/app/components/PublicNavbar'
+import PublicNavbarServer from '@/app/components/PublicNavbarServer'
 import RelatedArticles from '@/app/components/RelatedArticles'
 import Footer from '@/app/components/Footer'
 
@@ -133,7 +133,7 @@ export default async function ArticlePage({ params }) {
 
   return (
     <>
-      <PublicNavbar />
+      <PublicNavbarServer />
 
       <div className="article-page">
 

@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/db/supabase-server'
 import HomePageClient from './HomePageClient'
+import PublicNavbarServer from './components/PublicNavbarServer'
 
 export const revalidate = 60
 
@@ -32,7 +33,7 @@ export default async function Page() {
     .select('id, title, slug, tags, meta_description, featured_image, body, created_at, authors(name, photo_url)')
     .eq('status', 'published')
     .order('created_at', { ascending: false })
-    .limit(30)
+    .limit(33) // enough to fill all slots across the page
 
   // Strip body after computing read_time — don't ship large TipTap JSON to client
   const articles = (raw ?? []).map(({ body, ...rest }) => ({
@@ -40,5 +41,11 @@ export default async function Page() {
     read_time: calcReadTime(body),
   }))
 
-  return <HomePageClient articles={articles} />
+  // PublicNavbarServer fetches categories server-side — no client flash
+  return (
+    <>
+      <PublicNavbarServer />
+      <HomePageClient articles={articles} />
+    </>
+  )
 }
