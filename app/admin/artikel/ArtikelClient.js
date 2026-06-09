@@ -207,7 +207,7 @@ export default function ArtikelClient({ initialArticles }) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.1 }}
       className="admin-page-content"
-      style={{ fontFamily: "'DM Sans', sans-serif", paddingBottom: selectionActive ? '72px' : undefined }}
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       <style>{`
         .admin-page-content { ${vars} }
@@ -362,37 +362,29 @@ export default function ArtikelClient({ initialArticles }) {
         }
 
         /* ── Bulk action banner ── */
-        .bulk-banner {
-          position: fixed; bottom: 0; left: 0; right: 0;
-          background: var(--banner-bg);
-          border-top: 1px solid var(--banner-border);
-          box-shadow: var(--banner-shadow);
-          z-index: 400;
-          padding: 12px 24px;
-          display: flex; align-items: center; gap: 10px;
-          flex-wrap: wrap;
-          font-family: 'DM Sans', sans-serif;
+        @keyframes banner-pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.35; }
         }
-        .bulk-count {
-          font-size: 13px; font-weight: 600; color: var(--t1);
-          white-space: nowrap; min-width: max-content;
-        }
-        .bulk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        /* Positioning is applied inline on the motion.div — only button styles here */
         .bulk-btn {
-          padding: 6px 14px; border-radius: 6px;
+          padding: 7px 16px; border-radius: 6px;
           font-size: 12.5px; font-weight: 600; font-family: 'DM Sans', sans-serif;
           cursor: pointer; border: 1px solid;
-          transition: background 0.12s, border-color 0.12s;
+          transition: background 0.12s, border-color 0.12s, color 0.12s;
           white-space: nowrap; line-height: 1;
         }
+        .bulk-cancel {
+          background: none; border: 1px solid var(--banner-border); color: var(--t2);
+        }
+        .bulk-cancel:hover { border-color: var(--t2); color: var(--t1); }
         .bulk-delete {
           background: rgba(239,68,68,0.10); color: #ef4444;
           border-color: rgba(239,68,68,0.25);
         }
         .bulk-delete:hover { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.4); }
         .bulk-draft {
-          background: var(--badge-bg); color: var(--t2);
-          border-color: var(--border);
+          background: var(--badge-bg); color: var(--t2); border-color: var(--border);
         }
         .bulk-draft:hover { background: var(--row-hover); border-color: var(--border); }
         .bulk-publish {
@@ -400,11 +392,15 @@ export default function ArtikelClient({ initialArticles }) {
           border-color: rgba(16,185,129,0.25);
         }
         .bulk-publish:hover { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4); }
-        .bulk-cancel {
-          background: none; color: var(--t3); border-color: transparent;
-          margin-left: auto;
+
+        /* Responsive — matches settings banner breakpoints exactly */
+        @media (max-width: 640px) {
+          .bulk-banner { left: 0 !important; top: 51px !important; }
+          .bulk-btn { padding: 6px 12px; font-size: 12px; }
         }
-        .bulk-cancel:hover { color: var(--t1); }
+        @media (min-width: 641px) {
+          .bulk-banner { left: 220px !important; }
+        }
 
         /* ── Mobile ── */
         @media (max-width: 640px) {
@@ -421,8 +417,6 @@ export default function ArtikelClient({ initialArticles }) {
           .at-status-cell { grid-column: 2; grid-row: 2; }
           .at-action-cell { grid-column: 3; grid-row: 1 / span 2; display: flex; align-items: center; }
           .at-views-cell, .at-date-cell { display: none; }
-          .bulk-banner { padding: 10px 16px; gap: 8px; }
-          .bulk-btn { padding: 5px 11px; font-size: 12px; }
         }
       `}</style>
 
@@ -443,9 +437,9 @@ export default function ArtikelClient({ initialArticles }) {
       />
       <ConfirmationModal
         open={modal === 'bulk-delete'}
-        title="Padam Artikel?"
-        message={`Adakah anda pasti mahu memadam ${selectedIds.size} artikel yang dipilih? Tindakan ini tidak boleh dibatalkan.`}
-        confirmLabel="Ya, Padam" cancelLabel="Batal" confirmColor="red"
+        title="Delete Articles?"
+        message={`Are you sure you want to permanently delete ${selectedIds.size} selected ${selectedIds.size === 1 ? 'article' : 'articles'}? This cannot be undone.`}
+        confirmLabel="Yes, Delete" cancelLabel="Cancel" confirmColor="red"
         onConfirm={handleBulkDelete} onCancel={() => setModal(null)}
       />
 
@@ -647,40 +641,51 @@ export default function ArtikelClient({ initialArticles }) {
         )}
       </div>
 
-      {/* ── Bulk action banner (slides up from bottom) ── */}
+      {/* ── Bulk action banner — slides down from top, matches settings banner ── */}
       <AnimatePresence>
         {selectionActive && (
           <motion.div
             className="bulk-banner"
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+            initial={{ y: -64, opacity: 0 }}
+            animate={{ y: 0,   opacity: 1 }}
+            exit={{   y: -64, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+            style={{
+              position: 'fixed',
+              left: '240px',
+              right: 0,
+              top: 0,
+              zIndex: 120,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              padding: '10px 16px',
+              background: 'var(--banner-bg)',
+              borderBottom: '1px solid var(--banner-border)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.22)',
+              flexWrap: 'nowrap',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
           >
-            <span className="bulk-count">{selectedIds.size} artikel dipilih</span>
-            <div className="bulk-actions">
-              <button
-                className="bulk-btn bulk-delete"
-                onClick={() => setModal('bulk-delete')}
-              >
-                Padam
-              </button>
-              <button
-                className="bulk-btn bulk-draft"
-                onClick={() => handleBulkStatus('draft')}
-              >
-                Tetapkan sebagai Draf
-              </button>
-              <button
-                className="bulk-btn bulk-publish"
-                onClick={() => handleBulkStatus('published')}
-              >
-                Terbitkan
-              </button>
+            {/* Left — amber pulse dot + count */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{
+                width: '7px', height: '7px', borderRadius: '50%',
+                background: '#d4a853', flexShrink: 0,
+                animation: 'banner-pulse 1.8s ease-in-out infinite',
+              }} />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--t1)', whiteSpace: 'nowrap' }}>
+                {selectedIds.size} {selectedIds.size === 1 ? 'article' : 'articles'} selected
+              </span>
             </div>
-            <button className="bulk-btn bulk-cancel" onClick={exitSelection}>
-              Batal
-            </button>
+            {/* Right — action buttons */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button className="bulk-btn bulk-cancel"  onClick={exitSelection}>Cancel</button>
+              <button className="bulk-btn bulk-delete"  onClick={() => setModal('bulk-delete')}>Delete</button>
+              <button className="bulk-btn bulk-draft"   onClick={() => handleBulkStatus('draft')}>Set as Draft</button>
+              <button className="bulk-btn bulk-publish" onClick={() => handleBulkStatus('published')}>Publish</button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
