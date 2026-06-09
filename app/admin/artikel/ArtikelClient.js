@@ -134,7 +134,7 @@ export default function ArtikelClient({ initialArticles }) {
           color: var(--t3);
         }
         .at-row {
-          display: grid; grid-template-columns: 1fr 140px 120px 36px;
+          display: grid; grid-template-columns: 1fr 140px 70px 120px 36px;
           padding: 13px 20px; align-items: center;
           border-bottom: 1px solid var(--divider);
           transition: background 0.1s;
@@ -236,7 +236,7 @@ export default function ArtikelClient({ initialArticles }) {
       {/* Table */}
       <div className="at-table">
         <div className="at-header">
-          <span>Title</span><span>Status</span><span>Date</span><span />
+          <span>Title</span><span>Status</span><span>Views</span><span>Date</span><span />
         </div>
 
         {articles.length === 0 ? (
@@ -272,6 +272,9 @@ export default function ArtikelClient({ initialArticles }) {
                 <StatusBadge status={article.status} />
               </div>
 
+              <div className="at-date" style={{ color: article.views ? '#60a5fa' : undefined }}>
+                {article.views ? (article.views).toLocaleString() : '—'}
+              </div>
               <div className="at-date">{fmt(article.created_at)}</div>
 
               <div className="at-action-cell" style={{ display: 'flex', justifyContent: 'flex-end' }}>

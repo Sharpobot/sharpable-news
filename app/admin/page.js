@@ -27,6 +27,28 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
+  /* Most-read: top 5 published by views */
+  const { data: mostRead } = await supabase
+    .from('articles')
+    .select('id, title, slug, views')
+    .eq('status', 'published')
+    .order('views', { ascending: false })
+    .limit(5)
+
+  /* Views this week (sum of published articles created in last 7 days) */
+  const { data: weeklyPublished } = await supabase
+    .from('articles')
+    .select('views')
+    .eq('status', 'published')
+    .gte('created_at', sevenDaysAgo.toISOString())
+
+  /* Failed this week */
+  const { data: weeklyFailed } = await supabase
+    .from('articles')
+    .select('id')
+    .eq('status', 'failed')
+    .gte('created_at', sevenDaysAgo.toISOString())
+
   const allArticles = articles ?? []
   const weekly = weeklyArticles ?? []
 
@@ -38,12 +60,18 @@ export default async function AdminPage() {
     return { label, count: weekly.filter(a => a.created_at?.startsWith(key)).length }
   })
 
+  const viewsThisWeek = (weeklyPublished ?? []).reduce((s, a) => s + (a.views ?? 0), 0)
+  const failedThisWeek = (weeklyFailed ?? []).length
+
   const analytics = {
     totalPublished:  allArticles.filter(a => a.status === 'published').length,
     totalDraft:      allArticles.filter(a => a.status === 'draft').length,
     totalGenerating: allArticles.filter(a => a.status === 'generating').length,
     thisWeek:        weekly.length,
     recentPublished: recentPublished ?? [],
+    mostRead:        mostRead ?? [],
+    viewsThisWeek,
+    failedThisWeek,
     dailyCounts,
   }
 

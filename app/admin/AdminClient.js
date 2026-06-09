@@ -99,7 +99,7 @@ export default function AdminClient({ analytics }) {
   }, [])
 
   if (!analytics) return null
-  const { totalPublished, totalDraft, totalGenerating, thisWeek, recentPublished, dailyCounts } = analytics
+  const { totalPublished, totalDraft, totalGenerating, thisWeek, recentPublished, mostRead, viewsThisWeek, failedThisWeek, dailyCounts } = analytics
   const totalWeek = dailyCounts.reduce((s, d) => s + d.count, 0)
 
   const todayLabel = new Date().toLocaleDateString('en-MY', {
@@ -184,6 +184,9 @@ export default function AdminClient({ analytics }) {
           .metrics-strip > div:nth-last-child(-n+2) { border-bottom: none; }
           .analytics-bottom { grid-template-columns: 1fr !important; }
         }
+        @media (min-width: 901px) and (max-width: 1200px) {
+          .analytics-bottom { grid-template-columns: 1fr 1fr !important; }
+        }
         /* Very small screens: tighten padding + shrink the big number */
         @media (max-width: 420px) {
           .metrics-strip > div { padding: 14px 16px !important; }
@@ -255,14 +258,49 @@ export default function AdminClient({ analytics }) {
 
       {/* ── Metrics strip — one unified instrument surface ── */}
       <div className="metrics-strip">
-        <MetricCell label="Published"    target={totalPublished}  accent="#10b981" delay={0}   dividerColor="var(--divider)" />
-        <MetricCell label="Draft"        target={totalDraft}      accent="var(--t2)" delay={80}  dividerColor="var(--divider)" />
-        <MetricCell label="Generating"   target={totalGenerating} accent="#f59e0b" delay={160} dividerColor="var(--divider)" />
-        <MetricCell label="This Week"    target={thisWeek}        accent="#d4a853" delay={240} dividerColor="var(--divider)" isLast />
+        <MetricCell label="Published"       target={totalPublished}   accent="#10b981"  delay={0}   dividerColor="var(--divider)" />
+        <MetricCell label="Draft"           target={totalDraft}       accent="var(--t2)" delay={80}  dividerColor="var(--divider)" />
+        <MetricCell label="Generating"      target={totalGenerating}  accent="#f59e0b"  delay={160} dividerColor="var(--divider)" />
+        <MetricCell label="This Week"       target={thisWeek}         accent="#d4a853"  delay={240} dividerColor="var(--divider)" />
+        <MetricCell label="Views This Week" target={viewsThisWeek ?? 0}  accent="#60a5fa" delay={320} dividerColor="var(--divider)" />
+        <MetricCell label="Failed This Week" target={failedThisWeek ?? 0} accent="#ef4444" delay={400} dividerColor="var(--divider)" isLast />
       </div>
 
       {/* ── Bottom row ── */}
-      <div className="analytics-bottom">
+      <div className="analytics-bottom" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+
+        {/* Most read */}
+        <div className="dash-panel">
+          <div className="panel-label">Most Read Articles</div>
+          {(mostRead ?? []).length === 0 ? (
+            <div style={{ fontSize: '13px', color: 'var(--t3)', padding: '4px 0' }}>No views recorded yet.</div>
+          ) : (
+            <div>
+              {(mostRead ?? []).map((a, i) => (
+                <motion.div
+                  key={a.id}
+                  className="article-row"
+                  initial={{ opacity: 0, x: -5 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + i * 0.055, duration: 0.18 }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '9px', flex: 1, minWidth: 0 }}>
+                    <span className="article-idx">{String(i + 1).padStart(2, '0')}</span>
+                    <a
+                      href={`/artikel/${a.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="article-link"
+                    >
+                      {a.title ?? '(Untitled)'}
+                    </a>
+                  </div>
+                  <span className="article-date" style={{ color: '#60a5fa' }}>{(a.views ?? 0).toLocaleString()}</span>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Recent published */}
         <div className="dash-panel">

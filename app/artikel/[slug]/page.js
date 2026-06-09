@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/db/supabase-server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase-admin'
 import { generateHTML } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -78,12 +79,23 @@ export default async function ArticlePage({ params }) {
 
   const { data: article, error } = await supabase
     .from('articles')
-    .select('id, title, slug, body, tags, meta_description, featured_image, image_brief, created_at, author_id, authors(id, name, bio, photo_url)')
+    .select('id, title, slug, body, tags, meta_description, featured_image, image_brief, created_at, views, author_id, authors(id, name, bio, photo_url)')
     .eq('slug', slug)
     .eq('status', 'published')
     .single()
 
   if (!article || error) notFound()
+
+  /* ── Increment view counter (fire-and-forget, non-critical) ── */
+  try {
+    const adminSb = createAdminSupabaseClient()
+    adminSb
+      .from('articles')
+      .update({ views: (article.views ?? 0) + 1 })
+      .eq('id', article.id)
+      .then(() => {})
+      .catch(() => {})
+  } catch { /* ignore */ }
 
   /* ── Related articles: tag-matched first, fill with recent ── */
   let related = []

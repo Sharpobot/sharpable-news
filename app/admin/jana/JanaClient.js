@@ -113,7 +113,7 @@ function TopicCard({ option, onInitiateSelect, selecting, isSelected, isGreyedOu
       <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--t1)', lineHeight: 1.35 }}>
         {option.topic}
       </div>
-      <div style={{ fontSize: '12px', color: 'var(--t2)', lineHeight: 1.55, flex: 1 }}>
+      <div style={{ fontSize: '12px', color: 'var(--topic-desc)', lineHeight: 1.55, flex: 1 }}>
         {option.summary}
       </div>
 
@@ -124,13 +124,13 @@ function TopicCard({ option, onInitiateSelect, selecting, isSelected, isGreyedOu
           rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
           style={{
-            fontSize: '11px', color: 'var(--t3)', textDecoration: 'none',
+            fontSize: '11px', color: 'var(--topic-source)', textDecoration: 'none',
             display: 'flex', alignItems: 'center', gap: '4px',
             transition: 'color 0.12s',
             pointerEvents: isGreyedOut ? 'none' : 'auto',
           }}
           onMouseEnter={e => { if (!isGreyedOut) e.currentTarget.style.color = '#d4a853' }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--t3)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--topic-source)' }}
         >
           <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -205,7 +205,7 @@ function ArticleCard({
   // Section visibility — keep topic direction visible (read-only) from first search through completion
   const hasStartedFlow  = !!articleId || isSearching
   const showSearchSection = !isTerminal && (isPending || hasStartedFlow)
-  const showTopicCards    = (isAwaitingSelection && hasOptions) || (isGenerating && topicOptions && topicOptions.length > 0)
+  const showTopicCards    = (isAwaitingSelection && hasOptions) || ((isGenerating || isTerminal) && topicOptions && topicOptions.length > 0)
   const showSearchMini    = isAwaitingSelection && !hasOptions
   const showProgress      = isGenerating || isTerminal
 
@@ -268,6 +268,25 @@ function ArticleCard({
         </span>
 
         {/* Right-side chips/buttons */}
+        {isSearchingBeforeId && (
+          <button
+            onClick={() => onDismiss(localId)}
+            title="Cancel search"
+            style={{
+              background: 'none', border: 'none', color: 'var(--t3)',
+              padding: '0 2px', cursor: 'pointer', lineHeight: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              transition: 'color 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#ef4444' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--t3)' }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round">
+              <line x1="5" y1="5" x2="19" y2="19" />
+              <line x1="19" y1="5" x2="5" y2="19" />
+            </svg>
+          </button>
+        )}
         {isGenerating && (
           <>
             <span style={{ fontSize: '11px', color: '#d4a853', fontVariantNumeric: 'tabular-nums', fontWeight: 700, flexShrink: 0 }}>
@@ -394,17 +413,17 @@ function ArticleCard({
               <div>
                 <div style={{
                   fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase',
-                  color: isGenerating ? 'var(--t3)' : '#d4a853', marginBottom: isGenerating ? 0 : '2px',
+                  color: (isGenerating || isTerminal) ? 'var(--t3)' : '#d4a853', marginBottom: (isGenerating || isTerminal) ? 0 : '2px',
                 }}>
-                  {isGenerating ? 'Selected Topic' : 'Step 2 — Select Topic'}
+                  {(isGenerating || isTerminal) ? 'Selected Topic' : 'Step 2 — Select Topic'}
                 </div>
-                {!isGenerating && (
+                {!isGenerating && !isTerminal && (
                   <div style={{ fontSize: '13px', color: 'var(--t1)', fontWeight: 600 }}>
                     Select one topic to continue
                   </div>
                 )}
               </div>
-              {!isGenerating && (
+              {!isGenerating && !isTerminal && (
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <button
                     onClick={() => onAutoSelect(localId, articleId, topicOptions[0])}
@@ -438,10 +457,10 @@ function ArticleCard({
             </div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               {topicOptions.map((opt, i) => {
-                const optIsSelected = isGenerating && selectedOption
+                const optIsSelected = (isGenerating || isTerminal) && selectedOption
                   ? (selectedOption.topic === opt.topic)
                   : false
-                const optIsGreyedOut = isGenerating && !optIsSelected
+                const optIsGreyedOut = (isGenerating || isTerminal) && !optIsSelected
                 return (
                   <TopicCard
                     key={i}
@@ -784,12 +803,14 @@ export default function JanaClient({ initialArticles = [] }) {
     --t1:#0d1117;--t2:#1f2937;--t3:#4b5563;
     --surface-shadow:0 1px 4px rgba(0,0,0,0.06),0 0 0 1px #e5e7eb;--surface-inset:none;
     --agent-active-bg:rgba(245,158,11,0.06);--agent-idle:#9ca3af;
+    --topic-desc:var(--t2);--topic-source:var(--t3);
   ` : `
     --bg:#0c0b0a;--surface:#0f0e0d;--surface2:#131110;--card-inner:#111009;
     --border:rgba(237,232,223,0.07);--divider:rgba(237,232,223,0.05);
     --t1:#ede8df;--t2:#8c857c;--t3:#3d3830;
     --surface-shadow:none;--surface-inset:inset 0 1px 0 rgba(237,232,223,0.04);
     --agent-active-bg:rgba(245,158,11,0.05);--agent-idle:#252525;
+    --topic-desc:#a89e96;--topic-source:#6b6560;
   `
 
   return (

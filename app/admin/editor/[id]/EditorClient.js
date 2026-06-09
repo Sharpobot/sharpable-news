@@ -915,6 +915,48 @@ function InlineImageModal({
   )
 }
 
+/* ── Generation context (read-only) ──────────────────────────── */
+function GenerationContext({ article }) {
+  const dir = article?.topic_direction
+  const sel = article?.selected_topic
+
+  if (!dir && !sel) return null
+
+  const InfoRow = ({ label, value }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '10px' }}>
+      <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d' }}>
+        {label}
+      </div>
+      <div style={{ fontSize: '12.5px', color: '#ede8df', lineHeight: 1.45 }}>
+        {value}
+      </div>
+    </div>
+  )
+
+  return (
+    <section style={{ marginBottom: '24px' }}>
+      <SectionLabel>Generation Context</SectionLabel>
+      <div style={{
+        background: 'rgba(237,232,223,0.03)',
+        border: '1px solid rgba(237,232,223,0.07)',
+        borderRadius: '6px',
+        padding: '12px 14px',
+      }}>
+        <InfoRow
+          label="Topic Direction"
+          value={dir || <span style={{ color: '#56514d', fontStyle: 'italic' }}>None</span>}
+        />
+        {sel && (
+          <InfoRow
+            label="Selected Topic"
+            value={sel.topic || sel.description || JSON.stringify(sel)}
+          />
+        )}
+      </div>
+    </section>
+  )
+}
+
 /* ── Save / SEO content blocks ─────────────────────────────── */
 function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, setTags }) {
   return (
@@ -1901,6 +1943,9 @@ export default function EditorClient({ article, authors = [] }) {
 
         <aside className="editor-aside">
           <div className={`aside-section ${mob('seo')}`}>
+            {/* Generation context (read-only) */}
+            <GenerationContext article={article} />
+
             {/* Author selector */}
             {authors.length > 0 && (
               <section style={{ marginBottom: '32px' }}>
