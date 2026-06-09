@@ -268,10 +268,10 @@ function ArticleCard({
         </span>
 
         {/* Right-side chips/buttons */}
-        {isSearchingBeforeId && (
+        {(isSearchingBeforeId || (isAwaitingSelection && !hasOptions)) && (
           <button
-            onClick={() => onDismiss(localId)}
-            title="Cancel search"
+            onClick={() => isSearchingBeforeId ? onDismiss(localId) : onOpenCancel(localId, articleId)}
+            title="Cancel"
             style={{
               background: 'none', border: 'none', color: 'var(--t3)',
               padding: '0 2px', cursor: 'pointer', lineHeight: 0,
