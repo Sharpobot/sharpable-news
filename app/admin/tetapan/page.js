@@ -55,12 +55,12 @@ function UnsavedBanner({ count, onSave, onDiscard }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '16px',
-        padding: '12px 24px',
+        gap: '10px',
+        padding: '10px 16px',
         background: 'var(--banner-bg)',
         borderBottom: '1px solid var(--banner-border)',
         boxShadow: '0 4px 24px rgba(0,0,0,0.22)',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -232,7 +232,23 @@ export default function TetapanPage() {
       className="admin-page-content"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
-      <Toaster position="bottom-right" />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#1a1815',
+            color: '#ede8df',
+            border: '1px solid rgba(237,232,223,0.12)',
+            borderRadius: '7px',
+            fontSize: '13px',
+            fontFamily: "'DM Sans', sans-serif",
+            padding: '10px 14px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          },
+          success: { iconTheme: { primary: '#10b981', secondary: '#1a1815' } },
+          error:   { iconTheme: { primary: '#ef4444', secondary: '#1a1815' } },
+        }}
+      />
 
       {/* Confirmation modals */}
       <ConfirmationModal
@@ -261,10 +277,22 @@ export default function TetapanPage() {
 
         /* Banner responsive overrides — !important overrides inline style on fixed div */
         @media (max-width: 768px) {
-          .settings-banner { left: 0 !important; top: 52px !important; }
+          /* top:51px overlaps the 1px mobile header border-bottom, removing the grey separator line */
+          .settings-banner {
+            left: 0 !important;
+            top: 51px !important;
+            border-top: none !important;
+          }
         }
         @media (min-width: 769px) and (max-width: 1024px) {
           .settings-banner { left: 220px !important; }
+        }
+        /* Shrink banner buttons on very small phones so they don't wrap */
+        @media (max-width: 400px) {
+          .settings-banner button {
+            padding: 5px 9px !important;
+            font-size: 11px !important;
+          }
         }
 
         @keyframes banner-pulse {
