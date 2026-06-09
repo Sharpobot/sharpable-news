@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast, { Toaster } from 'react-hot-toast'
 import ConfirmationModal from '@/components/admin/ConfirmationModal'
@@ -119,13 +120,18 @@ function UnsavedBanner({ count, onSave, onDiscard }) {
    Main settings page
 ═══════════════════════════════════════════════════════════════ */
 export default function TetapanPage() {
+  const router = useRouter()
   const [lm, setLm] = useState(false)
   /* saved = what's in DB; draft = what admin is editing */
   const [saved,  setSaved]  = useState(DEFAULT_SETTINGS)
   const [draft,  setDraft]  = useState(DEFAULT_SETTINGS)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [modal,  setModal]  = useState(null)   // 'save' | 'discard'
+  const [modal,  setModal]  = useState(null)   // 'save' | 'discard' | 'leave'
+  const [pendingNavUrl, setPendingNavUrl] = useState(null)
+
+  /* Ref so navigation guard closure always sees current dirty state */
+  const isDirtyRef = useRef(false)
 
   /* ── Theme ── */
   useEffect(() => {
@@ -190,6 +196,49 @@ export default function TetapanPage() {
     setDraft({ ...saved })
     toast('Changes discarded', { duration: 1800, style: { fontSize: '13px' } })
   }, [saved])
+
+  /* ── Keep dirty ref in sync ── */
+  useEffect(() => { isDirtyRef.current = isDirty }, [isDirty])
+
+  /* ── Navigation guard (browser close + in-app links) ── */
+  useEffect(() => {
+    // 1. Warn on tab close / refresh
+    const onBeforeUnload = (e) => {
+      if (!isDirtyRef.current) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+
+    // 2. Intercept all <a> clicks at capture phase before Next.js handles them
+    const onLinkClick = (e) => {
+      if (!isDirtyRef.current) return
+      const anchor = e.target.closest('a[href]')
+      if (!anchor) return
+      const href = anchor.getAttribute('href')
+      // Ignore external, hash-only, or blank-target links
+      if (!href || href.startsWith('http') || href.startsWith('mailto') ||
+          href.startsWith('#') || anchor.target === '_blank') return
+      e.preventDefault()
+      e.stopPropagation()
+      setPendingNavUrl(href)
+      setModal('leave')
+    }
+
+    window.addEventListener('beforeunload', onBeforeUnload)
+    document.addEventListener('click', onLinkClick, true) // capture = before React
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      document.removeEventListener('click', onLinkClick, true)
+    }
+  }, []) // mount/unmount once — dirty state read via ref
+
+  /* ── Confirm leave without saving ── */
+  const handleConfirmLeave = useCallback(() => {
+    const url = pendingNavUrl
+    setModal(null)
+    setPendingNavUrl(null)
+    if (url) router.push(url)
+  }, [pendingNavUrl, router])
 
   /* ── CSS vars ── */
   const vars = lm ? `
@@ -270,6 +319,16 @@ export default function TetapanPage() {
         confirmColor="red"
         onConfirm={handleConfirmDiscard}
         onCancel={() => setModal(null)}
+      />
+      <ConfirmationModal
+        open={modal === 'leave'}
+        title="Leave Without Saving?"
+        message={`You have ${pendingKeys.length} unsaved ${pendingKeys.length === 1 ? 'change' : 'changes'}. They will be lost if you leave this page.`}
+        confirmLabel="Leave Without Saving"
+        cancelLabel="Stay & Keep Editing"
+        confirmColor="red"
+        onConfirm={handleConfirmLeave}
+        onCancel={() => { setModal(null); setPendingNavUrl(null) }}
       />
 
       <style>{`
