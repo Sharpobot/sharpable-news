@@ -31,10 +31,10 @@ const trendScoutSrc = readFileSync(path.join(root, 'lib/agents/trend-scout.js'),
 check('exports trendScout function',            trendScoutSrc.includes('export async function trendScout'))
 check('accepts topicDirection parameter',       trendScoutSrc.includes('topicDirection = null'))
 check('discovery only — no ranking in scout',   trendScoutSrc.includes('ONLY job is discovery') || trendScoutSrc.includes('does NOT filter'))
-check('decomposes direction into 3 queries',    trendScoutSrc.includes('3 different search queries') || trendScoutSrc.includes('Decompose the topic direction into 3'))
-check('returns 10-15 candidates',               trendScoutSrc.includes('10-15'))
-check('no direction runs broad search',         trendScoutSrc.includes('broad web search') || trendScoutSrc.includes('broad search'))
-check('maxTokens set to 2000',                  trendScoutSrc.includes('2000'))
+check('runs single targeted search with direction', trendScoutSrc.includes('AI ${topicDirection} news 2026'))
+check('returns top 8 candidates',               trendScoutSrc.includes('top 8'))
+check('no direction runs broad search',         trendScoutSrc.includes('trending AI news Malaysia Southeast Asia this week'))
+check('maxTokens set to 3000',                  trendScoutSrc.includes('3000'))
 
 // ── 2. topic-selector.js ────────────────────────────────────────────────────
 console.log('\n[2] topic-selector.js')

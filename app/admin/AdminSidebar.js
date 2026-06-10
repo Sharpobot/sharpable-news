@@ -50,6 +50,17 @@ const NAV = [
     ),
   },
   {
+    href: '/admin/langgan',
+    label: 'Subscribers',
+    exact: false,
+    icon: (
+      <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6z"/>
+        <path d="m22 6-10 7L2 6"/>
+      </svg>
+    ),
+  },
+  {
     href: '/admin/tetapan',
     label: 'Settings',
     exact: false,

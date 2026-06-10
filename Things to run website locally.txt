@@ -1,0 +1,15 @@
+Things to run website locally:
+
+1A. Open CMD, Run "D:"
+1B. Run "cd "D:/ALIFF MC/Website Coding/sharpable-news" (make sure it matches the ile location)
+1C. Run "npm run dev"
+- This is main website server, run "http://localhost:3000" to view it
+
+1B. Open CMD, run "D:"
+2B. Run "cd "D:/ALIFF MC/Website Coding/sharpable-news" (make sure it matches the ile location)
+3B. run "npx inngest-cli@latest dev"
+- this is the ingest server which is needed for the agents to run in the admin panel, run "http://localhost:8288" to view it
+
+
+
+
