@@ -304,6 +304,14 @@ Agents using `ask`: topic-selector, article-writer, seo-metadata, image-brief, r
 
 **Markdown fence fallback (trend-scout.js, Jun 11, 2026):** If `askWithSearch()`'s shared `parseJSON()` fails (returns `{ raw: text }`), trend-scout.js now strips leading/trailing ```` ```json ```` / ```` ``` ```` fences from `result.raw` and retries `JSON.parse()` before falling back to diagnostic logging. This handles cases where the model wraps its JSON response in markdown code fences. Diagnostic `console.log` lines were also added (raw text on parse failure, parsed keys/trends.length on success, and a summary of `topicsFound`/`firstTopic`/`scoutedAt`) to make future failures easier to diagnose from the terminal.
 
+**Markdown fence fallback extended to deep-researcher.js and article-writer.js (Jun 12, 2026):** Both agents were returning null/empty articles because `askWithSearch()`/`ask()`'s `parseJSON()` failed silently on markdown-fenced JSON responses (same root cause as the trend-scout issue, never backported to these two agents). Applied the same fence-stripping fallback (strip leading/trailing ```` ```json ```` / ```` ``` ```` and retry `JSON.parse()`) to both files. `scripts/test-pipeline-health.mjs` → 20/20 passing after fix.
+
+**image-brief.js prompt overhaul (Jun 12, 2026):** System prompt rewritten for photorealistic, publication-ready stock photo suggestions:
+- All people described as Malaysian, and must use a FACELESS composition (shot from behind/side/over-the-shoulder/farther away) — never a clearly visible face
+- Banned descriptors: "minimalist", "abstract", graphic/infographic, fantasy/surreal — replaced with "cinematic" framing/lighting/composition language
+- Examples updated to match (e.g. "Malaysian developer seen from behind, working on laptop in modern Kuala Lumpur office, cinematic natural lighting")
+- `maxTokens` unchanged at 1000
+
 ---
 
 ## Human-in-the-Loop Topic Selection (JanaClient)
@@ -390,8 +398,10 @@ The most complex file. Features:
 - **Image toolbar (click-based):** Appears at bottom of selected image — ↑↓ move, ✏ edit, × delete
 - **ImagePlaceholder nodes:** Amber dashed border blocks injected at suggested positions. "Muat Naik" → uploads and replaces node with real image. "Langkau" → deletes node. Placeholders are stripped from body HTML on publish.
 - **Cadangan AI card:** Shows hero image prompt in the "Imej Hero" section (desktop only; mobile has "Lihat Cadangan AI" button)
-- **InlineImageModal:** Upload + crop (ReactCrop, free aspect ratio) or URL. Lazy upload on insert.
-- **Featured image (hero):** Drag-drop or click. CropModal forces 16:9 (1280×720). Stored in `article-images` bucket.
+- **InlineImageModal:** Upload + crop (ReactCrop) or URL. Lazy upload on insert. Compact icon-based aspect ratio selector (36×36px / 32×32px responsive squares with visual aspect shapes): Free, 16:9 Landscape, 3:4 Portrait, 1:1 Square, 9:16 Tall.
+- **Featured image (hero) / CropModal:** Drag-drop or click. Same icon-based aspect ratio selector as InlineImageModal (`CROP_ASPECT_RATIOS = { free: null, landscape: 16/9, portrait: 3/4, square: 1/1, tall: 9/16 }`), default 16:9 (1280×720). Stored in `article-images` bucket.
+- **Thumbnail caption field:** Always visible in the "Imej Hero" section (matching Hero Alt Text), no longer conditional on an image being uploaded first (Jun 12, 2026).
+- **Editor theme:** Synced with the admin panel via the shared `admin-theme` localStorage key + `admin-theme-change` CustomEvent — toggling theme anywhere in the admin panel (including the editor) updates all pages consistently. No separate `editor-theme` key (Jun 12, 2026).
 - **Author selector:** Custom dropdown above SEO fields — shows avatar pip + name; default "Sharpable News"
 - **SEO sidebar:** Editable slug, meta description, tag chips
 - **Quality report panel:** Collapsible. Verdict + score + required fixes + corrections + original pre-revision report
@@ -413,7 +423,7 @@ The most complex file. Features:
 | Editor | `/admin/editor/[id]` | Full article editor (see above) |
 | Authors | `/admin/penulis` | Author card grid — add/edit (with 1:1 crop), delete |
 | Subscribers | `/admin/langgan` | Subscriber table (desktop) / cards (mobile) — search by email, CSV export, delete via ConfirmationModal |
-| Settings | `/admin/tetapan` | System info, pipeline overview |
+| Settings | `/admin/tetapan` | System info, pipeline overview, configurable generation settings |
 
 **Status badges** (`ArtikelClient.js` STATUS_CFG):
 - `generating` — amber "Menjana"
@@ -423,7 +433,25 @@ The most complex file. Features:
 - `draft` — grey "Draf"
 - `failed` — red "Gagal"
 
-**Light/dark mode:** `admin-theme-change` CustomEvent dispatched by AdminSidebar. All admin components listen and switch CSS vars via `lm` boolean.
+**Light/dark mode:** Single shared `admin-theme` localStorage key (`'dark'` | `'light'`). Toggled from `AdminSidebar.js`, which sets the key and dispatches `admin-theme-change` (CustomEvent). All admin components — including `AdminSidebar.js` itself and `EditorClient.js` — listen for `admin-theme-change` and switch CSS vars via an `lm` boolean. (Jun 12, 2026: fixed `AdminSidebar.js` which previously only read `admin-theme` on mount and didn't listen for the change event, causing the sidebar/page background to stay on the stale theme — e.g. dark sidebar + light panels — after toggling theme from the editor and navigating back.)
+
+**Articles table checkboxes** (`ArtikelClient.js` `.cb-box`): always-visible, subtle single-ring outline style (`--cb-border` CSS var per theme) instead of opacity-based hover reveal (Jun 11–12, 2026).
+
+### Settings page configuration (`/admin/tetapan` — `site_settings` table via `/api/settings`)
+All settings use the `draft`/`saved`/`pendingKeys` pattern — edits are staged, then saved via `Promise.all` POSTs to `/api/settings` (one row per key, `onConflict: 'key'`).
+
+| Setting | DB key(s) | UI control | Wired into pipeline? |
+|---|---|---|---|
+| Min Quality Score | `quality_score_threshold` | Slider 70–90, default 85 | Saves only — not yet read by `lib/` |
+| Target Article Length | `target_article_length` | Pill buttons (short/standard/long) | Saves only — not yet read by `lib/` |
+| Failure Notification Email | `notification_email` | Email input | Saves only — not yet read by `lib/` |
+| Site Tagline | `site_tagline` | Text input | Saves only — not yet read by `lib/` |
+| Social Links | `social_x`, `social_facebook`, `social_instagram` | 3 text inputs | Saves only — not yet read by `lib/` |
+| Pinned Categories | `pinned_categories` | Text input (comma-separated) | **Wired** — read by `app/api/categories/route.js` and `PublicNavbarServer.js` for public nav/categories |
+| **Body Images Per Article** (new, Jun 12, 2026) | `image_count_min`, `image_count_max` | Custom dual-handle range slider, 1–8, default min 3 / max 5 | Saves only — not yet read by `lib/` |
+| **Editorial Instructions** (new, Jun 12, 2026) | `editorial_instructions` | Large textarea, placeholder pre-filled with style-guide-derived default text | Saves only — not yet read by `lib/` |
+
+**Note:** Per CRITICAL RULES, none of the new/existing settings are wired into `lib/inngest-functions.js` or `lib/agents/` yet — that would require a dedicated, focused pipeline-only change.
 
 **Light mode design:** #f8f8f8 page, #f1f1f1 sidebar, #1a1a1a primary text, #4b5563 secondary, #e5e7eb borders. Status badge colors are contrast-safe on both themes.
 
@@ -616,6 +644,15 @@ Newsletter signup was failing with a 500. Fixed by using a direct Supabase servi
 3. Reduced requested candidates from "top 10-15" → "**top 8**".
 `scripts/test-pipeline-health.mjs` assertions updated to match (`'top 8'`, `'3000'`). 20/20 passing.
 
+### deep-researcher / article-writer returning blank/null content (FIXED — Jun 12, 2026)
+**Root cause:** Same markdown-fence JSON issue as trend-scout, but the fence-stripping fallback had never been backported to `deep-researcher.js` or `article-writer.js`. When the model wrapped its JSON in ```` ```json ```` fences, `parseJSON()` returned `{ raw: text }`, and downstream context fields (`researchBrief`, `article`) ended up null/empty — causing 0-word articles.
+**Fix:** Applied the same fence-stripping retry logic to both files. `scripts/test-pipeline-health.mjs` → 20/20 passing.
+
+### Admin theme not syncing fully after toggling in editor (FIXED — Jun 12, 2026)
+**Symptom:** Toggling light/dark mode in the article editor, then navigating back to the dashboard, showed a mixed state — sidebar/page background stuck on the old theme while individual panels switched to the new theme.
+**Root cause:** `AdminSidebar.js` only read `admin-theme` from localStorage once on mount and never listened for the `admin-theme-change` CustomEvent, so its own `theme` state went stale on client-side navigation (the sidebar/layout persists across route changes).
+**Fix:** `AdminSidebar.js` now also subscribes to `admin-theme-change` and updates its `theme` state immediately, matching every other admin component. Confirmed `admin-theme` is the single shared key across all 8 admin files (no `editor-theme` remains); normalized `PenulisClient.js`'s theme-init fallback to `|| 'dark'` for consistency.
+
 ---
 
 ## CRITICAL RULES
@@ -685,9 +722,15 @@ Newsletter signup was failing with a 500. Fixed by using a direct Supabase servi
 - [x] **Migration 009** — subscribers table for newsletter signups (Jun 10, 2026)
 - [x] **Subscribers/Newsletter system** — public signup API (`/api/subscribe`), admin management page (`/admin/langgan`) with search/CSV export/delete (Jun 10, 2026)
 - [x] **Trend-scout reliability fixes** — markdown-fence JSON fallback + diagnostic logging, maxTokens raised to 3000, top-8 candidates with capped description length (Jun 11, 2026)
+- [x] **deep-researcher/article-writer markdown-fence JSON fallback** — fixes blank/null article generation (Jun 12, 2026)
+- [x] **Editor UI polish** — thumbnail caption always visible, 9:16 aspect ratio option + icon-based aspect selectors for hero/inline image modals, subtle always-visible table checkboxes, brightened dark-mode text contrast (Jun 11–12, 2026)
+- [x] **image-brief prompt overhaul** — Malaysian faceless subjects, cinematic photorealistic framing, banned abstract/graphic/face-visible suggestions (Jun 12, 2026)
+- [x] **Unified admin theme system** — single `admin-theme` localStorage key + `admin-theme-change` event across all admin pages and the article editor, including AdminSidebar sync fix (Jun 12, 2026)
+- [x] **New settings: Body Images Per Article** (`image_count_min`/`image_count_max`, dual-range slider 1–8, default 3/5) and **Editorial Instructions** (`editorial_instructions`, large textarea) added to `/admin/tetapan` (Jun 12, 2026) — saved to `site_settings`, not yet wired into the pipeline
 
 ## What Could Be Next
 
+- [ ] Wire admin settings into the pipeline (dedicated, focused `lib/` change only): `quality_score_threshold`, `target_article_length`, `notification_email`, `image_count_min`/`image_count_max` (image-brief suggestion count), and `editorial_instructions` (inject into article-writer/revision prompts) are all currently "saves only"
 - [ ] Apply migration 006 (optional FTS index) for faster search at scale
 - [ ] Scheduled article generation (cron via Inngest)
 - [ ] Unsplash API integration (auto-fetch hero image from image_brief query)
