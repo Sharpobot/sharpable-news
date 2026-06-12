@@ -126,8 +126,8 @@ export default function AdminClient({ analytics }) {
     --border: rgba(237,232,223,0.07);
     --divider: rgba(237,232,223,0.06);
     --t1: #ede8df;
-    --t2: #8c857c;
-    --t3: #3d3830;
+    --t2: #a39c92;
+    --t3: #6f6862;
     --bar-empty: rgba(237,232,223,0.05);
     --surface-shadow: none;
     --surface-inset: inset 0 1px 0 rgba(237,232,223,0.04);

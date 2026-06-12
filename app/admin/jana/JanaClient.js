@@ -807,7 +807,7 @@ export default function JanaClient({ initialArticles = [] }) {
   ` : `
     --bg:#0c0b0a;--surface:#0f0e0d;--surface2:#131110;--card-inner:#111009;
     --border:rgba(237,232,223,0.07);--divider:rgba(237,232,223,0.05);
-    --t1:#ede8df;--t2:#8c857c;--t3:#3d3830;
+    --t1:#ede8df;--t2:#a39c92;--t3:#6f6862;
     --surface-shadow:none;--surface-inset:inset 0 1px 0 rgba(237,232,223,0.04);
     --agent-active-bg:rgba(245,158,11,0.05);--agent-idle:#252525;
     --topic-desc:#a89e96;--topic-source:#6b6560;

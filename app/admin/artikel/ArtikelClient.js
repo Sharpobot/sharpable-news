@@ -209,11 +209,11 @@ export default function ArtikelClient({ initialArticles }) {
     --jana-bg:rgba(212,168,83,0.1); --jana-border:rgba(212,168,83,0.28);
     --dd-bg:#ffffff; --dd-border:#e5e7eb; --dd-hover:#f3f4f6; --dd-shadow:0 4px 16px rgba(0,0,0,0.12);
     --banner-bg:#ffffff; --banner-border:rgba(24,21,15,0.1);
-    --cb-accent:#d4a853;
+    --cb-accent:#d4a853; --cb-border:#9ca3af;
   ` : `
     --bg:#0c0b0a; --surface:#0f0e0d; --surface2:#131110;
     --border:rgba(237,232,223,0.07); --divider:rgba(237,232,223,0.05);
-    --t1:#ede8df; --t2:#8c857c; --t3:#3d3830;
+    --t1:#ede8df; --t2:#a39c92; --t3:#6f6862;
     --surface-shadow:none; --surface-inset:inset 0 1px 0 rgba(237,232,223,0.04);
     --row-hover:rgba(237,232,223,0.02); --sel-row:rgba(212,168,83,0.055);
     --del-idle:#2a2a2a; --del-hover:#ef4444;
@@ -221,7 +221,7 @@ export default function ArtikelClient({ initialArticles }) {
     --jana-bg:rgba(212,168,83,0.08); --jana-border:rgba(212,168,83,0.22);
     --dd-bg:#1c1a18; --dd-border:rgba(237,232,223,0.1); --dd-hover:rgba(237,232,223,0.05); --dd-shadow:0 4px 20px rgba(0,0,0,0.35);
     --banner-bg:#141210; --banner-border:rgba(237,232,223,0.09);
-    --cb-accent:#d4a853;
+    --cb-accent:#d4a853; --cb-border:#6b6660;
   `
 
   // Inline theme vars object for the portal (it lives in document.body, outside the CSS scope)
@@ -288,12 +288,18 @@ export default function ArtikelClient({ initialArticles }) {
         .at-table tbody td.td-right  { text-align: right; padding-right: 16px; }
 
         /* ── Checkbox ── */
-        .at-cb { opacity: 0; transition: opacity 0.13s; display: inline-flex; align-items: center; justify-content: center; }
-        .at-table tbody tr:hover .at-cb,
-        .at-table tbody tr.at-selected .at-cb,
-        .at-wrap.sel-active .at-cb { opacity: 1; }
+        .at-cb { opacity: 1; transition: opacity 0.13s; display: inline-flex; align-items: center; justify-content: center; }
         .at-table thead tr .at-cb  { opacity: 1; }
-        .cb-box { width: 15px; height: 15px; cursor: pointer; accent-color: var(--cb-accent); }
+        .cb-box {
+          width: 15px; height: 15px; cursor: pointer; accent-color: var(--cb-accent);
+          appearance: none; -webkit-appearance: none;
+          background: var(--surface); border: 1px solid var(--cb-border);
+          border-radius: 3px; margin: 0;
+        }
+        .cb-box:checked {
+          appearance: auto; -webkit-appearance: auto;
+          border: none;
+        }
 
         /* ── Title cell ── */
         .article-title-link {

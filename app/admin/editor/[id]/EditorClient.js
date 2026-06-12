@@ -38,24 +38,24 @@ function TagInput({ tags, onChange }) {
   return (
     <div style={{
       display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '8px 10px',
-      borderRadius: '4px', border: '1px solid rgba(237,232,223,0.11)',
-      background: '#0e0d0c', cursor: 'text', minHeight: '42px', alignItems: 'center',
+      borderRadius: '4px', border: '1px solid var(--ed-border2)',
+      background: 'var(--ed-bg2)', cursor: 'text', minHeight: '42px', alignItems: 'center',
     }}>
       {tags.map((tag, i) => (
         <span key={i} style={{
           display: 'inline-flex', alignItems: 'center', gap: '5px',
-          background: '#1e1c1a', border: '1px solid rgba(237,232,223,0.11)',
-          color: '#ede8df', fontSize: '12px', padding: '2px 8px', borderRadius: '3px',
+          background: 'var(--ed-elevated)', border: '1px solid var(--ed-border2)',
+          color: 'var(--ed-text1)', fontSize: '12px', padding: '2px 8px', borderRadius: '3px',
         }}>
           {tag}
           <button onClick={() => onChange(tags.filter((_, j) => j !== i))}
-            style={{ background: 'none', border: 'none', color: '#8c857c', cursor: 'pointer', padding: 0, lineHeight: 1, fontSize: '14px' }}>×</button>
+            style={{ background: 'none', border: 'none', color: 'var(--ed-text2)', cursor: 'pointer', padding: 0, lineHeight: 1, fontSize: '14px' }}>×</button>
         </span>
       ))}
       <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
         onBlur={() => { if (input.trim()) add(input) }}
         placeholder={tags.length ? '' : 'Type tag + Enter…'}
-        style={{ flex: 1, minWidth: '100px', background: 'none', border: 'none', outline: 'none', color: '#ede8df', fontSize: '13px', fontFamily: "'DM Sans', sans-serif" }}
+        style={{ flex: 1, minWidth: '100px', background: 'none', border: 'none', outline: 'none', color: 'var(--ed-text1)', fontSize: '13px', fontFamily: "'DM Sans', sans-serif" }}
       />
     </div>
   )
@@ -67,9 +67,9 @@ function Toolbar({ editor, onInsertImage }) {
   const btnStyle = (isActive) => ({
     padding: '5px 10px', height: '28px', borderRadius: '3px',
     fontSize: '12.5px', fontWeight: 600, cursor: 'pointer',
-    border: '1px solid rgba(237,232,223,0.11)',
-    background: isActive ? '#2a2520' : 'transparent',
-    color: isActive ? '#d4a853' : '#8c857c',
+    border: '1px solid var(--ed-border2)',
+    background: isActive ? 'var(--ed-elevated)' : 'transparent',
+    color: isActive ? '#d4a853' : 'var(--ed-text2)',
     fontFamily: "'DM Sans', sans-serif",
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     whiteSpace: 'nowrap', flexShrink: 0,
@@ -86,9 +86,9 @@ function Toolbar({ editor, onInsertImage }) {
       display: 'flex', gap: '4px', flexWrap: 'nowrap', overflowX: 'auto',
       marginBottom: '12px', alignItems: 'center',
       position: 'sticky', top: '60px', zIndex: 18,
-      background: '#0e0d0c',
+      background: 'var(--ed-bg2)',
       paddingTop: '8px', paddingBottom: '8px',
-      borderBottom: '1px solid rgba(237,232,223,0.07)',
+      borderBottom: '1px solid var(--ed-border)',
       scrollbarWidth: 'none',
     }}>
       {btn('B',         () => editor.chain().focus().toggleBold().run(),                  editor.isActive('bold'))}
@@ -112,12 +112,12 @@ function Toolbar({ editor, onInsertImage }) {
 
 /* ── Quality flags helpers ─────────────────────────────────── */
 function verdictColor(v) {
-  if (!v) return '#8c857c'
+  if (!v) return 'var(--ed-text2)'
   const lv = v.toLowerCase()
   if (lv === 'publish') return '#10b981'
   if (lv === 'review')  return '#d4a853'
   if (lv === 'reject')  return '#ef4444'
-  return '#8c857c'
+  return 'var(--ed-text2)'
 }
 
 const VERDICT_LABEL = {
@@ -132,7 +132,7 @@ function FixItem({ text }) {
   const isWajib   = text.startsWith('WAJIB:')
   const truncate  = text.length > 100 && !expanded
   const btnStyle  = {
-    background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+    background: 'none', border: 'none', color: 'var(--ed-text3)', cursor: 'pointer',
     fontSize: '11.5px', padding: '0 0 0 4px', fontFamily: "'DM Sans', sans-serif",
   }
 
@@ -140,7 +140,7 @@ function FixItem({ text }) {
     const rest = text.slice('WAJIB:'.length)
     const restDisplay = truncate ? rest.slice(0, 94) + '…' : rest
     return (
-      <li style={{ fontSize: '12.5px', lineHeight: 1.55, color: '#8c857c' }}>
+      <li style={{ fontSize: '12.5px', lineHeight: 1.55, color: 'var(--ed-text2)' }}>
         <span style={{ color: '#d4a853', fontWeight: 700 }}>WAJIB:</span>
         {restDisplay}
         {text.length > 100 && (
@@ -153,7 +153,7 @@ function FixItem({ text }) {
   }
 
   return (
-    <li style={{ fontSize: '12.5px', lineHeight: 1.55, color: '#8c857c' }}>
+    <li style={{ fontSize: '12.5px', lineHeight: 1.55, color: 'var(--ed-text2)' }}>
       {truncate ? text.slice(0, 100) + '…' : text}
       {text.length > 100 && (
         <button onClick={() => setExpanded(v => !v)} style={btnStyle}>
@@ -196,7 +196,7 @@ function QualityPanel({ qf, originalQf }) {
   return (
     <section style={{ marginBottom: '32px' }}>
       <SectionLabel>Quality Report</SectionLabel>
-      <div style={{ background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderRadius: '6px', padding: '16px' }}>
+      <div style={{ background: 'var(--ed-card)', border: '1px solid var(--ed-border)', borderRadius: '6px', padding: '16px' }}>
 
         {/* Compact header — always visible */}
         {/* Row 1: verdict label + toggle button (no score here — avoids wrapping) */}
@@ -205,8 +205,8 @@ function QualityPanel({ qf, originalQf }) {
             {verdictLabel}
           </span>
           <button onClick={() => setExpanded(v => !v)} style={{
-            flexShrink: 0, background: 'none', border: '1px solid rgba(237,232,223,0.11)',
-            color: '#56514d', fontSize: '11px', cursor: 'pointer', padding: '4px 10px',
+            flexShrink: 0, background: 'none', border: '1px solid var(--ed-border2)',
+            color: 'var(--ed-text3)', fontSize: '11px', cursor: 'pointer', padding: '4px 10px',
             borderRadius: '4px', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap',
           }}>
             {expanded ? 'Close' : 'View Report'}
@@ -216,15 +216,15 @@ function QualityPanel({ qf, originalQf }) {
         {score != null && (
           <div style={{ marginBottom: '4px' }}>
             <span style={{ fontSize: '26px', fontWeight: 700, color: scoreColor, lineHeight: 1 }}>{score}</span>
-            <span style={{ fontSize: '12px', color: '#56514d', fontWeight: 400, marginLeft: '2px' }}>/100</span>
+            <span style={{ fontSize: '12px', color: 'var(--ed-text3)', fontWeight: 400, marginLeft: '2px' }}>/100</span>
           </div>
         )}
         {/* Row 3: summary */}
-        <div style={{ fontSize: '11.5px', color: '#56514d' }}>{summaryLine}</div>
+        <div style={{ fontSize: '11.5px', color: 'var(--ed-text3)' }}>{summaryLine}</div>
 
         {/* Expanded detail */}
         {expanded && (
-          <div style={{ marginTop: '16px', borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px' }}>
+          <div style={{ marginTop: '16px', borderTop: '1px solid var(--ed-border)', paddingTop: '16px' }}>
 
             {/* Perlu Perhatian Anda */}
             <div style={{ marginBottom: hasRevision && correctionItems.length > 0 ? '14px' : 0 }}>
@@ -291,7 +291,7 @@ function AuthorSelect({ authors, value, onChange }) {
       style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   ) : (
     <div style={{
-      width: size, height: size, borderRadius: '50%', background: '#2a2520', flexShrink: 0,
+      width: size, height: size, borderRadius: '50%', background: 'var(--ed-elevated)', flexShrink: 0,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#d4a853', fontSize: Math.round(size * 0.42) + 'px', fontWeight: 700,
     }}>
@@ -307,8 +307,8 @@ function AuthorSelect({ authors, value, onChange }) {
         onClick={() => setOpen(v => !v)}
         style={{
           width: '100%', padding: '9px 40px 9px 12px', borderRadius: '4px',
-          border: `1px solid ${open ? 'rgba(237,232,223,0.22)' : 'rgba(237,232,223,0.11)'}`,
-          background: '#0e0d0c', color: selected ? '#ede8df' : '#56514d',
+          border: `1px solid ${open ? 'rgba(237,232,223,0.22)' : 'var(--ed-border2)'}`,
+          background: 'var(--ed-bg2)', color: selected ? 'var(--ed-text1)' : 'var(--ed-text3)',
           fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
           cursor: 'pointer', textAlign: 'left', position: 'relative', boxSizing: 'border-box',
           display: 'flex', alignItems: 'center', gap: '9px',
@@ -328,7 +328,7 @@ function AuthorSelect({ authors, value, onChange }) {
           style={{
             position: 'absolute', right: '14px', top: '50%',
             transform: `translateY(-50%) rotate(${open ? 180 : 0}deg)`,
-            transition: 'transform 0.15s', color: '#56514d', flexShrink: 0, pointerEvents: 'none',
+            transition: 'transform 0.15s', color: 'var(--ed-text3)', flexShrink: 0, pointerEvents: 'none',
           }}>
           <polyline points="6 9 12 15 18 9"/>
         </svg>
@@ -338,7 +338,7 @@ function AuthorSelect({ authors, value, onChange }) {
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 5px)', left: 0, right: 0, zIndex: 200,
-          background: '#161412',
+          background: 'var(--ed-modal)',
           border: '1px solid rgba(237,232,223,0.14)',
           borderRadius: '6px',
           boxShadow: '0 8px 32px rgba(0,0,0,0.65)',
@@ -347,9 +347,9 @@ function AuthorSelect({ authors, value, onChange }) {
           {/* Sharpable News (null) option */}
           <button type="button" onClick={() => { onChange(null); setOpen(false) }} style={{
             width: '100%', padding: '9px 14px', border: 'none',
-            borderBottom: '1px solid rgba(237,232,223,0.06)',
+            borderBottom: '1px solid var(--ed-toggle-bg)',
             background: !value ? 'rgba(212,168,83,0.07)' : 'transparent',
-            color: !value ? '#d4a853' : '#8c857c',
+            color: !value ? '#d4a853' : 'var(--ed-text2)',
             fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
             cursor: 'pointer', textAlign: 'left',
             display: 'flex', alignItems: 'center', gap: '9px',
@@ -358,9 +358,9 @@ function AuthorSelect({ authors, value, onChange }) {
           onMouseEnter={e => { if (value) e.currentTarget.style.background = 'rgba(237,232,223,0.04)' }}
           onMouseLeave={e => { if (value) e.currentTarget.style.background = 'transparent' }}>
             <div style={{
-              width: 20, height: 20, borderRadius: '50%', background: '#1e1c1a', flexShrink: 0,
+              width: 20, height: 20, borderRadius: '50%', background: 'var(--ed-elevated)', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#56514d', fontSize: '8px', fontWeight: 700, letterSpacing: '0.02em',
+              color: 'var(--ed-text3)', fontSize: '8px', fontWeight: 700, letterSpacing: '0.02em',
             }}>SN</div>
             <span>Sharpable News</span>
           </button>
@@ -370,7 +370,7 @@ function AuthorSelect({ authors, value, onChange }) {
             <button key={a.id} type="button" onClick={() => { onChange(a.id); setOpen(false) }} style={{
               width: '100%', padding: '9px 14px', border: 'none',
               background: value === a.id ? 'rgba(212,168,83,0.07)' : 'transparent',
-              color: value === a.id ? '#d4a853' : '#ede8df',
+              color: value === a.id ? '#d4a853' : 'var(--ed-text1)',
               fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
               cursor: 'pointer', textAlign: 'left',
               display: 'flex', alignItems: 'center', gap: '9px',
@@ -388,10 +388,50 @@ function AuthorSelect({ authors, value, onChange }) {
   )
 }
 
+/* ── Sun / Moon icons + theme toggle ───────────────────────── */
+function SunIcon() {
+  return (
+    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  )
+}
+function MoonIcon() {
+  return (
+    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  )
+}
+function ThemeToggle({ theme, onToggle }) {
+  const lm = theme === 'light'
+  return (
+    <button
+      onClick={onToggle}
+      title={lm ? 'Dark Mode' : 'Light Mode'}
+      aria-label="Toggle theme"
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: '32px', height: '32px', borderRadius: '6px',
+        background: 'var(--ed-toggle-bg)',
+        border: '1px solid var(--ed-border2)',
+        color: 'var(--ed-text2)', cursor: 'pointer', flexShrink: 0,
+        transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+      }}
+    >
+      {lm ? <SunIcon /> : <MoonIcon />}
+    </button>
+  )
+}
+
 /* ── Section label ─────────────────────────────────────────── */
 function SectionLabel({ children }) {
   return (
-    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d', marginBottom: '8px' }}>
+    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ed-text3)', marginBottom: '8px' }}>
       {children}
     </div>
   )
@@ -399,8 +439,8 @@ function SectionLabel({ children }) {
 
 const inputStyle = {
   width: '100%', padding: '8px 10px', borderRadius: '4px',
-  border: '1px solid rgba(237,232,223,0.11)', background: '#0e0d0c',
-  color: '#ede8df', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
+  border: '1px solid var(--ed-border2)', background: 'var(--ed-bg2)',
+  color: 'var(--ed-text1)', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
   outline: 'none', boxSizing: 'border-box',
 }
 
@@ -426,7 +466,7 @@ function AIBriefModal({ brief, onClose }) {
         transition={{ type: 'spring', stiffness: 400, damping: 34 }}
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#161412',
+          background: 'var(--ed-modal)',
           border: '1px solid rgba(237,232,223,0.1)',
           borderTop: '3px solid #d4a853',
           borderRadius: '12px 12px 0 0',
@@ -439,12 +479,12 @@ function AIBriefModal({ brief, onClose }) {
         <div style={{ width: '36px', height: '3px', background: 'rgba(237,232,223,0.15)', borderRadius: '999px', margin: '0 auto 20px' }} />
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
           <div>
-            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>AI Suggestion</div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df' }}>Hero Image</div>
+            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--ed-text3)', marginBottom: '4px' }}>AI Suggestion</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ed-text1)' }}>Hero Image</div>
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
-            color: '#8c857c', cursor: 'pointer', padding: '6px', borderRadius: '6px',
+            color: 'var(--ed-text2)', cursor: 'pointer', padding: '6px', borderRadius: '6px',
             display: 'flex', alignItems: 'center', flexShrink: 0,
           }}>
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -453,7 +493,7 @@ function AIBriefModal({ brief, onClose }) {
           </button>
         </div>
         <p style={{
-          margin: 0, fontSize: '14px', color: '#8c857c', lineHeight: 1.7,
+          margin: 0, fontSize: '14px', color: 'var(--ed-text2)', lineHeight: 1.7,
           borderLeft: '3px solid rgba(212,168,83,0.3)', paddingLeft: '14px',
         }}>
           {brief}
@@ -464,15 +504,34 @@ function AIBriefModal({ brief, onClose }) {
 }
 
 /* ── Image Crop Modal ──────────────────────────────────────── */
+const CROP_ASPECT_RATIOS = { free: null, landscape: 16 / 9, portrait: 3 / 4, square: 1 / 1, tall: 9 / 16 }
+
 function CropModal({ src, onConfirm, onCancel }) {
   const [crop, setCrop] = useState()
   const [completedCrop, setCompletedCrop] = useState()
+  const [aspectMode, setAspectMode] = useState('landscape')
   const imgRef = useRef(null)
 
   const onImageLoad = (e) => {
     const { naturalWidth: w, naturalHeight: h } = e.currentTarget
-    const c = centerCrop(makeAspectCrop({ unit: '%', width: 90 }, 16 / 9, w, h), w, h)
+    const ratio = CROP_ASPECT_RATIOS[aspectMode]
+    const c = ratio
+      ? centerCrop(makeAspectCrop({ unit: '%', width: 90 }, ratio, w, h), w, h)
+      : { unit: 'px', x: 0, y: 0, width: w, height: h }
     setCrop(c)
+    setCompletedCrop(c)
+  }
+
+  const applyAspect = (mode) => {
+    setAspectMode(mode)
+    const img = imgRef.current
+    if (!img) return
+    const ratio = CROP_ASPECT_RATIOS[mode]
+    const next = ratio
+      ? centerCrop(makeAspectCrop({ unit: '%', width: 90 }, ratio, img.width, img.height), img.width, img.height)
+      : { unit: 'px', x: 0, y: 0, width: img.width, height: img.height }
+    setCrop(next)
+    setCompletedCrop(next)
   }
 
   const handleConfirm = () => {
@@ -481,14 +540,14 @@ function CropModal({ src, onConfirm, onCancel }) {
     const img = imgRef.current
     const scaleX = img.naturalWidth / img.width
     const scaleY = img.naturalHeight / img.height
-    canvas.width  = 1280
-    canvas.height = 720
+    canvas.width  = Math.round(completedCrop.width  * scaleX)
+    canvas.height = Math.round(completedCrop.height * scaleY)
     const ctx = canvas.getContext('2d')
     ctx.drawImage(
       img,
       completedCrop.x * scaleX, completedCrop.y * scaleY,
       completedCrop.width * scaleX, completedCrop.height * scaleY,
-      0, 0, 1280, 720,
+      0, 0, canvas.width, canvas.height,
     )
     canvas.toBlob((blob) => {
       if (blob) onConfirm(new File([blob], 'featured-image.jpg', { type: 'image/jpeg' }))
@@ -511,7 +570,7 @@ function CropModal({ src, onConfirm, onCancel }) {
         exit={{ scale: 0.95, opacity: 0, y: 8 }}
         transition={{ type: 'spring', stiffness: 480, damping: 34 }}
         style={{
-          background: '#161412',
+          background: 'var(--ed-modal)',
           border: '1px solid rgba(237,232,223,0.12)',
           borderTop: '3px solid #d4a853',
           borderRadius: '10px', padding: '22px',
@@ -521,11 +580,11 @@ function CropModal({ src, onConfirm, onCancel }) {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ede8df', marginBottom: '2px' }}>Crop Hero Image</div>
-            <div style={{ fontSize: '11.5px', color: '#56514d' }}>16:9 ratio · Output resolution 1280×720</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ed-text1)', marginBottom: '2px' }}>Crop Hero Image</div>
+            <div style={{ fontSize: '11.5px', color: 'var(--ed-text3)' }}>Choose an aspect ratio, then adjust the crop area</div>
           </div>
           <button onClick={onCancel} style={{
-            background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+            background: 'none', border: 'none', color: 'var(--ed-text3)', cursor: 'pointer',
             padding: '4px', fontSize: '20px', lineHeight: 1, display: 'flex',
           }}>
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -533,17 +592,58 @@ function CropModal({ src, onConfirm, onCancel }) {
             </svg>
           </button>
         </div>
+        {/* Aspect ratio templates */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          {[
+            { id: 'free', label: 'Free', w: 14, h: 14, dashed: true },
+            { id: 'landscape', label: '16:9', w: 18, h: 18 * (9 / 16) },
+            { id: 'portrait', label: '3:4', w: 18 * (3 / 4), h: 18 },
+            { id: 'square', label: '1:1', w: 16, h: 16 },
+            { id: 'tall', label: '9:16', w: 18 * (9 / 16), h: 18 },
+          ].map(({ id, label, w, h, dashed }) => {
+            const selected = aspectMode === id
+            return (
+              <button key={id} type="button" onClick={() => applyAspect(id)}
+                className="crop-aspect-ratio-btn"
+                title={label}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  gap: '3px', borderRadius: '6px', cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                  transition: 'background 0.12s, border-color 0.12s',
+                  background: selected ? 'var(--ed-amber-tint)' : 'transparent',
+                  border: selected ? '1px solid #d4a853' : '1px solid var(--ed-border2)',
+                }}>
+                <span style={{
+                  display: 'block', width: `${w}px`, height: `${h}px`,
+                  border: `1.5px ${dashed ? 'dashed' : 'solid'} ${selected ? '#d4a853' : 'var(--ed-text3)'}`,
+                  borderRadius: '2px',
+                }} />
+                <span style={{
+                  fontSize: '8.5px', fontWeight: 600, lineHeight: 1,
+                  color: selected ? '#d4a853' : 'var(--ed-text3)',
+                }}>{label}</span>
+              </button>
+            )
+          })}
+          <style>{`
+            .crop-aspect-ratio-btn { width: 36px; height: 36px; }
+            @media (max-width: 640px) {
+              .crop-aspect-ratio-btn { width: 32px; height: 32px; }
+            }
+          `}</style>
+        </div>
         {/* Crop area */}
         <div style={{
-          background: '#0c0b0a', borderRadius: '6px', overflow: 'hidden', marginBottom: '18px',
-          border: '1px solid rgba(237,232,223,0.07)',
+          background: 'var(--ed-bg)', borderRadius: '6px', overflow: 'hidden', marginBottom: '18px',
+          border: '1px solid var(--ed-border)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '180px',
         }}>
           <ReactCrop
             crop={crop}
             onChange={(c) => setCrop(c)}
             onComplete={(c) => setCompletedCrop(c)}
-            aspect={16 / 9}
+            aspect={CROP_ASPECT_RATIOS[aspectMode] || undefined}
             style={{ maxWidth: '100%' }}
           >
             <img ref={imgRef} src={src} onLoad={onImageLoad}
@@ -555,17 +655,17 @@ function CropModal({ src, onConfirm, onCancel }) {
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
           <button onClick={onCancel} style={{
             padding: '9px 18px', borderRadius: '6px',
-            border: '1px solid rgba(237,232,223,0.11)',
-            background: 'transparent', color: '#8c857c', fontSize: '13px',
+            border: '1px solid var(--ed-border2)',
+            background: 'transparent', color: 'var(--ed-text2)', fontSize: '13px',
             fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
             transition: 'border-color 0.12s, color 0.12s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = '#ede8df' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.11)'; e.currentTarget.style.color = '#8c857c' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = 'var(--ed-text1)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ed-border2)'; e.currentTarget.style.color = 'var(--ed-text2)' }}
           >Cancel</button>
           <button onClick={handleConfirm} style={{
             padding: '9px 20px', borderRadius: '6px', border: 'none',
-            background: '#d4a853', color: '#0c0b0a', fontSize: '13px', fontWeight: 700,
+            background: '#d4a853', color: 'var(--ed-bg)', fontSize: '13px', fontWeight: 700,
             cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
             transition: 'background 0.12s',
           }}
@@ -597,7 +697,26 @@ function InlineImageModal({
   const [rawFile,       setRawFile]       = useState(null)
   const [crop,          setCrop]          = useState()
   const [completedCrop, setCompletedCrop] = useState()
+  const [aspectMode,    setAspectMode]    = useState('free')
   const imgRef = useRef(null)
+
+  const ASPECT_RATIOS = { free: null, landscape: 16 / 9, portrait: 3 / 4, square: 1 / 1, tall: 9 / 16 }
+
+  const applyAspect = (mode) => {
+    setAspectMode(mode)
+    const ratio = ASPECT_RATIOS[mode]
+    const img = imgRef.current
+    if (!img) return
+    if (!ratio) {
+      const full = { unit: 'px', x: 0, y: 0, width: img.width, height: img.height }
+      setCrop(full)
+      setCompletedCrop(full)
+      return
+    }
+    const next = centerCrop(makeAspectCrop({ unit: '%', width: 90 }, ratio, img.width, img.height), img.width, img.height)
+    setCrop(next)
+    setCompletedCrop(next)
+  }
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose() }
@@ -616,6 +735,7 @@ function InlineImageModal({
     setUploadErr('')
     setCrop(undefined)
     setCompletedCrop(undefined)
+    setAspectMode('free')
     setRawFile(file)
     const reader = new FileReader()
     reader.onload = (e) => { setPreviewDataUrl(e.target.result); setUrl('') }
@@ -676,7 +796,7 @@ function InlineImageModal({
 
   const clearPreview = () => {
     setPreviewDataUrl('')
-    setRawFile(null); setUrl(''); setCrop(undefined); setCompletedCrop(undefined)
+    setRawFile(null); setUrl(''); setCrop(undefined); setCompletedCrop(undefined); setAspectMode('free')
   }
 
   const hasPreview  = !!(previewDataUrl || url.trim())
@@ -687,14 +807,14 @@ function InlineImageModal({
     <button onClick={() => setTab(id)} style={{
       padding: '8px 16px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
       background: 'none', borderBottom: `2px solid ${tab === id ? '#d4a853' : 'transparent'}`,
-      color: tab === id ? '#d4a853' : '#56514d', fontFamily: "'DM Sans', sans-serif",
+      color: tab === id ? '#d4a853' : 'var(--ed-text3)', fontFamily: "'DM Sans', sans-serif",
       transition: 'color 0.1s, border-color 0.1s',
     }}>{label}</button>
   )
 
   const fieldLabel = {
     fontSize: '11px', fontWeight: 700, letterSpacing: '0.07em',
-    textTransform: 'uppercase', color: '#56514d', marginBottom: '6px',
+    textTransform: 'uppercase', color: 'var(--ed-text3)', marginBottom: '6px',
   }
 
   return (
@@ -715,7 +835,7 @@ function InlineImageModal({
         transition={{ type: 'spring', stiffness: 480, damping: 34 }}
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#161412',
+          background: 'var(--ed-modal)',
           border: '1px solid rgba(237,232,223,0.1)',
           borderTop: '3px solid #d4a853',
           borderRadius: '10px', width: '100%', maxWidth: '460px',
@@ -729,16 +849,16 @@ function InlineImageModal({
           padding: '18px 22px 14px', flexShrink: 0,
         }}>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#ede8df', marginBottom: '1px' }}>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ed-text1)', marginBottom: '1px' }}>
               {mode === 'edit' ? 'Edit Image' : 'Insert Image'}
             </div>
-            <div style={{ fontSize: '11.5px', color: '#56514d' }}>
+            <div style={{ fontSize: '11.5px', color: 'var(--ed-text3)' }}>
               {mode === 'edit' ? 'Update image, alt text or caption' : 'Upload a file or enter a URL'}
             </div>
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
-            color: '#8c857c', cursor: 'pointer', padding: '6px', borderRadius: '6px',
+            color: 'var(--ed-text2)', cursor: 'pointer', padding: '6px', borderRadius: '6px',
             display: 'flex', alignItems: 'center', transition: 'background 0.1s',
           }}>
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -748,7 +868,7 @@ function InlineImageModal({
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(237,232,223,0.07)', paddingLeft: '12px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--ed-border)', paddingLeft: '12px', flexShrink: 0 }}>
           {tabBtn('upload', 'Upload')}
           {tabBtn('url', 'URL')}
         </div>
@@ -759,11 +879,53 @@ function InlineImageModal({
             <div style={{ marginBottom: '14px' }}>
               {hasPreview && tab === 'upload' ? (
                 <div style={{ marginBottom: '8px' }}>
+                  {rawFile && (
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                      {[
+                        { id: 'free', label: 'Free', w: 14, h: 14, dashed: true },
+                        { id: 'landscape', label: '16:9', w: 18, h: 18 * (9 / 16) },
+                        { id: 'portrait', label: '3:4', w: 18 * (3 / 4), h: 18 },
+                        { id: 'square', label: '1:1', w: 16, h: 16 },
+                        { id: 'tall', label: '9:16', w: 18 * (9 / 16), h: 18 },
+                      ].map(({ id, label, w, h, dashed }) => {
+                        const selected = aspectMode === id
+                        return (
+                          <button key={id} type="button" onClick={() => applyAspect(id)}
+                            className="aspect-ratio-btn"
+                            title={label}
+                            style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                              gap: '3px', borderRadius: '6px', cursor: 'pointer',
+                              fontFamily: "'DM Sans', sans-serif",
+                              transition: 'background 0.12s, border-color 0.12s',
+                              background: selected ? 'var(--ed-amber-tint)' : 'transparent',
+                              border: selected ? '1px solid #d4a853' : '1px solid var(--ed-border2)',
+                            }}>
+                            <span style={{
+                              display: 'block', width: `${w}px`, height: `${h}px`,
+                              border: `1.5px ${dashed ? 'dashed' : 'solid'} ${selected ? '#d4a853' : 'var(--ed-text3)'}`,
+                              borderRadius: '2px',
+                            }} />
+                            <span style={{
+                              fontSize: '8.5px', fontWeight: 600, lineHeight: 1,
+                              color: selected ? '#d4a853' : 'var(--ed-text3)',
+                            }}>{label}</span>
+                          </button>
+                        )
+                      })}
+                      <style>{`
+                        .aspect-ratio-btn { width: 36px; height: 36px; }
+                        @media (max-width: 640px) {
+                          .aspect-ratio-btn { width: 32px; height: 32px; }
+                        }
+                      `}</style>
+                    </div>
+                  )}
                   {/* Adaptive image viewer — no forced aspect ratio, shows full image */}
                   <div style={{
                     width: '100%',
-                    background: '#0c0b0a', borderRadius: '7px',
-                    border: '1px solid rgba(237,232,223,0.07)',
+                    background: 'var(--ed-bg)', borderRadius: '7px',
+                    border: '1px solid var(--ed-border)',
                     position: 'relative',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     marginBottom: '6px',
@@ -771,6 +933,7 @@ function InlineImageModal({
                     {rawFile ? (
                       <ReactCrop
                         crop={crop}
+                        aspect={ASPECT_RATIOS[aspectMode] || undefined}
                         onChange={c => setCrop(c)}
                         onComplete={c => setCompletedCrop(c)}
                         style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }}
@@ -795,12 +958,12 @@ function InlineImageModal({
                     <button onClick={clearPreview} style={{
                       position: 'absolute', top: '8px', right: '8px',
                       background: 'rgba(12,11,10,0.85)', border: '1px solid rgba(237,232,223,0.18)',
-                      color: '#ede8df', borderRadius: '5px', padding: '4px 10px',
+                      color: 'var(--ed-text1)', borderRadius: '5px', padding: '4px 10px',
                       fontSize: '11.5px', cursor: 'pointer', fontWeight: 600,
                     }}>Change</button>
                   </div>
                   {rawFile && (
-                    <div style={{ fontSize: '11px', color: '#3d3830', textAlign: 'center', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ed-text4)', textAlign: 'center', marginBottom: '2px' }}>
                       Drag to select crop area (optional)
                     </div>
                   )}
@@ -812,7 +975,7 @@ function InlineImageModal({
                     border: `2px dashed ${uploading ? 'rgba(212,168,83,0.3)' : 'rgba(237,232,223,0.1)'}`,
                     borderRadius: '7px', padding: '28px 20px',
                     textAlign: 'center', cursor: 'pointer',
-                    background: '#0e0d0c',
+                    background: 'var(--ed-bg2)',
                     transition: 'border-color 0.15s, background 0.15s',
                   }}
                   onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = 'rgba(237,232,223,0.2)' }}
@@ -826,8 +989,8 @@ function InlineImageModal({
                         <line x1="12" y1="3" x2="12" y2="15"/>
                       </svg>
                     </div>
-                    <div style={{ fontSize: '13px', color: '#8c857c', marginBottom: '3px' }}>Click to select image</div>
-                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · Max 8 MB</div>
+                    <div style={{ fontSize: '13px', color: 'var(--ed-text2)', marginBottom: '3px' }}>Click to select image</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ed-text4)' }}>JPG, PNG, WebP · Max 8 MB</div>
                   </>
                 </div>
               )}
@@ -852,8 +1015,8 @@ function InlineImageModal({
               {url && (
                 <div style={{
                   width: '100%',
-                  background: '#0c0b0a', borderRadius: '6px',
-                  border: '1px solid rgba(237,232,223,0.07)',
+                  background: 'var(--ed-bg)', borderRadius: '6px',
+                  border: '1px solid var(--ed-border)',
                   marginTop: '8px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
@@ -869,12 +1032,12 @@ function InlineImageModal({
           {/* Shared fields */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
             <div>
-              <div style={fieldLabel}>Alt Text <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(accessibility)</span></div>
+              <div style={fieldLabel}>Alt Text <span style={{ color: 'var(--ed-text4)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(accessibility)</span></div>
               <input type="text" value={alt} onChange={e => setAlt(e.target.value)}
                 placeholder="Describe this image…" style={inputStyle} />
             </div>
             <div>
-              <div style={fieldLabel}>Caption <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
+              <div style={fieldLabel}>Caption <span style={{ color: 'var(--ed-text4)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
               <input type="text" value={caption} onChange={e => setCaption(e.target.value)}
                 placeholder="Caption below the image…" style={inputStyle} />
             </div>
@@ -883,19 +1046,19 @@ function InlineImageModal({
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
             <button onClick={onClose} style={{
               padding: '9px 18px', borderRadius: '6px',
-              border: '1px solid rgba(237,232,223,0.11)',
-              background: 'transparent', color: '#8c857c',
+              border: '1px solid var(--ed-border2)',
+              background: 'transparent', color: 'var(--ed-text2)',
               fontSize: '13px', fontWeight: 600, cursor: 'pointer',
               fontFamily: "'DM Sans', sans-serif",
               transition: 'border-color 0.12s, color 0.12s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = '#ede8df' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.11)'; e.currentTarget.style.color = '#8c857c' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.25)'; e.currentTarget.style.color = 'var(--ed-text1)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ed-border2)'; e.currentTarget.style.color = 'var(--ed-text2)' }}
             >Cancel</button>
             <button onClick={handleInsert} disabled={!canInsert} style={{
               padding: '9px 20px', borderRadius: '6px', border: 'none',
-              background: canInsert ? '#d4a853' : '#1e1c1a',
-              color: canInsert ? '#0c0b0a' : '#3a3530',
+              background: canInsert ? '#d4a853' : 'var(--ed-elevated)',
+              color: canInsert ? 'var(--ed-bg)' : 'var(--ed-text4)',
               fontSize: '13px', fontWeight: 700,
               cursor: canInsert ? 'pointer' : 'not-allowed',
               fontFamily: "'DM Sans', sans-serif",
@@ -903,7 +1066,7 @@ function InlineImageModal({
               display: 'flex', alignItems: 'center', gap: '7px',
             }}
             onMouseEnter={e => { if (canInsert) e.currentTarget.style.background = '#c49640' }}
-            onMouseLeave={e => { if (canInsert) e.currentTarget.style.background = canInsert ? '#d4a853' : '#1e1c1a' }}
+            onMouseLeave={e => { if (canInsert) e.currentTarget.style.background = canInsert ? '#d4a853' : 'var(--ed-elevated)' }}
             >
               {uploading && <Spinner size={12} />}
               {mode === 'edit' ? 'Update' : 'Insert Image'}
@@ -924,10 +1087,10 @@ function GenerationContext({ article }) {
 
   const InfoRow = ({ label, value }) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '10px' }}>
-      <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#56514d' }}>
+      <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ed-text3)' }}>
         {label}
       </div>
-      <div style={{ fontSize: '12.5px', color: '#ede8df', lineHeight: 1.45 }}>
+      <div style={{ fontSize: '12.5px', color: 'var(--ed-text1)', lineHeight: 1.45 }}>
         {value}
       </div>
     </div>
@@ -937,14 +1100,14 @@ function GenerationContext({ article }) {
     <section style={{ marginBottom: '24px' }}>
       <SectionLabel>Generation Context</SectionLabel>
       <div style={{
-        background: 'rgba(237,232,223,0.03)',
-        border: '1px solid rgba(237,232,223,0.07)',
+        background: 'var(--ed-tint)',
+        border: '1px solid var(--ed-border)',
         borderRadius: '6px',
         padding: '12px 14px',
       }}>
         <InfoRow
           label="Topic Direction"
-          value={dir || <span style={{ color: '#56514d', fontStyle: 'italic' }}>None</span>}
+          value={dir || <span style={{ color: 'var(--ed-text3)', fontStyle: 'italic' }}>None</span>}
         />
         {sel && (
           <InfoRow
@@ -964,16 +1127,16 @@ function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, s
       <SectionLabel>SEO</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div>
-          <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Slug</div>
+          <div style={{ fontSize: '11.5px', color: 'var(--ed-text3)', marginBottom: '5px' }}>Slug</div>
           <input type="text" value={slug} onChange={e => setSlug(e.target.value)} style={inputStyle} />
         </div>
         <div>
-          <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Meta Description</div>
+          <div style={{ fontSize: '11.5px', color: 'var(--ed-text3)', marginBottom: '5px' }}>Meta Description</div>
           <textarea value={metaDescription} onChange={e => setMetaDescription(e.target.value)} rows={4}
             style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, minHeight: '96px' }} />
         </div>
         <div>
-          <div style={{ fontSize: '11.5px', color: '#56514d', marginBottom: '5px' }}>Tag</div>
+          <div style={{ fontSize: '11.5px', color: 'var(--ed-text3)', marginBottom: '5px' }}>Tag</div>
           <TagInput tags={tags} onChange={setTags} />
         </div>
       </div>
@@ -981,14 +1144,14 @@ function SEOFields({ slug, setSlug, metaDescription, setMetaDescription, tags, s
   )
 }
 
-function SaveButtons({ saveStatus, onDraft, onPublish }) {
+function SaveButtons({ saveStatus, onDraft, onPublish, isPublished }) {
   return (
     <section>
       <SectionLabel>Actions</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <button onClick={onDraft} disabled={saveStatus === 'saving'} style={{
           width: '100%', padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-          border: '1px solid rgba(237,232,223,0.11)', background: 'transparent', color: '#8c857c',
+          border: '1px solid var(--ed-border2)', background: 'transparent', color: 'var(--ed-text2)',
           cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
           fontFamily: "'DM Sans', sans-serif",
@@ -999,13 +1162,13 @@ function SaveButtons({ saveStatus, onDraft, onPublish }) {
         <button onClick={onPublish} disabled={saveStatus === 'saving'} style={{
           width: '100%', padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 700,
           border: 'none', background: saveStatus === 'saving' ? '#3a3020' : '#d4a853',
-          color: saveStatus === 'saving' ? '#8c7040' : '#0c0b0a',
+          color: saveStatus === 'saving' ? '#8c7040' : 'var(--ed-bg)',
           cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
           fontFamily: "'DM Sans', sans-serif",
         }}>
           {saveStatus === 'saving' && <Spinner size={12} />}
-          Publish Now
+          {isPublished ? 'Save Changes' : 'Publish Now'}
         </button>
       </div>
     </section>
@@ -1068,6 +1231,25 @@ export default function EditorClient({ article, authors = [] }) {
 
   // Mobile tab state
   const [activeTab, setActiveTab] = useState('kandungan')
+
+  // Editor theme (synced with admin panel theme)
+  const [theme, setTheme] = useState('dark')
+  useEffect(() => {
+    const saved = localStorage.getItem('admin-theme') || 'dark'
+    setTheme(saved)
+    const h = (e) => setTheme(e.detail)
+    window.addEventListener('admin-theme-change', h)
+    return () => window.removeEventListener('admin-theme-change', h)
+  }, [])
+  const toggleTheme = () => {
+    document.documentElement.classList.add('theme-transitioning')
+    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 380)
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    localStorage.setItem('admin-theme', next)
+    window.dispatchEvent(new CustomEvent('admin-theme-change', { detail: next }))
+  }
+  const lm = theme === 'light'
 
   const editor = useEditor({
     extensions: [
@@ -1411,26 +1593,63 @@ export default function EditorClient({ article, authors = [] }) {
   const qf         = article.quality_flags ?? {}
   const originalQf = article.original_quality_flags ?? {}
   const sources    = article.sources ?? []
+  const isPublished = article.status === 'published'
 
   const mob = (tab) => activeTab === tab ? 'mob-tab-show' : 'mob-tab-hide'
 
+  const themeVars = lm ? {
+    '--ed-bg':         '#f8f8f8',
+    '--ed-bg2':        '#ffffff',
+    '--ed-card':       '#f1f1f1',
+    '--ed-modal':      '#ffffff',
+    '--ed-elevated':   '#ececec',
+    '--ed-amber-tint': '#fbf3e2',
+    '--ed-text1':      '#1a1a1a',
+    '--ed-text2':      '#5b5650',
+    '--ed-text3':      '#8a8580',
+    '--ed-text4':      '#b8b3ac',
+    '--ed-border':     'rgba(0,0,0,0.08)',
+    '--ed-border2':    'rgba(0,0,0,0.13)',
+    '--ed-tint':       'rgba(0,0,0,0.025)',
+    '--ed-toggle-bg':  'rgba(0,0,0,0.05)',
+    '--ed-strong':     '#0d0d0d',
+    '--ed-em':         '#4b4641',
+  } : {
+    '--ed-bg':         '#0C0B0A',
+    '--ed-bg2':        '#0E0D0C',
+    '--ed-card':       '#111011',
+    '--ed-modal':      '#161413',
+    '--ed-elevated':   '#1E1C1A',
+    '--ed-amber-tint': '#1A160E',
+    '--ed-text1':      '#EDE8DF',
+    '--ed-text2':      '#A39C92',
+    '--ed-text3':      '#7A7269',
+    '--ed-text4':      '#5E564D',
+    '--ed-border':     'rgba(237, 232, 223, 0.07)',
+    '--ed-border2':    'rgba(237, 232, 223, 0.11)',
+    '--ed-tint':       'rgba(237, 232, 223, 0.03)',
+    '--ed-toggle-bg':  'rgba(237, 232, 223, 0.06)',
+    '--ed-strong':     '#f0ebe2',
+    '--ed-em':         '#c0b8ae',
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0c0b0a', fontFamily: "'DM Sans', sans-serif", color: '#ede8df' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--ed-bg)', fontFamily: "'DM Sans', sans-serif", color: 'var(--ed-text1)', transition: 'background 0.2s, color 0.2s', ...themeVars }}>
       <style>{`
         @keyframes editor-spin { to { transform: rotate(360deg); } }
 
-        .tiptap-editor { outline: none; min-height: 320px; font-size: 15px; line-height: 1.75; color: #ede8df; }
+        .tiptap-editor { outline: none; min-height: 320px; font-size: 15px; line-height: 1.75; color: var(--ed-text1); }
         .tiptap-editor h2 { font-family: 'DM Sans', sans-serif; font-size: 20px; font-weight: 700; margin: 24px 0 8px; }
         .tiptap-editor h3 { font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; margin: 20px 0 6px; }
         .tiptap-editor p  { margin: 0 0 14px; }
         .tiptap-editor ul, .tiptap-editor ol { padding-left: 20px; margin: 0 0 14px; }
-        .tiptap-editor strong { color: #f0ebe2; }
-        .tiptap-editor em { color: #c0b8ae; }
+        .tiptap-editor strong { color: var(--ed-strong); }
+        .tiptap-editor em { color: var(--ed-em); }
         .tiptap-editor img { max-width: 100%; width: auto; height: auto; max-height: 500px; border-radius: 4px; display: block; margin: 16px auto 4px; cursor: default; }
         .tiptap-editor img.ProseMirror-selectednode { outline: 2px solid #d4a853; border-radius: 4px; }
         .tiptap-editor img[title]::after { content: attr(title); }
-        .img-move-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:4px; border:1px solid rgba(237,232,223,0.18); background:#1e1c1a; color:#ede8df; cursor:pointer; font-size:14px; line-height:1; transition:background 0.1s, transform 0.1s; }
-        .img-move-btn:hover { background:#2a2824; }
+        .img-move-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:4px; border:1px solid rgba(237,232,223,0.18); background:var(--ed-elevated); color:var(--ed-text1); cursor:pointer; font-size:14px; line-height:1; transition:background 0.1s, transform 0.1s; }
+        .img-move-btn:hover { background:var(--ed-elevated); }
         .img-move-btn:active { transform:scale(0.91); }
         .img-move-btn:disabled { opacity:0.25; cursor:default; }
         /* Toolbar button hover + press */
@@ -1448,34 +1667,34 @@ export default function EditorClient({ article, authors = [] }) {
         .editor-header {
           padding: 0 32px; height: 60px;
           display: flex; align-items: center; justify-content: space-between;
-          position: sticky; top: 0; background: #0c0b0a; z-index: 20;
-          border-bottom: 1px solid rgba(237,232,223,0.07);
+          position: sticky; top: 0; background: var(--ed-bg); z-index: 20;
+          border-bottom: 1px solid var(--ed-border);
         }
         .editor-header-title { display: flex; align-items: center; gap: 16px; min-width: 0; }
-        .editor-header-label { font-size: 13px; font-weight: 600; color: #8c857c; white-space: nowrap; }
-        .editor-header-sep   { color: #2a2520; }
+        .editor-header-label { font-size: 13px; font-weight: 600; color: var(--ed-text2); white-space: nowrap; }
+        .editor-header-sep   { color: var(--ed-elevated); }
         .editor-save-btns    { display: flex; gap: 10px; flex-shrink: 0; }
 
         /* ── Mobile tab bar ── */
         .editor-tab-bar {
           display: none;
           position: sticky; top: 52px; z-index: 15;
-          background: #0c0b0a;
-          border-bottom: 1px solid rgba(237,232,223,0.07);
+          background: var(--ed-bg);
+          border-bottom: 1px solid var(--ed-border);
         }
         .editor-tab-btn {
           flex: 1; padding: 12px 8px; border: none; background: none;
-          color: #56514d; font-size: 13px; font-weight: 600;
+          color: var(--ed-text3); font-size: 13px; font-weight: 600;
           border-bottom: 2px solid transparent; cursor: pointer;
           transition: color 0.15s, border-color 0.15s, background 0.12s;
           font-family: var(--font-sans); white-space: nowrap;
         }
-        .editor-tab-btn:hover { color: #8c857c; background: rgba(237,232,223,0.03); }
+        .editor-tab-btn:hover { color: var(--ed-text2); background: var(--ed-tint); }
         .editor-tab-btn.tab-active { color: #d4a853; border-bottom-color: #d4a853; }
 
         /* ── Desktop two-column layout ── */
         .editor-layout { display: grid; grid-template-columns: 1fr 340px; max-width: 1400px; margin: 0 auto; }
-        .editor-main   { padding: 36px 40px; border-right: 1px solid rgba(237,232,223,0.07); }
+        .editor-main   { padding: 36px 40px; border-right: 1px solid var(--ed-border); }
         .editor-aside  { padding: 36px 28px; position: sticky; top: 60px; align-self: start; height: calc(100vh - 60px); overflow-y: auto; }
 
         .dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: #d4a853; flex-shrink: 0; }
@@ -1519,6 +1738,9 @@ export default function EditorClient({ article, authors = [] }) {
       <ConfirmationModal open={modal === 'publish'} title="Publish Article?" message="The article will be published and visible to the public."
         confirmLabel="Yes, Publish" cancelLabel="Review Again" confirmColor="amber"
         onConfirm={() => { setModal(null); save('published') }} onCancel={() => setModal(null)} />
+      <ConfirmationModal open={modal === 'draft'} title="Save as Draft?" message="Are you sure you want to save this as a draft? Any published version will be unpublished."
+        confirmLabel="Yes, Save Draft" cancelLabel="Cancel" confirmColor="amber"
+        onConfirm={() => { setModal(null); save('draft') }} onCancel={() => setModal(null)} />
       <ConfirmationModal open={modal === 'unsaved'} title="Unsaved Changes" message="Your changes will be lost if you leave without saving."
         confirmLabel="Leave Without Saving" cancelLabel="Keep Editing" confirmColor="red"
         onConfirm={() => { setModal(null); setIsDirty(false); router.push(pendingNav ?? '/admin') }}
@@ -1562,7 +1784,7 @@ export default function EditorClient({ article, authors = [] }) {
       <header className="editor-header">
         <div className="editor-header-title">
           <Link href="/admin" onClick={handleBackClick}
-            style={{ color: '#56514d', fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            style={{ color: 'var(--ed-text3)', fontSize: '13px', textDecoration: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
             ← Admin
           </Link>
           {isDirty && <span className="dirty-dot" title="Unsaved changes" />}
@@ -1570,10 +1792,12 @@ export default function EditorClient({ article, authors = [] }) {
           <span className="editor-header-label">Article Editor</span>
         </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <ThemeToggle theme={theme} onToggle={toggleTheme} />
         <div className="editor-save-btns">
-          <button onClick={() => save('draft')} disabled={saveStatus === 'saving'} style={{
+          <button onClick={() => setModal('draft')} disabled={saveStatus === 'saving'} style={{
             padding: '7px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-            border: '1px solid rgba(237,232,223,0.11)', background: 'transparent', color: '#8c857c',
+            border: '1px solid var(--ed-border2)', background: 'transparent', color: 'var(--ed-text2)',
             cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', gap: '7px',
           }}>
@@ -1583,13 +1807,14 @@ export default function EditorClient({ article, authors = [] }) {
           <button onClick={() => setModal('publish')} disabled={saveStatus === 'saving'} style={{
             padding: '7px 18px', borderRadius: '6px', fontSize: '13px', fontWeight: 700,
             border: 'none', background: saveStatus === 'saving' ? '#3a3020' : '#d4a853',
-            color: saveStatus === 'saving' ? '#8c7040' : '#0c0b0a',
+            color: saveStatus === 'saving' ? '#8c7040' : 'var(--ed-bg)',
             cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', gap: '7px',
           }}>
             {saveStatus === 'saving' && <Spinner size={12} />}
-            Publish Now
+            {isPublished ? 'Save Changes' : 'Publish Now'}
           </button>
+        </div>
         </div>
       </header>
 
@@ -1620,8 +1845,8 @@ export default function EditorClient({ article, authors = [] }) {
                 <label key={i} style={{
                   display: 'flex', alignItems: 'flex-start', gap: '12px',
                   padding: '14px 16px', borderRadius: '4px', cursor: 'pointer',
-                  border: `1px solid ${selectedIdx === i && !customHeadline ? '#d4a853' : 'rgba(237,232,223,0.07)'}`,
-                  background: selectedIdx === i && !customHeadline ? '#1a160e' : '#111010',
+                  border: `1px solid ${selectedIdx === i && !customHeadline ? '#d4a853' : 'var(--ed-border)'}`,
+                  background: selectedIdx === i && !customHeadline ? 'var(--ed-amber-tint)' : 'var(--ed-card)',
                   transition: 'border-color 0.15s, background 0.15s',
                 }}>
                   <input type="radio" name="headline"
@@ -1629,7 +1854,7 @@ export default function EditorClient({ article, authors = [] }) {
                     onChange={() => { setSelectedIdx(i); setCustomHeadline(''); setIsDirty(true) }}
                     style={{ marginTop: '2px', accentColor: '#d4a853', flexShrink: 0 }}
                   />
-                  <span style={{ fontSize: '15px', lineHeight: 1.5, color: '#ede8df' }}>{h}</span>
+                  <span style={{ fontSize: '15px', lineHeight: 1.5, color: 'var(--ed-text1)' }}>{h}</span>
                 </label>
               ))}
               <div style={{ marginTop: '4px' }}>
@@ -1639,8 +1864,8 @@ export default function EditorClient({ article, authors = [] }) {
                   placeholder="Write your own headline…"
                   style={{
                     ...inputStyle,
-                    border: `1px solid ${customHeadline ? '#d4a853' : 'rgba(237,232,223,0.11)'}`,
-                    background: customHeadline ? '#1a160e' : '#0e0d0c',
+                    border: `1px solid ${customHeadline ? '#d4a853' : 'var(--ed-border2)'}`,
+                    background: customHeadline ? 'var(--ed-amber-tint)' : 'var(--ed-bg2)',
                     fontSize: '15px',
                   }}
                 />
@@ -1654,10 +1879,10 @@ export default function EditorClient({ article, authors = [] }) {
 
             {article.image_brief && (
               <>
-                <div style={{ padding: '14px 16px', borderRadius: '4px', marginBottom: '12px', background: '#111010', border: '1px solid rgba(237,232,223,0.07)', borderLeft: '3px solid #d4a853' }}
+                <div style={{ padding: '14px 16px', borderRadius: '4px', marginBottom: '12px', background: 'var(--ed-card)', border: '1px solid var(--ed-border)', borderLeft: '3px solid #d4a853' }}
                   className="hide-on-mobile">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d' }}>AI Suggestion — Hero Image</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ed-text3)' }}>AI Suggestion — Hero Image</div>
                     <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
                       <button
                         onClick={() => {
@@ -1682,7 +1907,7 @@ export default function EditorClient({ article, authors = [] }) {
                       </button>
                     </div>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13.5px', color: '#8c857c', lineHeight: 1.6 }}>{briefPrompt}</p>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--ed-text2)', lineHeight: 1.6 }}>{briefPrompt}</p>
                 </div>
                 <button className="show-on-mobile" onClick={() => setShowBrief(true)} style={{
                   display: 'none', marginBottom: '12px', padding: '8px 14px', borderRadius: '6px',
@@ -1702,7 +1927,7 @@ export default function EditorClient({ article, authors = [] }) {
                 <button onClick={() => setModal('removeImage')} style={{
                   position: 'absolute', top: '10px', right: '10px',
                   background: 'rgba(12,11,10,0.8)', border: '1px solid rgba(237,232,223,0.15)',
-                  color: '#ede8df', borderRadius: '4px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer',
+                  color: 'var(--ed-text1)', borderRadius: '4px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer',
                 }}>× Change</button>
               </div>
             ) : (
@@ -1712,21 +1937,21 @@ export default function EditorClient({ article, authors = [] }) {
                 onDrop={async e => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) handleFileSelect(f) }}
                 onClick={() => fileInputRef.current?.click()}
                 style={{
-                  border: `2px dashed ${isDragging ? '#d4a853' : 'rgba(237,232,223,0.11)'}`,
+                  border: `2px dashed ${isDragging ? '#d4a853' : 'var(--ed-border2)'}`,
                   borderRadius: '4px', padding: '36px 24px', textAlign: 'center',
-                  cursor: 'pointer', background: isDragging ? '#1a160e' : '#0e0d0c',
+                  cursor: 'pointer', background: isDragging ? 'var(--ed-amber-tint)' : 'var(--ed-bg2)',
                   transition: 'border-color 0.15s, background 0.15s',
                 }}
               >
                 {uploadStatus === 'uploading' ? (
-                  <div style={{ color: '#8c857c', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <div style={{ color: 'var(--ed-text2)', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                     <Spinner size={14} />Uploading…
                   </div>
                 ) : (
                   <>
                     <div style={{ fontSize: '28px', marginBottom: '8px', opacity: 0.4 }}>↑</div>
-                    <div style={{ fontSize: '13.5px', color: '#8c857c', marginBottom: '4px' }}>Drag & drop image, or click to select</div>
-                    <div style={{ fontSize: '11.5px', color: '#3a3530' }}>JPG, PNG, WebP · 16:9 ratio will be cropped · Max 8 MB</div>
+                    <div style={{ fontSize: '13.5px', color: 'var(--ed-text2)', marginBottom: '4px' }}>Drag & drop image, or click to select</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ed-text4)' }}>JPG, PNG, WebP · 16:9 ratio will be cropped · Max 8 MB</div>
                     {uploadStatus === 'error' && <div style={{ marginTop: '8px', fontSize: '12px', color: '#ef4444' }}>Upload failed. Try again.</div>}
                   </>
                 )}
@@ -1736,49 +1961,47 @@ export default function EditorClient({ article, authors = [] }) {
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }} />
 
             {/* Caption for hero image */}
-            {featuredImage && (
-              <div style={{ marginTop: '10px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>
-                  Thumbnail Caption
-                </div>
-                {editingFeaturedCaption ? (
-                  <input
-                    autoFocus
-                    value={featuredImageCaption}
-                    onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
-                    onBlur={() => setEditingFeaturedCaption(false)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedCaption(false) } }}
-                    placeholder="Short news-style caption…"
-                    style={{
-                      width: '100%', boxSizing: 'border-box',
-                      padding: '7px 10px', borderRadius: '4px',
-                      background: '#0e0d0c', border: '1px solid rgba(212,168,83,0.35)',
-                      color: '#ede8df', fontSize: '13px',
-                      fontFamily: "'DM Sans', sans-serif", outline: 'none',
-                    }}
-                  />
-                ) : (
-                  <div
-                    onClick={() => setEditingFeaturedCaption(true)}
-                    title="Click to edit caption"
-                    style={{
-                      padding: '7px 10px', borderRadius: '4px', cursor: 'text',
-                      border: '1px solid rgba(237,232,223,0.07)',
-                      background: 'transparent', minHeight: '34px',
-                      fontSize: '13px', fontStyle: featuredImageCaption ? 'normal' : 'italic',
-                      color: featuredImageCaption ? '#8c857c' : '#3a3530',
-                      fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
-                    }}
-                  >
-                    {featuredImageCaption || 'No caption — click to add'}
-                  </div>
-                )}
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ed-text3)', marginBottom: '4px' }}>
+                Thumbnail Caption
               </div>
-            )}
+              {editingFeaturedCaption ? (
+                <input
+                  autoFocus
+                  value={featuredImageCaption}
+                  onChange={e => { setFeaturedImageCaption(e.target.value); setIsDirty(true) }}
+                  onBlur={() => setEditingFeaturedCaption(false)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setEditingFeaturedCaption(false) } }}
+                  placeholder="Short news-style caption…"
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '7px 10px', borderRadius: '4px',
+                    background: 'var(--ed-bg2)', border: '1px solid rgba(212,168,83,0.35)',
+                    color: 'var(--ed-text1)', fontSize: '13px',
+                    fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                  }}
+                />
+              ) : (
+                <div
+                  onClick={() => setEditingFeaturedCaption(true)}
+                  title="Click to edit caption"
+                  style={{
+                    padding: '7px 10px', borderRadius: '4px', cursor: 'text',
+                    border: '1px solid var(--ed-border)',
+                    background: 'transparent', minHeight: '34px',
+                    fontSize: '13px', fontStyle: featuredImageCaption ? 'normal' : 'italic',
+                    color: featuredImageCaption ? 'var(--ed-text2)' : 'var(--ed-text4)',
+                    fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
+                  }}
+                >
+                  {featuredImageCaption || 'No caption — click to add'}
+                </div>
+              )}
+            </div>
 
             {/* Alt text for hero image */}
             <div style={{ marginTop: '10px' }}>
-              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#56514d', marginBottom: '4px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ed-text3)', marginBottom: '4px' }}>
                 Hero Image Alt Text
               </div>
               {editingFeaturedAlt ? (
@@ -1793,8 +2016,8 @@ export default function EditorClient({ article, authors = [] }) {
                   style={{
                     width: '100%', boxSizing: 'border-box',
                     padding: '7px 10px', borderRadius: '4px',
-                    background: '#0e0d0c', border: '1px solid rgba(212,168,83,0.35)',
-                    color: '#ede8df', fontSize: '13px',
+                    background: 'var(--ed-bg2)', border: '1px solid rgba(212,168,83,0.35)',
+                    color: 'var(--ed-text1)', fontSize: '13px',
                     fontFamily: "'DM Sans', sans-serif", outline: 'none',
                   }}
                 />
@@ -1804,10 +2027,10 @@ export default function EditorClient({ article, authors = [] }) {
                   title="Click to edit"
                   style={{
                     padding: '7px 10px', borderRadius: '4px', cursor: 'text',
-                    border: '1px solid rgba(237,232,223,0.07)',
+                    border: '1px solid var(--ed-border)',
                     background: 'transparent', minHeight: '34px',
                     fontSize: '13px', fontStyle: featuredImageAlt ? 'normal' : 'italic',
-                    color: featuredImageAlt ? '#8c857c' : '#3a3530',
+                    color: featuredImageAlt ? 'var(--ed-text2)' : 'var(--ed-text4)',
                     fontFamily: "'DM Sans', sans-serif", lineHeight: '1.4',
                   }}
                 >
@@ -1815,7 +2038,7 @@ export default function EditorClient({ article, authors = [] }) {
                 </div>
               )}
               {editingFeaturedAlt && (
-                <div style={{ fontSize: '11px', color: '#3a3530', marginTop: '3px', textAlign: 'right' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ed-text4)', marginTop: '3px', textAlign: 'right' }}>
                   {featuredImageAlt.length}/125
                 </div>
               )}
@@ -1825,9 +2048,9 @@ export default function EditorClient({ article, authors = [] }) {
           {/* 3. TipTap body editor */}
           <section style={{ marginBottom: '40px' }}>
             <SectionLabel>Article Content</SectionLabel>
-            <div style={{ border: '1px solid rgba(237,232,223,0.11)', borderRadius: '4px', background: '#0e0d0c', padding: '16px' }}>
+            <div style={{ border: '1px solid var(--ed-border2)', borderRadius: '4px', background: 'var(--ed-bg2)', padding: '16px' }}>
               <Toolbar editor={editor} onInsertImage={() => setShowInlineImageModal(true)} />
-              <div ref={editorContainerRef} style={{ borderTop: '1px solid rgba(237,232,223,0.07)', paddingTop: '16px', position: 'relative' }}>
+              <div ref={editorContainerRef} style={{ borderTop: '1px solid var(--ed-border)', paddingTop: '16px', position: 'relative' }}>
                 <EditorContent editor={editor} className="tiptap-editor" />
                 {/* Image toolbar — horizontal overlay at bottom of selected image */}
                 {imgMove && (
@@ -1876,18 +2099,18 @@ export default function EditorClient({ article, authors = [] }) {
                     {/* ↑↓ move buttons — always visible (essential on mobile, convenient on desktop) */}
                     {imgHover.canUp && (
                       <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('up') }} title="Move up"
-                        style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↑</button>
+                        style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: 'var(--ed-text1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↑</button>
                     )}
                     {imgHover.canDown && (
                       <button onMouseDown={e => { e.preventDefault(); moveImageAtPos('down') }} title="Move down"
-                        style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↓</button>
+                        style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: 'var(--ed-text1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', fontSize: '14px', lineHeight: 1 }}>↓</button>
                     )}
                     {(imgHover.canUp || imgHover.canDown) && (
                       <div style={{ width: '1px', background: 'rgba(237,232,223,0.15)', margin: '4px 1px' }} />
                     )}
                     {/* Edit */}
                     <button onMouseDown={e => { e.preventDefault(); openHoverEditImage() }} title="Edit image"
-                      style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ede8df', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
+                      style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: 'var(--ed-text1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>
                       <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1920,17 +2143,17 @@ export default function EditorClient({ article, authors = [] }) {
                   <li key={i}>
                     {src.url ? (
                       <a href={src.url} target="_blank" rel="noopener noreferrer" style={{
-                        fontSize: '13.5px', fontWeight: 600, color: '#ede8df', marginBottom: '2px',
+                        fontSize: '13.5px', fontWeight: 600, color: 'var(--ed-text1)', marginBottom: '2px',
                         display: 'block', textDecoration: 'underline', textUnderlineOffset: '3px',
                         textDecorationColor: 'rgba(237,232,223,0.3)',
                       }}>
                         {src.title}
                       </a>
                     ) : (
-                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: '#ede8df', marginBottom: '2px' }}>{src.title}</div>
+                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ed-text1)', marginBottom: '2px' }}>{src.title}</div>
                     )}
                     {src.description && (
-                      <div style={{ fontSize: '12.5px', color: '#56514d', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: '12.5px', color: 'var(--ed-text3)', lineHeight: 1.5 }}>
                         {src.description.replace(/<cite[^>]*>(.*?)<\/cite>/gi, '$1').trim()}
                       </div>
                     )}
@@ -1964,7 +2187,8 @@ export default function EditorClient({ article, authors = [] }) {
           <div className={`aside-section ${mob('semakan')}`}>
             <QualityPanel qf={qf} originalQf={originalQf} />
             <SaveButtons saveStatus={saveStatus}
-              onDraft={() => save('draft')}
+              isPublished={isPublished}
+              onDraft={() => setModal('draft')}
               onPublish={() => setModal('publish')} />
           </div>
         </aside>

@@ -49,7 +49,7 @@ const inputStyle = {
 }
 const fieldLabel = {
   fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.08em',
-  textTransform: 'uppercase', color: '#56514d', marginBottom: '6px',
+  textTransform: 'uppercase', color: '#7a7269', marginBottom: '6px',
 }
 
 /* ── Add / Edit Modal ── */
@@ -191,7 +191,7 @@ function AuthorModal({ author, onClose, onSaved }) {
           </div>
           <button onClick={onClose} style={{
             background: 'rgba(237,232,223,0.05)', border: '1px solid rgba(237,232,223,0.09)',
-            color: '#8c857c', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex',
+            color: '#a39c92', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex',
           }}>
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -235,12 +235,12 @@ function AuthorModal({ author, onClose, onSaved }) {
                     /* Edit mode — existing photo, no crop needed unless re-uploaded */
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px' }}>
                       <Avatar src={previewDataUrl} name={name || '?'} size={64} />
-                      <div style={{ fontSize: '12.5px', color: '#56514d' }}>Current photo. Select a new one to change.</div>
+                      <div style={{ fontSize: '12.5px', color: '#7a7269' }}>Current photo. Select a new one to change.</div>
                     </div>
                   )}
                 </div>
                 {rawFile && (
-                  <div style={{ fontSize: '11px', color: '#3d3830', textAlign: 'center', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '11px', color: '#5e564d', textAlign: 'center', marginBottom: '4px' }}>
                     Adjust the circular crop area
                   </div>
                 )}
@@ -249,7 +249,7 @@ function AuthorModal({ author, onClose, onSaved }) {
                   style={{
                     padding: '6px 14px', borderRadius: '5px', fontSize: '12px', fontWeight: 600,
                     border: '1px solid rgba(237,232,223,0.15)', background: 'transparent',
-                    color: '#8c857c', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                    color: '#a39c92', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
                   }}>
                   Change Photo
                 </button>
@@ -268,8 +268,8 @@ function AuthorModal({ author, onClose, onSaved }) {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(237,232,223,0.1)' }}
               >
                 <div style={{ fontSize: '24px', marginBottom: '6px', opacity: 0.3 }}>👤</div>
-                <div style={{ fontSize: '12.5px', color: '#8c857c', marginBottom: '2px' }}>Click to select photo</div>
-                <div style={{ fontSize: '11px', color: '#3a3530' }}>JPG, PNG, WebP · Max 4 MB</div>
+                <div style={{ fontSize: '12.5px', color: '#a39c92', marginBottom: '2px' }}>Click to select photo</div>
+                <div style={{ fontSize: '11px', color: '#5e564d' }}>JPG, PNG, WebP · Max 4 MB</div>
               </div>
             )}
 
@@ -286,11 +286,11 @@ function AuthorModal({ author, onClose, onSaved }) {
 
           {/* Bio */}
           <div>
-            <div style={fieldLabel}>Bio <span style={{ color: '#3a3530', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(one sentence)</span></div>
+            <div style={fieldLabel}>Bio <span style={{ color: '#5e564d', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(one sentence)</span></div>
             <input type="text" value={bio} onChange={e => setBio(e.target.value)}
               placeholder="Technology writer specialising in AI and digital innovation…"
               style={inputStyle} maxLength={180} />
-            <div style={{ fontSize: '11px', color: '#3a3530', marginTop: '4px', textAlign: 'right' }}>
+            <div style={{ fontSize: '11px', color: '#5e564d', marginTop: '4px', textAlign: 'right' }}>
               {bio.length}/180
             </div>
           </div>
@@ -299,7 +299,7 @@ function AuthorModal({ author, onClose, onSaved }) {
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '4px' }}>
             <button onClick={onClose} style={{
               padding: '9px 18px', borderRadius: '6px', border: '1px solid rgba(237,232,223,0.11)',
-              background: 'transparent', color: '#8c857c', fontSize: '13px', fontWeight: 600,
+              background: 'transparent', color: '#a39c92', fontSize: '13px', fontWeight: 600,
               cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
             }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} style={{
@@ -330,7 +330,7 @@ export default function PenulisClient({ initialAuthors }) {
 
   const [lm, setLm] = useState(false)
   useEffect(() => {
-    const saved = localStorage.getItem('admin-theme')
+    const saved = localStorage.getItem('admin-theme') || 'dark'
     setLm(saved === 'light')
     const h = (e) => setLm(e.detail === 'light')
     window.addEventListener('admin-theme-change', h)
@@ -343,8 +343,8 @@ export default function PenulisClient({ initialAuthors }) {
     btnBorder: '#e5e7eb', btnText: '#6b7280',
   } : {
     pageBg: '#0c0b0a', cardBg: '#111010', border: 'rgba(237,232,223,0.07)',
-    text1: '#ede8df', text2: '#8c857c', text3: '#56514d',
-    btnBorder: 'rgba(237,232,223,0.11)', btnText: '#8c857c',
+    text1: '#ede8df', text2: '#a39c92', text3: '#7a7269',
+    btnBorder: 'rgba(237,232,223,0.11)', btnText: '#a39c92',
   }
 
   const handleSaved = (author, mode) => {

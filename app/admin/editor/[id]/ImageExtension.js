@@ -31,7 +31,7 @@ export const ImageWithCaption = Image.extend({
       caption.style.cssText = [
         'margin:5px 0 0',
         'font-style:italic',
-        'color:#8c857c',
+        'color:#a39c92',
         'font-size:13px',
         'line-height:1.4',
         'text-align:center',

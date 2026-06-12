@@ -20,6 +20,7 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
   const [uploading,     setUploading]     = useState(false)
   const [error,         setError]         = useState('')
   const [showSkipModal, setShowSkipModal] = useState(false)
+  const [isDragOver,    setIsDragOver]    = useState(false)
   const fileRef     = useRef(null)
   const articleId   = extension.options.articleId
   const onOpenModal = extension.options.onOpenModal
@@ -73,6 +74,41 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
     editor.view.dispatch(editor.state.tr.delete(pos, pos + 1))
   }
 
+  const handleDroppedFile = (f) => {
+    if (!f || !f.type?.startsWith('image/')) return
+    if (onOpenModal) {
+      onOpenModal({
+        file:        f,
+        pos:         getPos(),
+        description: node.attrs.description || '',
+        altText:     node.attrs.altText      || node.attrs.description || '',
+        caption:     node.attrs.caption      || '',
+      })
+    } else {
+      handleDirectUpload(f)
+    }
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isDragOver) setIsDragOver(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    const f = e.dataTransfer?.files?.[0]
+    handleDroppedFile(f)
+  }
+
   return (
     <NodeViewWrapper>
       <style>{`
@@ -87,6 +123,11 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
           gap: 12px;
           user-select: none;
           box-sizing: border-box;
+          transition: border-color 0.15s, background 0.15s;
+        }
+        .imgph-block.drag-over {
+          border-color: rgba(212,168,83,0.9);
+          background: rgba(212,168,83,0.1);
         }
         .imgph-content {
           flex: 1;
@@ -103,7 +144,7 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
         }
         .imgph-desc {
           font-size: 12px;
-          color: #56514d;
+          color: #7a7269;
           line-height: 1.45;
           font-family: 'DM Sans', sans-serif;
         }
@@ -174,7 +215,13 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
         onCancel={() => setShowSkipModal(false)}
       />
 
-      <div className="imgph-block" contentEditable={false}>
+      <div
+        className={`imgph-block${isDragOver ? ' drag-over' : ''}`}
+        contentEditable={false}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {/* Image icon */}
         <svg width="18" height="18" fill="none" stroke="rgba(212,168,83,0.45)" strokeWidth="1.5" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
           <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -225,7 +272,7 @@ function ImagePlaceholderNodeView({ node, getPos, editor, extension }) {
             style={{
               padding: '4px 9px', borderRadius: '4px',
               border: '1px solid rgba(237,232,223,0.1)',
-              background: 'transparent', color: '#56514d',
+              background: 'transparent', color: '#7a7269',
               fontSize: '11.5px', cursor: 'pointer',
               fontFamily: "'DM Sans',sans-serif",
             }}

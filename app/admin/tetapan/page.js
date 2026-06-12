@@ -36,6 +36,64 @@ const DEFAULT_SETTINGS = {
   social_facebook:         '',
   social_instagram:        '',
   pinned_categories:       '',
+  image_count_min:         '3',
+  image_count_max:         '5',
+  editorial_instructions:  '',
+}
+
+const EDITORIAL_GUIDELINES_DEFAULT = `PANDUAN GAYA — SHARPABLE NEWS
+
+Struktur artikel (5 bahagian):
+1. Hook — dibuka dengan individu bernama sebenar + petikan langsung dalam 2 perenggan pertama
+2. Fakta & Konteks — latar belakang dan maklumat penting
+3. Impak Tempatan — kesan kepada pembaca Malaysia
+4. Soalan Kritikal — isu atau persoalan yang timbul
+5. Penutup — kembali kepada individu yang disebut di bahagian Hook (bookending)
+
+Panjang: 700–900 patah perkataan
+Subtajuk: 3–5 (H2), setiap satu deskriptif dan spesifik
+Tajuk: 3 pilihan, masing-masing bawah 70 aksara
+
+Frasa yang dilarang:
+- "Dalam era digital ini"
+- "Tidak dapat dinafikan"
+- "Hal ini demikian kerana"
+
+Nada: Bahasa Malaysia gaya berita BERNAMA/Astro AWANI — formal, tepat, dan mudah difahami oleh penyelidik, pembangun, dan pembuat keputusan di Malaysia.`
+
+/* ── Dual-handle range slider ── */
+function DualRangeSlider({ min, max, valueMin, valueMax, onChange, disabled }) {
+  const range = max - min
+  const pctMin = ((valueMin - min) / range) * 100
+  const pctMax = ((valueMax - min) / range) * 100
+
+  const handleMinChange = (e) => {
+    const v = Math.min(Number(e.target.value), valueMax - 1)
+    onChange(v, valueMax)
+  }
+  const handleMaxChange = (e) => {
+    const v = Math.max(Number(e.target.value), valueMin + 1)
+    onChange(valueMin, v)
+  }
+
+  return (
+    <div className="tet-dual-range">
+      <div className="tet-dual-range-track" />
+      <div className="tet-dual-range-fill" style={{ left: `${pctMin}%`, width: `${pctMax - pctMin}%` }} />
+      <input
+        type="range" min={min} max={max} step="1"
+        value={valueMin} disabled={disabled}
+        onChange={handleMinChange}
+        aria-label="Minimum body images"
+      />
+      <input
+        type="range" min={min} max={max} step="1"
+        value={valueMax} disabled={disabled}
+        onChange={handleMaxChange}
+        aria-label="Maximum body images"
+      />
+    </div>
+  )
 }
 
 /* ── Unsaved changes banner ───────────────────────────────────── */
@@ -253,7 +311,7 @@ export default function TetapanPage() {
   ` : `
     --bg: #0c0b0a; --surface: #0f0e0d; --surface2: #131110;
     --border: rgba(237,232,223,0.07); --divider: rgba(237,232,223,0.05);
-    --t1: #ede8df; --t2: #8c857c; --t3: #3d3830;
+    --t1: #ede8df; --t2: #a39c92; --t3: #6f6862;
     --surface-shadow: none; --surface-inset: inset 0 1px 0 rgba(237,232,223,0.04);
     --chip-bg: rgba(237,232,223,0.04); --chip-border: rgba(237,232,223,0.07);
     --optional-bg: rgba(237,232,223,0.02);
@@ -410,6 +468,81 @@ export default function TetapanPage() {
         .tet-input:focus { border-color: rgba(212,168,83,0.45) !important; outline: none; }
         .tet-score-track { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
         .tet-score-val   { font-size: 22px; font-weight: 700; color: #d4a853; font-variant-numeric: tabular-nums; min-width: 32px; }
+
+        /* Dual-handle range slider */
+        .tet-dual-range {
+          position: relative;
+          height: 28px;
+          display: flex;
+          align-items: center;
+        }
+        .tet-dual-range-track {
+          position: absolute;
+          left: 0; right: 0;
+          height: 4px;
+          border-radius: 2px;
+          background: var(--input-border);
+        }
+        .tet-dual-range-fill {
+          position: absolute;
+          height: 4px;
+          border-radius: 2px;
+          background: #d4a853;
+          transition: left 0.08s, width 0.08s;
+        }
+        .tet-dual-range input[type="range"] {
+          position: absolute;
+          left: 0;
+          width: 100%;
+          height: 28px;
+          margin: 0;
+          background: transparent;
+          -webkit-appearance: none;
+          appearance: none;
+          pointer-events: none;
+        }
+        .tet-dual-range input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
+        .tet-dual-range input[type="range"]::-moz-range-track { background: transparent; }
+        .tet-dual-range input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          pointer-events: auto;
+          width: 16px; height: 16px;
+          border-radius: 50%;
+          background: #d4a853;
+          border: 2px solid var(--surface);
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+          cursor: pointer;
+          transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .tet-dual-range input[type="range"]:disabled::-webkit-slider-thumb { cursor: not-allowed; opacity: 0.5; }
+        .tet-dual-range input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.18); }
+        .tet-dual-range input[type="range"]::-moz-range-thumb {
+          pointer-events: auto;
+          width: 16px; height: 16px;
+          border-radius: 50%;
+          background: #d4a853;
+          border: 2px solid var(--surface);
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+          cursor: pointer;
+          transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .tet-dual-range input[type="range"]:disabled::-moz-range-thumb { cursor: not-allowed; opacity: 0.5; }
+        .tet-dual-range input[type="range"]::-moz-range-thumb:hover { transform: scale(1.18); }
+        .tet-dual-range-labels {
+          display: flex; justify-content: space-between;
+          font-size: 11px; color: var(--t3); margin-top: 6px;
+          font-variant-numeric: tabular-nums;
+        }
+
+        /* Editorial instructions textarea */
+        .tet-textarea {
+          resize: vertical;
+          min-height: 180px;
+          line-height: 1.6;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .tet-textarea::placeholder { color: var(--t3); opacity: 0.7; white-space: pre-wrap; }
 
         @keyframes tet-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
@@ -570,6 +703,51 @@ export default function TetapanPage() {
             disabled={!loaded}
             onChange={e => handleChange('pinned_categories', e.target.value)}
             style={{ ...inputStyle, marginTop: '4px' }}
+          />
+        </div>
+
+        {/* Body images per article */}
+        <div className="tet-config-row">
+          <div className="tet-config-key">
+            <div>Body Images Per Article</div>
+            <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '3px' }}>Number of inline images generated per article</div>
+          </div>
+          <div>
+            <DualRangeSlider
+              min={1} max={8}
+              valueMin={Number(draft.image_count_min ?? 3)}
+              valueMax={Number(draft.image_count_max ?? 5)}
+              disabled={!loaded}
+              onChange={(lo, hi) => {
+                handleChange('image_count_min', String(lo))
+                handleChange('image_count_max', String(hi))
+              }}
+            />
+            <div className="tet-dual-range-labels">
+              <span>Min: {loaded ? draft.image_count_min : '—'}</span>
+              <span>Max: {loaded ? draft.image_count_max : '—'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Editorial instructions */}
+      <div className="tet-panel">
+        <div className="tet-panel-header">
+          <span className="tet-section-label">Editorial Instructions</span>
+        </div>
+        <div style={{ padding: '14px 20px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--t3)', marginBottom: '10px', lineHeight: 1.5 }}>
+            Custom instructions injected into article generation. Changes apply to new generations only.
+          </div>
+          <textarea
+            className="tet-input tet-textarea"
+            placeholder={EDITORIAL_GUIDELINES_DEFAULT}
+            value={draft.editorial_instructions || ''}
+            disabled={!loaded}
+            onChange={e => handleChange('editorial_instructions', e.target.value)}
+            rows={12}
+            style={inputStyle}
           />
         </div>
       </div>

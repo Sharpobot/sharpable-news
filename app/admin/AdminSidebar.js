@@ -117,6 +117,9 @@ export default function AdminSidebar({ children, logoutAction }) {
   useEffect(() => {
     const saved = localStorage.getItem('admin-theme') || 'dark'
     setTheme(saved)
+    const h = (e) => setTheme(e.detail)
+    window.addEventListener('admin-theme-change', h)
+    return () => window.removeEventListener('admin-theme-change', h)
   }, [])
 
   const toggleTheme = () => {
@@ -154,15 +157,15 @@ export default function AdminSidebar({ children, logoutAction }) {
     border:     '#1a1a1a',
     borderMid:  '#1e1e1e',
     text1:      '#f0f0f0',
-    text2:      '#8c857c',
-    text3:      '#56514d',
+    text2:      '#a39c92',
+    text3:      '#7a7269',
     activeBg:   '#161412',
     activeText: '#d4a853',
-    iconInact:  '#3a3a3a',
-    logoutText: '#3a3a3a',
+    iconInact:  '#5a5a5a',
+    logoutText: '#5a5a5a',
     logoutBorder:'#1e1e1e',
     drawerBg:   '#0a0a0a',
-    hamColor:   '#8c857c',
+    hamColor:   '#a39c92',
   }
 
   const isEditor = pathname.startsWith('/admin/editor/')

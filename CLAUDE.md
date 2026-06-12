@@ -93,6 +93,9 @@ sharpable-news/
 │   │   │   └── loading.js
 │   │   ├── tetapan/
 │   │   │   └── page.js                  # Settings page
+│   │   ├── langgan/
+│   │   │   ├── page.js                  # Subscribers server page (fetches subscribers list)
+│   │   │   └── LanggananClient.js       # Subscribers table — search, CSV export, delete (ConfirmationModal)
 │   │   └── login/
 │   │       ├── page.js
 │   │       └── LoginClient.js
@@ -104,12 +107,15 @@ sharpable-news/
 │       ├── cancel-topic/route.js        # POST: deletes article + fires topic/selected with cancelled:true
 │       ├── progress/route.js            # GET: returns progress rows + article status + topic_options by articleId
 │       ├── search/route.js              # GET: public article search (?q=query) — max 5 results
+│       ├── subscribe/route.js           # POST: public newsletter signup — inserts into subscribers table (service role client)
 │       ├── articles/
 │       │   ├── route.js                 # GET: all articles for admin table
 │       │   └── [id]/route.js            # GET + PATCH + DELETE for single article
 │       ├── authors/
 │       │   ├── route.js                 # GET all authors + POST create
 │       │   └── [id]/route.js            # PATCH + DELETE single author
+│       ├── subscribers/
+│       │   └── [id]/route.js            # DELETE single subscriber (admin)
 │       ├── upload-image/route.js        # POST: uploads featured hero image to Supabase Storage
 │       ├── upload-inline-image/route.js # POST: uploads inline article image to Supabase Storage
 │       └── upload-author-photo/route.js # POST: uploads author profile photo to 'authors' bucket
@@ -122,7 +128,7 @@ sharpable-news/
 │   ├── agents/
 │   │   ├── _client.js                   # Shared Claude API helper: ask() + askWithSearch() — MAX_RETRIES=2, 90s timeout
 │   │   ├── style-guide.js               # Editorial style rules + 10 BERNAMA reference articles
-│   │   ├── trend-scout.js               # Agent 1: finds trending topics via web search (maxTokens: 2000)
+│   │   ├── trend-scout.js               # Agent 1: finds trending topics via web search (maxTokens: 3000)
 │   │   ├── topic-selector.js            # Agent 2: returns 3 distinct topic OPTIONS for human selection (maxTokens: 1000)
 │   │   ├── deep-researcher.js           # Agent 3: gathers facts + source URLs via web search (maxTokens: 3000)
 │   │   ├── article-writer.js            # Agent 4: writes full BM article (maxTokens: 4000, injects STYLE_GUIDE)
@@ -146,7 +152,8 @@ sharpable-news/
 │   ├── 005_authors.sql                  # authors table + author_id FK on articles
 │   ├── 006_fts_index.sql               # Optional: GIN index for full-text search performance
 │   ├── 007_topic_selection.sql         # Adds topic_options (jsonb) + selected_topic (jsonb) columns to articles
-│   └── 008_status_constraint.sql       # Expands status CHECK to include 'failed' + 'awaiting_topic_selection'
+│   ├── 008_status_constraint.sql       # Expands status CHECK to include 'failed' + 'awaiting_topic_selection'
+│   └── 009_subscribers.sql             # Adds subscribers table for newsletter signups
 ├── netlify.toml                         # Netlify deployment config (not yet live)
 ├── .env.local                           # Local secrets (never commit)
 └── CLAUDE.md                            # This file
@@ -207,6 +214,7 @@ sharpable-news/
 - 001–006: initial schema, featured image, quality flags, similar articles, authors, FTS index
 - **007_topic_selection.sql** — adds `topic_options` + `selected_topic` jsonb columns
 - **008_status_constraint.sql** — drops old CHECK constraint, adds expanded one allowing `failed` + `awaiting_topic_selection`
+- **009_subscribers.sql** — creates `subscribers` table (email, source, subscribed_at, created_at) for newsletter signups; RLS enabled, no public policies (service role only)
 
 ---
 
@@ -283,7 +291,7 @@ Agents using `ask`: topic-selector, article-writer, seo-metadata, image-brief, r
 **maxTokens by agent (CRITICAL — do not change without good reason):**
 | Agent | maxTokens | Reason |
 |---|---|---|
-| trend-scout | **2000** | Web search synthesis ~1200-1400 tokens of JSON; 1500 caused truncation |
+| trend-scout | **3000** | Returns top 8 candidates with 1-2 sentence (~100 char) descriptions; raised from 2000 (Jun 11, 2026) — at 2000, descriptions had grown verbose enough to truncate the JSON again |
 | topic-selector | **1000** | Returns 3 short option objects |
 | deep-researcher | **3000** | Detailed research brief with multiple sources |
 | article-writer | **4000** | Full 700-900 word TipTap JSON article |
@@ -292,7 +300,9 @@ Agents using `ask`: topic-selector, article-writer, seo-metadata, image-brief, r
 | quality-checker | **2000** | Web search synthesis + structured quality report |
 | revision | **4000** | Full revised article in TipTap JSON |
 
-**WARNING:** Lowering trend-scout below 2000 or quality-checker below 2000 will cause JSON truncation → `parseJSON` returns `{ raw: text }` → agent returns empty/null data → pipeline fails silently.
+**WARNING:** Lowering trend-scout below 3000 or quality-checker below 2000 will cause JSON truncation → `parseJSON` returns `{ raw: text }` → agent returns empty/null data → pipeline fails silently.
+
+**Markdown fence fallback (trend-scout.js, Jun 11, 2026):** If `askWithSearch()`'s shared `parseJSON()` fails (returns `{ raw: text }`), trend-scout.js now strips leading/trailing ```` ```json ```` / ```` ``` ```` fences from `result.raw` and retries `JSON.parse()` before falling back to diagnostic logging. This handles cases where the model wraps its JSON response in markdown code fences. Diagnostic `console.log` lines were also added (raw text on parse failure, parsed keys/trends.length on success, and a summary of `topicsFound`/`firstTopic`/`scoutedAt`) to make future failures easier to diagnose from the terminal.
 
 ---
 
@@ -402,6 +412,7 @@ The most complex file. Features:
 | Generate | `/admin/jana` | Two-step topic selection: direction input → 3 topic cards → full generation progress |
 | Editor | `/admin/editor/[id]` | Full article editor (see above) |
 | Authors | `/admin/penulis` | Author card grid — add/edit (with 1:1 crop), delete |
+| Subscribers | `/admin/langgan` | Subscriber table (desktop) / cards (mobile) — search by email, CSV export, delete via ConfirmationModal |
 | Settings | `/admin/tetapan` | System info, pipeline overview |
 
 **Status badges** (`ArtikelClient.js` STATUS_CFG):
@@ -471,6 +482,35 @@ The most complex file. Features:
 - Byline: 28px avatar + name (underlined, subtle) + "·" separator + date
 - Author bio card at bottom: amber border + amber tinted bg + "Tentang Penulis" label
 - Falls back to "Sharpable News" if no author assigned
+
+---
+
+## Subscribers / Newsletter System (Jun 10, 2026)
+
+### `subscribers` table (migration 009)
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | Primary key |
+| email | text | Unique, lowercased before insert |
+| source | text | Defaults to `'homepage'` |
+| subscribed_at | timestamptz | |
+| created_at | timestamptz | |
+
+RLS enabled with no public policies — only the service role (server-side) can read/write.
+
+### Public signup (`POST /api/subscribe`)
+- Validates email format, lowercases + trims
+- Uses a direct `createClient()` with `SUPABASE_SERVICE_ROLE_KEY` (NOT the anon client) to bypass RLS for the insert
+- Unique violation (`error.code === '23505'`) → "Emel ini sudah berdaftar." (409)
+- BM error messages throughout
+
+### Admin (`/admin/langgan`)
+- `LanggananClient.js` — desktop table (Email / Source / Date Subscribed / Delete) + mobile card layout, matches the styling pattern of the Articles table
+- Search input filters by email (client-side)
+- **CSV export** — client-side `Blob` download (`subscribers-YYYY-MM-DD.csv`); the download `<a>` click is dispatched as `bubbles: false` so the global `PageLoader` document click-listener doesn't intercept it and get stuck mid-progress
+- Delete via `ConfirmationModal` → `DELETE /api/subscribers/[id]`
+- Light/dark theme support via the same `admin-theme-change` CustomEvent pattern as other admin pages
+- Sidebar nav order: Authors → **Subscribers** → Settings (`AdminSidebar.js`)
 
 ---
 
@@ -565,6 +605,17 @@ Original CHECK only allowed 4 statuses. `migration 008_status_constraint.sql` ex
 ### Topic direction input disappearing during search (FIXED — Jun 2026)
 Input was cleared on search start. Fixed: input stays visible as read-only during `isSearching` + when awaiting articles exist. Only clears on `confirmCancel` success or `handleSelectTopic` success.
 
+### POST /api/subscribe 500 error (FIXED — Jun 11, 2026)
+Newsletter signup was failing with a 500. Fixed by using a direct Supabase service-role client (`createClient` with `SUPABASE_SERVICE_ROLE_KEY`) in `app/api/subscribe/route.js` instead of the anon client, so RLS-protected inserts to `subscribers` succeed.
+
+### Trend scout STILL returning 0 topics after JSON-fence fix (FIXED — Jun 11, 2026)
+**Root cause:** Same truncation pattern as the earlier "Trend scout returning 0 topics" fix, recurring at the (then-current) `maxTokens: 2000` cap. The model's per-topic `description` fields had grown to ~70 words (vs. the requested "2-3 sentences") across 10-15 requested topics, producing JSON too large for 2000 tokens — the response got cut off mid-structure, so even the new markdown-fence-stripping fallback couldn't parse it (the JSON itself was incomplete, not just fence-wrapped).
+**Fix (trend-scout.js only):**
+1. Raised `maxTokens` from 2000 → **3000**.
+2. Tightened the prompt: descriptions capped at "1-2 sentences (max ~100 characters)".
+3. Reduced requested candidates from "top 10-15" → "**top 8**".
+`scripts/test-pipeline-health.mjs` assertions updated to match (`'top 8'`, `'3000'`). 20/20 passing.
+
 ---
 
 ## CRITICAL RULES
@@ -580,7 +631,7 @@ Input was cleared on search start. Fixed: input stays visible as read-only durin
 1. **Never use the anon Supabase client for server-side writes** — always `createAdminSupabaseClient()`.
 2. **Model ID is `claude-sonnet-4-5`** — not the dated format (returns 404).
 3. **Inngest MUST be running on port 8288** for generation to work. Restart after changing `inngest-functions.js` OR any agent file.
-4. **maxTokens are carefully tuned** — see table in Agent Helpers section. trend-scout MUST be ≥2000. Do not lower any of them without understanding the truncation risk.
+4. **maxTokens are carefully tuned** — see table in Agent Helpers section. trend-scout MUST be ≥3000 (raised from 2000 on Jun 11, 2026). Do not lower any of them without understanding the truncation risk.
 5. **TipTap body format:** Stored as TipTap JSON in DB. `editor.getHTML()` used for save; body column holds the JSON.
 6. **65s sleeps between agents** — intentional rate-limit protection. Do not remove.
 7. **STYLE_GUIDE** — imported by article-writer AND revision. Named-person hook mandatory. Reference articles for BM register only.
@@ -631,6 +682,9 @@ Input was cleared on search start. Fixed: input stays visible as read-only durin
 - [x] **Cost controls** — token caps, 90s timeout, 1 retry max, 3-failure pipeline abort (Jun 2026)
 - [x] **Migration 007** — topic_options + selected_topic columns (Jun 2026)
 - [x] **Migration 008** — expanded status CHECK constraint (Jun 2026)
+- [x] **Migration 009** — subscribers table for newsletter signups (Jun 10, 2026)
+- [x] **Subscribers/Newsletter system** — public signup API (`/api/subscribe`), admin management page (`/admin/langgan`) with search/CSV export/delete (Jun 10, 2026)
+- [x] **Trend-scout reliability fixes** — markdown-fence JSON fallback + diagnostic logging, maxTokens raised to 3000, top-8 candidates with capped description length (Jun 11, 2026)
 
 ## What Could Be Next
 

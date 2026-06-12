@@ -99,7 +99,7 @@ export default function LoginClient() {
               <div style={{ fontSize: '18px', fontWeight: 700, color: '#ede8df', marginBottom: '5px' }}>
                 Sign In
               </div>
-              <div style={{ fontSize: '13px', color: '#56514d', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '13px', color: '#7a7269', lineHeight: 1.5 }}>
                 Enter your admin credentials to continue.
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function LoginClient() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Email */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#56514d', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#7a7269', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   Email
                 </label>
                 <input
@@ -123,7 +123,7 @@ export default function LoginClient() {
 
               {/* Password */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#56514d', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#7a7269', marginBottom: '5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   Password
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -142,7 +142,7 @@ export default function LoginClient() {
                     onClick={() => setShowPw(v => !v)}
                     style={{
                       position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', color: '#56514d', cursor: 'pointer',
+                      background: 'none', border: 'none', color: '#7a7269', cursor: 'pointer',
                       padding: '4px', display: 'flex', alignItems: 'center',
                     }}
                     tabIndex={-1}
