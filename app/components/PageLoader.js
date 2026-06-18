@@ -72,6 +72,7 @@ export default function PageLoader() {
       background: '#0c0b0a',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
+      paddingBottom: '12vh',
       opacity: !visible ? 0 : leaving ? 0 : 1,
       transition: leaving
         ? 'opacity 0.9s cubic-bezier(0.4,0,0.2,1)'
@@ -79,7 +80,7 @@ export default function PageLoader() {
       pointerEvents: visible && !leaving ? 'all' : 'none',
     }}>
       {/* Logo */}
-      <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 0, marginBottom: '28px', marginTop: '10vh' }}>
+      <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 0, marginBottom: '28px' }}>
         <span style={{
           fontFamily: "'Fraunces', serif",
           fontSize: '30px', fontWeight: 700,

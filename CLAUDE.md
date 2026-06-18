@@ -681,6 +681,12 @@ Newsletter signup was failing with a 500. Fixed by using a direct Supabase servi
 14. **Migration 008 must be applied** — if you see "invalid input value for enum" or CHECK constraint errors when creating articles, run `supabase/migrations/008_status_constraint.sql` in Supabase SQL Editor.
 15. **topic/selected event** — Inngest pipeline pauses on `waitForEvent('wait-for-topic-selection', { event: 'topic/selected', timeout: '24h', match: 'data.articleId' })`. Cancel sends this event with `cancelled: true`. If pipeline times out (24h), article auto-marks failed.
 16. **Pipeline failure counter resets per run** — `pipelineFailures` is a local variable in `generateArticle`. Each new article run starts at 0. Abort triggers on ≥3 failures within a single run only.
+17. **Article length setting values** — site_settings `target_article_length` uses `brief`/`standard`/`detailed` (NOT short/standard/long — renamed Jun 13). Article Writer maps these to 600/750/900w. Actual output ~150-200w longer due to TipTap headings/structure.
+18. **Image Brief settings** — reads `image_count_min` and `image_count_max` from site_settings. Both use `createAdminSupabaseClient()` at agent start — same pattern for future settings wiring.
+19. **topic_direction column** — added to articles table via Migration 010. If missing, run: `ALTER TABLE articles ADD COLUMN topic_direction text;`
+20. **Canonical tags table** — `canonical_tags` stores the approved tag list. SEO agent should read from this table. Article editor tag picker shows only canonical tags. Free-text tags from before this system show with amber warning in editor.
+21. **Settings wiring status** — brief/standard/detailed → WIRED (article-writer.js). image_count_min/max → WIRED (image-brief.js). quality_score_threshold → saves only, not wired. notification_email → saves only, Coming Soon. site_tagline/social links → saves only, Coming Soon. editorial_instructions → saves only, Coming Soon. pinned_categories → wired to public navbar only.
+22. **Never batch pipeline file changes with UI changes** — keep them in separate prompts in separate chats. Always add "Show me a diff of every line you changed" to any agent file prompt to catch silent edits.
 
 ---
 
@@ -727,10 +733,21 @@ Newsletter signup was failing with a 500. Fixed by using a direct Supabase servi
 - [x] **image-brief prompt overhaul** — Malaysian faceless subjects, cinematic photorealistic framing, banned abstract/graphic/face-visible suggestions (Jun 12, 2026)
 - [x] **Unified admin theme system** — single `admin-theme` localStorage key + `admin-theme-change` event across all admin pages and the article editor, including AdminSidebar sync fix (Jun 12, 2026)
 - [x] **New settings: Body Images Per Article** (`image_count_min`/`image_count_max`, dual-range slider 1–8, default 3/5) and **Editorial Instructions** (`editorial_instructions`, large textarea) added to `/admin/tetapan` (Jun 12, 2026) — saved to `site_settings`, not yet wired into the pipeline
+- [x] **target_article_length wired to Article Writer** — reads brief/standard/detailed from site_settings, maps to 600/750/900w targets with style guide override protection (Jun 13, 2026)
+- [x] **image_count_min/max wired to Image Brief** — reads range from site_settings, picks random count in range, falls back to 5 silently (Jun 13, 2026)
+- [x] **topic_direction persisted to articles table** — saved in save-topic-options step, displays correctly in editor Generation Context (Jun 13, 2026). Migration 010 required: `ALTER TABLE articles ADD COLUMN topic_direction text;`
+- [x] **Coming Soon badges** — added to Min Quality Score, Failure Notification Email, Site Tagline, Social Links, Editorial Instructions in settings page (Jun 13, 2026)
+- [x] **Article length options renamed** — short/standard/long → brief/standard/detailed in both UI and site_settings DB values (Jun 13, 2026)
+- [x] **Body image delete reverts to original placeholder** — stores suggestionDescription on image node at upload time, restores on delete. Only works for images uploaded after this fix; older images revert to empty placeholder (Jun 13, 2026)
+- [x] **Status dropdown in articles tab** — inline clickable dropdown per row, uses React portal to fix overflow clipping. Generating/failed statuses are read-only (Jun 2026)
+- [x] **Bulk selection in articles tab** — checkbox selection mode, sticky action banner, bulk publish/draft/delete with ConfirmationModal (Jun 2026)
+- [x] **Preview button in articles tab** — eye icon opens published article in new tab (Jun 2026)
+- [x] **Subscribers admin page** — /admin/langgan, English UI, mobile card layout, CSV export, search, delete with ConfirmationModal (Jun 2026)
+- [x] **Canonical tags system** — canonical_tags table, /admin/topik management page, article editor multi-select picker, SEO agent constraint (Jun 2026) — run SQL: `CREATE TABLE public.canonical_tags (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, name text UNIQUE NOT NULL, slug text UNIQUE NOT NULL, description text, created_at timestamptz DEFAULT now());`
 
 ## What Could Be Next
 
-- [ ] Wire admin settings into the pipeline (dedicated, focused `lib/` change only): `quality_score_threshold`, `target_article_length`, `notification_email`, `image_count_min`/`image_count_max` (image-brief suggestion count), and `editorial_instructions` (inject into article-writer/revision prompts) are all currently "saves only"
+- [ ] Wire remaining admin settings into pipeline (dedicated focused lib/ changes only): `quality_score_threshold` (risky — touches branching logic in inngest-functions.js, do last), `editorial_instructions` (medium risk — inject into article-writer + topic-selector system prompts), `notification_email` (requires email integration, Coming Soon)
 - [ ] Apply migration 006 (optional FTS index) for faster search at scale
 - [ ] Scheduled article generation (cron via Inngest)
 - [ ] Unsplash API integration (auto-fetch hero image from image_brief query)
@@ -741,3 +758,8 @@ Newsletter signup was failing with a 500. Fixed by using a direct Supabase servi
 - [ ] Multiple admin users / role-based access
 - [ ] Email notification when article ready to review
 - [ ] Full Netlify deployment with Inngest cloud (requires INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY)
+- [ ] Article Writer paragraph structure improvements — shorter paragraphs (2-4 sentences max), sentence variation, subheading frequency rules
+- [ ] Style guide additions — extracted writing patterns from Astro Awani/Says.com references
+- [ ] Canonical tags SEO agent wiring — seo-metadata.js reads from canonical_tags table (pipeline change, fresh chat, git commit first)
+- [ ] Category pages on public site (/kategori/[tag])
+- [ ] Homepage real article slot redistribution fix (1x3 grid, no duplicates, Akan Datang placeholders)
