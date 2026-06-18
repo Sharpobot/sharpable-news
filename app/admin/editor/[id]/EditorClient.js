@@ -1213,6 +1213,7 @@ export default function EditorClient({ article, authors = [] }) {
   const [featuredImageAlt,      setFeaturedImageAlt]      = useState(() => parseImageBrief(article.image_brief)?.altText  ?? '')
   const [featuredImageCaption,  setFeaturedImageCaption]  = useState(() => parseImageBrief(article.image_brief)?.caption  ?? '')
   const [placeholderInitialCaption, setPlaceholderInitialCaption] = useState('')
+  const [placeholderInitialDescription, setPlaceholderInitialDescription] = useState('')
   const [editingFeaturedAlt,     setEditingFeaturedAlt]     = useState(false)
   const [editingFeaturedCaption, setEditingFeaturedCaption] = useState(false)
 
@@ -1260,6 +1261,7 @@ export default function EditorClient({ article, authors = [] }) {
         setPlaceholderInitialFile(file)
         setPlaceholderInitialAlt(altText || description)
         setPlaceholderInitialCaption(caption || '')
+        setPlaceholderInitialDescription(description || '')
         setShowInlineImageModal(true)
       }),
     ],
@@ -1363,8 +1365,10 @@ export default function EditorClient({ article, authors = [] }) {
       placeholderReplaceRef.current = null
       const imgNode = editor.schema.nodes.image.create({
         src, alt: alt || undefined, title: caption || undefined,
+        suggestionDescription: placeholderInitialDescription || undefined,
       })
       editor.view.dispatch(editor.state.tr.replaceWith(pos, pos + 1, imgNode))
+      setPlaceholderInitialDescription('')
     } else if (hoverEditPosRef.current !== null) {
       // Hover-edit: replace node at stored position (no selection required)
       const pos  = hoverEditPosRef.current
@@ -1395,7 +1399,22 @@ export default function EditorClient({ article, authors = [] }) {
 
   const removeSelectedImage = () => {
     if (!editor) return
-    editor.chain().focus().deleteSelection().run()
+    const { selection } = editor.state
+    const node = selection.node
+    if (node?.type.name === 'image') {
+      const altText = node.attrs.alt || ''
+      const caption = node.attrs.title || ''
+      const description = node.attrs.suggestionDescription || ''
+      const placeholderNode = editor.schema.nodes.imagePlaceholder.create({
+        description,
+        placement:   '',
+        altText,
+        caption,
+      })
+      editor.view.dispatch(editor.state.tr.replaceWith(selection.from, selection.to, placeholderNode))
+    } else {
+      editor.chain().focus().deleteSelection().run()
+    }
     setImgMove(null)
     setIsDirty(true)
   }
@@ -1408,6 +1427,7 @@ export default function EditorClient({ article, authors = [] }) {
   const imgHoverTimer = useRef(null)
   const hoverEditPosRef        = useRef(null)
   const placeholderReplaceRef  = useRef(null)
+  const hoverDeleteDataRef     = useRef(null)
   const [imgHover, setImgHover] = useState(null) // {top,left,width,height,src,alt,caption,pos,canUp,canDown}
 
   useEffect(() => {
@@ -1538,12 +1558,23 @@ export default function EditorClient({ article, authors = [] }) {
   }
 
   const deleteHoverImage = () => {
-    if (!editor || imgHover?.pos == null) return
-    const pos  = imgHover.pos
+    const data = hoverDeleteDataRef.current ?? imgHover
+    if (!editor || data?.pos == null) return
+    const pos  = data.pos
     const node = editor.state.doc.nodeAt(pos)
     if (node?.type.name === 'image') {
-      editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize))
+      const altText = node.attrs.alt || ''
+      const caption = node.attrs.title || node.attrs.caption || data.caption || ''
+      const description = node.attrs.suggestionDescription || ''
+      const placeholderNode = editor.schema.nodes.imagePlaceholder.create({
+        description,
+        placement:   '',
+        altText,
+        caption,
+      })
+      editor.view.dispatch(editor.state.tr.replaceWith(pos, pos + node.nodeSize, placeholderNode))
     }
+    hoverDeleteDataRef.current = null
     setImgHover(null); setIsDirty(true)
   }
 
@@ -1734,7 +1765,7 @@ export default function EditorClient({ article, authors = [] }) {
         onConfirm={() => { removeSelectedImage(); setModal(null) }} onCancel={() => setModal(null)} />
       <ConfirmationModal open={modal === 'removeHoverImage'} title="Remove Image?" message="This image will be permanently removed from the article."
         confirmLabel="Yes, Remove" cancelLabel="Cancel" confirmColor="red"
-        onConfirm={() => { deleteHoverImage(); setModal(null) }} onCancel={() => { setModal(null); setImgHover(null) }} />
+        onConfirm={() => { deleteHoverImage(); setModal(null) }} onCancel={() => { hoverDeleteDataRef.current = null; setModal(null); setImgHover(null) }} />
       <ConfirmationModal open={modal === 'publish'} title="Publish Article?" message="The article will be published and visible to the public."
         confirmLabel="Yes, Publish" cancelLabel="Review Again" confirmColor="amber"
         onConfirm={() => { setModal(null); save('published') }} onCancel={() => setModal(null)} />
@@ -1769,6 +1800,7 @@ export default function EditorClient({ article, authors = [] }) {
               setPlaceholderInitialFile(null)
               setPlaceholderInitialAlt('')
               setPlaceholderInitialCaption('')
+              setPlaceholderInitialDescription('')
               placeholderReplaceRef.current = null
             }}
             initialSrc={editingInlineImageData?.src ?? ''}
@@ -2119,7 +2151,7 @@ export default function EditorClient({ article, authors = [] }) {
                       </svg>
                     </button>
                     {/* Delete — opens ConfirmationModal */}
-                    <button onMouseDown={e => { e.preventDefault(); setModal('removeHoverImage') }} title="Delete image"
+                    <button onMouseDown={e => { e.preventDefault(); hoverDeleteDataRef.current = imgHover; setModal('removeHoverImage') }} title="Delete image"
                       style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid rgba(237,232,223,0.22)', background: 'rgba(12,11,10,0.82)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', transition: 'background 0.12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,28,26,0.92)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,11,10,0.82)' }}>

@@ -394,10 +394,10 @@ export default function TetapanPage() {
 
         /* Banner responsive overrides — !important overrides inline style on fixed div */
         @media (max-width: 768px) {
-          /* top:51px overlaps the 1px mobile header border-bottom, removing the grey separator line */
+          /* top:48px matches the mobile topbar height, closing the gap above the banner */
           .settings-banner {
             left: 0 !important;
-            top: 51px !important;
+            top: 48px !important;
             border-top: none !important;
           }
         }
@@ -459,6 +459,20 @@ export default function TetapanPage() {
           text-transform: uppercase; color: var(--t3);
           background: var(--chip-bg); border: 1px solid var(--chip-border);
           padding: 1px 7px; border-radius: 999px; margin-left: 7px; vertical-align: middle;
+        }
+        .tet-key-title {
+          display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+        }
+        .tet-soon-badge {
+          display: inline-flex; align-items: center;
+          font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+          text-transform: uppercase; color: var(--t3);
+          background: var(--chip-bg); border: 1px solid var(--chip-border);
+          padding: 1px 7px; border-radius: 999px; vertical-align: middle;
+          opacity: 0.85;
+        }
+        .tet-soon-note {
+          font-size: 11px; color: var(--t3); margin-top: 6px; font-style: italic;
         }
         .tet-status-dot {
           width: 7px; height: 7px; border-radius: 50%;
@@ -584,7 +598,7 @@ export default function TetapanPage() {
         {/* Quality score threshold */}
         <div className="tet-config-row">
           <div className="tet-config-key">
-            <div>Min Quality Score</div>
+            <div className="tet-key-title">Min Quality Score<span className="tet-soon-badge">Coming soon</span></div>
             <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '3px' }}>Articles below this get revised (70–90)</div>
           </div>
           <div>
@@ -598,6 +612,7 @@ export default function TetapanPage() {
                 style={{ flex: 1, accentColor: '#d4a853', cursor: 'pointer' }}
               />
             </div>
+            <div className="tet-soon-note">This setting is not yet active.</div>
           </div>
         </div>
 
@@ -605,10 +620,10 @@ export default function TetapanPage() {
         <div className="tet-config-row">
           <div className="tet-config-key">
             <div>Target Article Length</div>
-            <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '3px' }}>Short: ~600w · Standard: ~750w · Long: ~900w</div>
+            <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '3px' }}>Brief: ~600w · Standard: ~750w · Detailed: ~900w</div>
           </div>
           <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', flexWrap: 'wrap' }}>
-            {['short', 'standard', 'long'].map(opt => (
+            {['brief', 'standard', 'detailed'].map(opt => (
               <button
                 key={opt}
                 disabled={!loaded}
@@ -632,60 +647,69 @@ export default function TetapanPage() {
         {/* Failure notification email */}
         <div className="tet-config-row">
           <div className="tet-config-key">
-            <div>Failure Notification Email</div>
+            <div className="tet-key-title">Failure Notification Email<span className="tet-soon-badge">Coming soon</span></div>
             <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '3px' }}>Alert on generation failure (optional)</div>
           </div>
-          <input
-            type="email"
-            className="tet-input"
-            placeholder="you@example.com"
-            value={draft.notification_email || ''}
-            disabled={!loaded}
-            onChange={e => handleChange('notification_email', e.target.value)}
-            style={{ ...inputStyle, marginTop: '4px' }}
-          />
+          <div>
+            <input
+              type="email"
+              className="tet-input"
+              placeholder="you@example.com"
+              value={draft.notification_email || ''}
+              disabled={!loaded}
+              onChange={e => handleChange('notification_email', e.target.value)}
+              style={{ ...inputStyle, marginTop: '4px' }}
+            />
+            <div className="tet-soon-note">This setting is not yet active.</div>
+          </div>
         </div>
 
         {/* Site tagline */}
         <div className="tet-config-row">
           <div className="tet-config-key">
-            <div>Site Tagline</div>
+            <div className="tet-key-title">Site Tagline<span className="tet-soon-badge">Coming soon</span></div>
             <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '3px' }}>Shown in footer and meta</div>
           </div>
-          <input
-            type="text"
-            className="tet-input"
-            placeholder="Your tagline…"
-            value={draft.site_tagline || ''}
-            disabled={!loaded}
-            onChange={e => handleChange('site_tagline', e.target.value)}
-            style={{ ...inputStyle, marginTop: '4px' }}
-          />
+          <div>
+            <input
+              type="text"
+              className="tet-input"
+              placeholder="Your tagline…"
+              value={draft.site_tagline || ''}
+              disabled={!loaded}
+              onChange={e => handleChange('site_tagline', e.target.value)}
+              style={{ ...inputStyle, marginTop: '4px' }}
+            />
+            <div className="tet-soon-note">This setting is not yet active.</div>
+          </div>
         </div>
 
         {/* Social links */}
         <div className="tet-config-row">
           <div className="tet-config-key">
-            <div>Social Links</div>
+            <div className="tet-key-title">Social Links<span className="tet-soon-badge">Coming soon</span></div>
             <div style={{ fontSize: '11px', color: 'var(--t3)', marginTop: '3px' }}>X, Facebook, Instagram</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-            {[
-              { key: 'social_x',        placeholder: 'X / Twitter URL or handle' },
-              { key: 'social_facebook',  placeholder: 'Facebook page URL' },
-              { key: 'social_instagram', placeholder: 'Instagram handle' },
-            ].map(({ key, placeholder }) => (
-              <input
-                key={key}
-                type="text"
-                className="tet-input"
-                placeholder={placeholder}
-                value={draft[key] || ''}
-                disabled={!loaded}
-                onChange={e => handleChange(key, e.target.value)}
-                style={inputStyle}
-              />
-            ))}
+          <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
+              {[
+                { key: 'social_x',        placeholder: 'X / Twitter URL or handle' },
+                { key: 'social_facebook',  placeholder: 'Facebook page URL' },
+                { key: 'social_instagram', placeholder: 'Instagram handle' },
+              ].map(({ key, placeholder }) => (
+                <input
+                  key={key}
+                  type="text"
+                  className="tet-input"
+                  placeholder={placeholder}
+                  value={draft[key] || ''}
+                  disabled={!loaded}
+                  onChange={e => handleChange(key, e.target.value)}
+                  style={inputStyle}
+                />
+              ))}
+            </div>
+            <div className="tet-soon-note">This setting is not yet active.</div>
           </div>
         </div>
 
@@ -735,6 +759,7 @@ export default function TetapanPage() {
       <div className="tet-panel">
         <div className="tet-panel-header">
           <span className="tet-section-label">Editorial Instructions</span>
+          <span className="tet-soon-badge">Coming soon</span>
         </div>
         <div style={{ padding: '14px 20px' }}>
           <div style={{ fontSize: '11px', color: 'var(--t3)', marginBottom: '10px', lineHeight: 1.5 }}>
@@ -749,6 +774,7 @@ export default function TetapanPage() {
             rows={12}
             style={inputStyle}
           />
+          <div className="tet-soon-note">This setting is not yet active.</div>
         </div>
       </div>
 

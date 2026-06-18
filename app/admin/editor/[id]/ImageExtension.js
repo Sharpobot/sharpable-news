@@ -12,6 +12,19 @@ import Image from '@tiptap/extension-image'
  * figure/caption wrapper only exists in the editor view.
  */
 export const ImageWithCaption = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      suggestionDescription: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-suggestion-description'),
+        renderHTML: attrs => attrs.suggestionDescription
+          ? { 'data-suggestion-description': attrs.suggestionDescription }
+          : {},
+      },
+    }
+  },
+
   addNodeView() {
     return ({ node }) => {
       /* ── Outer wrapper ── */
